@@ -23,12 +23,18 @@ Comme le cœur sing-box embarqué est compilé depuis les sources (GPL-3.0), le 
 
 ## Captures d'écran
 
-| Nœuds | Abonnements | Réseau | Paramètres |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| Vue d'ensemble | Nœuds | Abonnements |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| Connexions | Journaux | Paramètres |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+La page **Réseau** regroupe les politiques de protection de connexion, les contrôles d'intégrité et la détection de déblocage streaming / IA :
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="Vue d'ensemble (sombre)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="Réseau">
 </p>
 
 ## Compilation
@@ -46,6 +52,14 @@ pnpm tauri build                       # produire une version de distribution
 `prepare-sidecars` compile le cœur et le convertisseur d'abonnements depuis les sources au lieu de télécharger des binaires préconstruits. Les hooks dev et build de Tauri l'exécutent automatiquement, vous n'avez donc pas à l'appeler à la main après avoir modifié les sources du cœur.
 
 Pour prévisualiser l'interface sans installer Rust ni Go, lancez le frontend seul avec `pnpm dev` et ouvrez-le dans un navigateur. `browserBridge()` remplace la partie native par des bouchons, donc tout ce qui dépend du cœur — la connexion, l'IP de sortie, le débit en direct — doit être vérifié dans la vraie application de bureau.
+
+## Exécution sur macOS
+
+Les versions de distribution ne sont ni signées ni notarisées (il n'y a pas de certificat de développeur Apple), donc macOS peut refuser d'ouvrir une version téléchargée (« ClashNova est endommagé… » ou un avertissement de développeur non identifié). Supprimez l'indicateur de quarantaine, puis ouvrez l'application normalement — adaptez le chemin si vous l'avez installée ailleurs :
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## Configuration
 

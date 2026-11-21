@@ -23,12 +23,18 @@ Da der mitgelieferte sing-box-Kernel aus dem Quellcode kompiliert wird (GPL-3.0)
 
 ## Screenshots
 
-| Knoten | Abonnements | Netzwerk | Einstellungen |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| Übersicht | Knoten | Abonnements |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| Verbindungen | Logs | Einstellungen |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+Die **Netzwerk**-Seite bündelt Verbindungsschutz-Richtlinien, Integritätsprüfungen und Streaming-/KI-Freischaltprüfungen:
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="Übersicht (dunkel)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="Netzwerk">
 </p>
 
 ## Erstellen
@@ -46,6 +52,14 @@ pnpm tauri build                       # Release-Build paketieren
 `prepare-sidecars` baut den Kernel und den Abonnement-Konverter aus dem Quellcode, statt vorkompilierte Binärdateien herunterzuladen. Die dev- und build-Hooks von Tauri führen es automatisch aus, sodass du es nach Änderungen am Kernel-Quellcode nicht von Hand aufrufen musst.
 
 Um die Oberfläche ohne Rust oder Go anzusehen, läuft das Frontend auch allein mit `pnpm dev` im Browser. `browserBridge()` ersetzt die native Seite durch Stubs, daher muss alles, was vom Kernel abhängt – Verbindung, Ausgangs-IP, Live-Geschwindigkeit – im echten Desktop-Build geprüft werden.
+
+## Unter macOS ausführen
+
+Release-Builds sind nicht signiert oder notariell beglaubigt (es gibt kein Apple-Entwicklerzertifikat), daher kann macOS die heruntergeladene App ablehnen („ClashNova ist beschädigt …" oder eine Entwicklerwarnung). Entferne das Quarantäne-Flag und öffne die App dann normal – passe den Pfad an, falls du sie woanders installiert hast:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## Konfiguration
 

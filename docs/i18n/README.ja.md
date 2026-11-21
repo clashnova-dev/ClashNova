@@ -23,12 +23,18 @@
 
 ## スクリーンショット
 
-| ノード | サブスクリプション | ネットワーク | 設定 |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| 概要 | ノード | サブスクリプション |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| 接続 | ログ | 設定 |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+**ネットワーク**ページは、接続保護ポリシー、ヘルスチェック、ストリーミング / AI のアンロック判定をまとめています:
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="概要(ダーク)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="ネットワーク">
 </p>
 
 ## ビルド
@@ -46,6 +52,14 @@ pnpm tauri build                       # リリース版をパッケージ化
 `prepare-sidecars` はコアとサブスクリプション変換器をソースからビルドし、ビルド済みバイナリはダウンロードしません。Tauri の dev・build フックが自動的に実行するため、コアのソースを変更しても手動で呼び出す必要はありません。
 
 Rust や Go を入れずに UI だけを確認したい場合は、`pnpm dev` でフロントエンドだけを起動してブラウザで開けます。`browserBridge()` がネイティブ側をスタブ化するため、コアに依存する部分——接続・出口 IP・リアルタイム速度——は実際のデスクトップビルドで検証する必要があります。
+
+## macOS で実行する
+
+リリースビルドはコード署名も公証(notarization)も行われていないため(Apple Developer 証明書がないため)、ダウンロードしたビルドの起動を macOS が拒否することがあります(「ClashNova は壊れています…」や開発元を確認できない旨の警告)。隔離フラグを解除してから通常どおり開いてください。別の場所にインストールした場合はパスを調整してください:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## 設定
 

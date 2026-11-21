@@ -23,12 +23,18 @@
 
 ## 截图
 
-| 节点 | 订阅 | 网络 | 设置 |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| 概览 | 节点 | 订阅 |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| 连接 | 日志 | 设置 |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+**网络**页集中了连接防护策略、健康检查和流媒体 / AI 解锁检测:
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="概览(深色)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="网络">
 </p>
 
 ## 构建
@@ -46,6 +52,14 @@ pnpm tauri build                       # 打包发布版本
 `prepare-sidecars` 从源码编译内核和订阅转换器,不下载预编译二进制。Tauri 的 dev 与 build 钩子会自动运行它,改动内核源码后无需手动执行。
 
 若不想安装 Rust 或 Go,可以只跑前端:`pnpm dev` 后在浏览器打开。`browserBridge()` 会桩掉原生侧,因此依赖内核的功能——连接、出口 IP、实时速率——仍需在真实桌面版本中验证。
+
+## 在 macOS 上运行
+
+发布版未做代码签名与公证(没有 Apple 开发者证书),下载后 macOS 可能拒绝打开(提示「ClashNova 已损坏」或开发者无法验证)。先解除隔离标记再正常打开,若安装在其它位置请相应修改路径:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## 配置
 

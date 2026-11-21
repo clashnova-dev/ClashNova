@@ -23,12 +23,18 @@
 
 ## Скриншоты
 
-| Узлы | Подписки | Сеть | Настройки |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| Обзор | Узлы | Подписки |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| Соединения | Журналы | Настройки |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+Страница **Сеть** объединяет политики защиты соединения, проверки состояния и детекцию разблокировки стриминга / ИИ:
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="Обзор (тёмная тема)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="Сеть">
 </p>
 
 ## Сборка
@@ -46,6 +52,14 @@ pnpm tauri build                       # собрать релизную сбо�
 `prepare-sidecars` собирает ядро и конвертер подписок из исходного кода, а не скачивает готовые бинарники. Хуки dev и build в Tauri запускают его автоматически, поэтому после изменения исходников ядра вызывать его вручную не нужно.
 
 Чтобы посмотреть интерфейс без установки Rust или Go, запустите один фронтенд командой `pnpm dev` и откройте его в браузере. `browserBridge()` подменяет нативную часть заглушками, поэтому всё, что зависит от ядра — соединение, исходящий IP, скорость в реальном времени — нужно проверять в настоящей десктопной сборке.
+
+## Запуск на macOS
+
+Релизные сборки не подписаны и не нотаризованы (нет сертификата разработчика Apple), поэтому macOS может отказаться открывать загруженную сборку («ClashNova повреждён…» или предупреждение о неустановленном разработчике). Снимите флаг карантина и откройте приложение как обычно — измените путь, если установили в другое место:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## Конфигурация
 

@@ -23,12 +23,18 @@
 
 ## 스크린샷
 
-| 노드 | 구독 | 네트워크 | 설정 |
-| :-: | :-: | :-: | :-: |
-| <img src="../screenshots/nodes.jpg" width="200"> | <img src="../screenshots/subscriptions.jpg" width="200"> | <img src="../screenshots/network.jpg" width="200"> | <img src="../screenshots/settings.jpg" width="200"> |
+| 개요 | 노드 | 구독 |
+| :-: | :-: | :-: |
+| <img src="../screenshots/overview-dark.jpg" width="240"> | <img src="../screenshots/nodes.jpg" width="240"> | <img src="../screenshots/subscriptions.jpg" width="240"> |
+
+| 연결 | 로그 | 설정 |
+| :-: | :-: | :-: |
+| <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
+
+**네트워크** 페이지는 연결 보호 정책, 상태 점검, 스트리밍 / AI 언락 감지를 한데 모았습니다:
 
 <p align="center">
-  <img src="../screenshots/overview-dark.jpg" width="540" alt="개요(다크)">
+  <img src="../screenshots/network-full.jpg" width="680" alt="네트워크">
 </p>
 
 ## 빌드
@@ -46,6 +52,14 @@ pnpm tauri build                       # 배포 빌드 패키징
 `prepare-sidecars`는 미리 빌드된 바이너리를 내려받지 않고 코어와 구독 변환기를 소스에서 빌드합니다. Tauri의 dev·build 훅이 자동으로 실행하므로 코어 소스를 수정한 뒤 직접 호출할 필요가 없습니다.
 
 Rust나 Go를 설치하지 않고 UI만 미리 보려면 `pnpm dev`로 프런트엔드만 실행해 브라우저에서 열면 됩니다. `browserBridge()`가 네이티브 쪽을 스텁으로 대체하므로 코어에 의존하는 기능 — 연결, 출구 IP, 실시간 속도 — 은 실제 데스크톱 빌드에서 확인해야 합니다.
+
+## macOS에서 실행
+
+릴리스 빌드는 코드 서명과 공증(notarization)이 되어 있지 않아(Apple 개발자 인증서가 없음), 내려받은 빌드를 macOS가 실행 거부할 수 있습니다(「ClashNova이(가) 손상되었습니다…」 또는 확인되지 않은 개발자 경고). 격리 플래그를 제거한 뒤 정상적으로 여세요. 다른 위치에 설치했다면 경로를 바꾸세요:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## 설정
 

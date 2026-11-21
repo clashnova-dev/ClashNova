@@ -22,12 +22,18 @@ Because the bundled sing-box core is compiled from source (GPL-3.0), the project
 
 ## Screenshots
 
-| Nodes | Subscriptions | Network | Settings |
-| :-: | :-: | :-: | :-: |
-| <img src="docs/screenshots/nodes.jpg" width="200"> | <img src="docs/screenshots/subscriptions.jpg" width="200"> | <img src="docs/screenshots/network.jpg" width="200"> | <img src="docs/screenshots/settings.jpg" width="200"> |
+| Overview | Nodes | Subscriptions |
+| :-: | :-: | :-: |
+| <img src="docs/screenshots/overview-dark.jpg" width="240"> | <img src="docs/screenshots/nodes.jpg" width="240"> | <img src="docs/screenshots/subscriptions.jpg" width="240"> |
+
+| Connections | Logs | Settings |
+| :-: | :-: | :-: |
+| <img src="docs/screenshots/connections.jpg" width="240"> | <img src="docs/screenshots/logs.jpg" width="240"> | <img src="docs/screenshots/settings.jpg" width="240"> |
+
+The **Network** page bundles connection-protection policies, health checks and streaming / AI unlock detection:
 
 <p align="center">
-  <img src="docs/screenshots/overview-dark.jpg" width="540" alt="Overview (dark)">
+  <img src="docs/screenshots/network-full.jpg" width="680" alt="Network">
 </p>
 
 ## Building
@@ -47,6 +53,14 @@ pnpm tauri build                       # package a release build
 `prepare-sidecars` builds the core and the subscription converter from source instead of downloading prebuilt binaries. Tauri's dev and build hooks run it automatically, so you don't need to invoke it by hand after changing the core sources.
 
 To preview the UI without installing Rust or Go, run the frontend on its own with `pnpm dev` and open it in a browser. `browserBridge()` stubs out the native side, so anything that depends on the core — the connection, egress IP, live speed — still has to be verified in the real desktop build.
+
+## Running on macOS
+
+Release builds are not code-signed or notarized (there is no Apple Developer certificate), so macOS may refuse to open a downloaded build ("ClashNova is damaged…" or an unidentified-developer warning). Clear the quarantine flag, then open the app normally — adjust the path if you installed it elsewhere:
+
+```sh
+sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
+```
 
 ## Configuration
 
