@@ -2,18 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { encode, messageKeys, msg, translator } from "../src/i18n/index.ts";
 import zhCN from "../src/i18n/zh-CN.ts";
 import en from "../src/i18n/en.ts";
 import { parsePreferences } from "../src/lib/preferences.ts";
 
-const src = new URL("../src/", import.meta.url).pathname;
-const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
+const src = fileURLToPath(new URL("../src/", import.meta.url));
+const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name).replaceAll("\\", "/")]);
 const sources = walk(src).filter(file => /\.(vue|ts)$/.test(file));
 // Not app copy: the dictionaries, the long-form help articles, and the patterns that recognise region names inside node names.
 const appCode = sources.filter(file => !file.includes("/i18n/") && !file.endsWith("content/help.ts") && !file.endsWith("lib/regions.ts"));
 // The native side sends keys too: the app and the TUN service helper.
-const root = new URL("../", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../", import.meta.url));
 const rustCode = ["src-tauri/src", "tun-service/src"].flatMap(dir => walk(join(root, dir))).filter(file => file.endsWith(".rs"));
 // Template expressions and file names that happen to look like a key.
 const notKeys = new Set(["nodes.length", "shortcuts.json", "subscriptions.json", "check.json"]);
