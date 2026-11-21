@@ -7,12 +7,12 @@ if ($version.ProductName -ne 'ClashNova') { throw "Unexpected product name: $($v
 if (-not $version.FileVersion.StartsWith($config.version)) { throw "Unexpected file version: $($version.FileVersion)" }
 if ($version.CompanyName -ne 'clashnova-dev') { throw "Unexpected publisher: $($version.CompanyName)" }
 Add-Type -AssemblyName System.Drawing
-$expected = [System.Drawing.Icon]::new((Resolve-Path src-tauri/icons/icon.ico), 32, 32).ToBitmap()
+$expected = [System.Drawing.Icon]::new((Resolve-Path src-tauri/icons/icon.ico).Path, 32, 32).ToBitmap()
 New-Item -ItemType Directory -Force release-artifacts | Out-Null
 $installer = Get-ChildItem "src-tauri/target/$Target/release/bundle/nsis/*-setup.exe"
 if ($installer.Count -ne 1) { throw 'Expected one Windows installer' }
 foreach ($entry in @(@{path=$executable; name='application'}, @{path=$installer.FullName; name='installer'})) {
-    $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Resolve-Path $entry.path)).ToBitmap()
+    $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Resolve-Path $entry.path).Path).ToBitmap()
     if ($icon.Width -ne 32 -or $icon.Height -ne 32) { throw 'Unexpected icon dimensions' }
     for ($x=0; $x -lt 32; $x++) {
         for ($y=0; $y -lt 32; $y++) {
