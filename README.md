@@ -92,3 +92,9 @@ The actual outbound traffic is forwarded by the bundled sing-box core.
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE). The project links the GPL-3.0 sing-box core, so distributions must follow the same license and make the corresponding source available.
+
+## GitHub updates
+
+The desktop updater reads signed updates from [GitHub Releases](https://github.com/clashnova-dev/ClashNova/releases), using the release's `latest.json` manifest. Update payloads are verified with the embedded public key before installation. This update signature is independent of Windows Authenticode and Apple notarization.
+
+Version 0.1.1 establishes the public release signing key. Install it manually once when moving from the initial 0.1.0 packages; subsequent compatible releases use the built-in updater. Private release keys are kept outside the repository and supplied to GitHub Actions through encrypted secrets.

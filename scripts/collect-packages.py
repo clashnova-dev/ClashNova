@@ -4,6 +4,7 @@ import argparse
 import configparser
 import hashlib
 import json
+import os
 import plistlib
 from pathlib import Path
 import shlex
@@ -70,7 +71,30 @@ def main():
                     verify_linux(Path(tmp) / 'squashfs-root', name, version)
             shutil.copy2(package, output / package.name)
             records.append({'file': package.name, 'sha256': hashlib.sha256(package.read_bytes()).hexdigest()})
-    (output / 'package-metadata.json').write_text(json.dumps({'name': name, 'version': version, 'publisher': 'clashnova-dev', 'target': args.target, 'files': records}, indent=2) + '\n')
+
+    updater = None
+    if os.environ.get('TAURI_SIGNING_PRIVATE_KEY'):
+        if 'apple' in args.target:
+            candidates = list((bundle / 'macos').glob('*.app.tar.gz'))
+            platform = 'darwin-' + args.target.split('-')[0]
+        elif 'windows' in args.target:
+            candidates = list((bundle / 'nsis').glob('*-setup.exe'))
+            platform = 'windows-' + args.target.split('-')[0]
+        else:
+            candidates = list((bundle / 'appimage').glob('*.AppImage'))
+            platform = 'linux-' + args.target.split('-')[0]
+        assert len(candidates) == 1, 'Expected exactly one updater artifact'
+        artifact = candidates[0]
+        signature = Path(str(artifact) + '.sig')
+        assert signature.is_file() and signature.read_text().strip(), 'Updater signature missing'
+        filename = (name + '_' + version + '_' + args.target.split('-')[0] + '.app.tar.gz') if 'apple' in args.target else artifact.name
+        for source, destination in [(artifact, filename), (signature, filename + '.sig')]:
+            shutil.copy2(source, output / destination)
+            if not any(item['file'] == destination for item in records):
+                records.append({'file': destination, 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()})
+        updater = {'platform': platform, 'file': filename, 'signature': signature.read_text().strip()}
+
+    (output / 'package-metadata.json').write_text(json.dumps({'name': name, 'version': version, 'publisher': 'clashnova-dev', 'target': args.target, 'files': records, 'updater': updater}, indent=2) + '\n')
     (output / 'SHA256SUMS').write_text(''.join(f"{item['sha256']}  {item['file']}\n" for item in records))
     print(json.dumps(records))
 
