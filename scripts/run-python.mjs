@@ -3,9 +3,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizeToolPath } from "./tool-env.mjs";
 
 function withToolBins(env) {
-  const next = { ...env };
+  const next = normalizeToolPath(env);
   const home = process.env.USERPROFILE || process.env.HOME || "";
   const extras = [];
 
@@ -33,13 +34,14 @@ function withToolBins(env) {
     }
 
     const pythonDirs = [
+      env.pythonLocation || "",
       "D:\\Program Files\\Python",
       "C:\\Program Files\\Python312",
       "C:\\Program Files\\Python311",
       "C:\\Program Files\\Python310",
       join(home, "AppData", "Local", "Programs", "Python", "Python312"),
       join(home, "AppData", "Local", "Programs", "Python", "Python311"),
-    ];
+    ].filter(Boolean);
     // If Scripts\ is on PATH, also add its parent (where python.exe usually lives).
     for (const part of (next.PATH || "").split(delimiter)) {
       if (/[\\/]Python(?:\d+)?[\\/]Scripts[\\/]?$/i.test(part)) {
