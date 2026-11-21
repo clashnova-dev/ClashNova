@@ -197,7 +197,7 @@ pub fn parse_tun(text: &str) -> Vec<String> {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(any(not(windows), test))]
 fn parse_unix_tun(text: &str) -> Vec<String> {
     let mut found = Vec::new();
     let mut iface: Option<String> = None;
@@ -246,7 +246,7 @@ fn parse_unix_tun(text: &str) -> Vec<String> {
     found
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn parse_windows_tun(text: &str) -> Vec<String> {
     let mut found = Vec::new();
     for line in text.lines() {
@@ -266,7 +266,7 @@ fn is_tun_name(name: &str) -> bool {
     name.starts_with("tun") || name.starts_with("utun")
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn is_proxy_tun_address(ip: &str) -> bool {
     let Some((a, rest)) = ip.split_once('.') else {
         return false;
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn a_tun_with_an_ipv4_address_is_on_and_a_link_local_utun_is_not() {
         let sample = "utun0: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1380\n\tinet6 fe80::1%utun0 prefixlen 64\nutun8: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 9000\n\tinet 198.18.0.1 --> 198.18.0.1 netmask 0xfffffffc\nen0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500\n\tinet 192.168.1.20 netmask 0xffffff00\n";
-        assert_eq!(parse_tun(sample), vec!["TUN utun8 198.18.0.1".to_string()]);
+        assert_eq!(parse_unix_tun(sample), vec!["TUN utun8 198.18.0.1".to_string()]);
     }
 
     #[test]
@@ -330,6 +330,15 @@ mod tests {
         let sample = "\
 2: enp0s1    inet 192.168.1.20/24 brd 192.168.1.255 scope global\n\
 5: tun0    inet 172.19.0.1/30 scope global tun0\n";
-        assert_eq!(parse_tun(sample), vec!["TUN tun0 172.19.0.1".to_string()]);
+        assert_eq!(parse_unix_tun(sample), vec!["TUN tun0 172.19.0.1".to_string()]);
+    }
+
+    #[test]
+    fn windows_ipconfig_reports_proxy_tunnel_ranges_only() {
+        let sample = "Ethernet adapter TUN:\n   IPv4 Address: 172.19.0.1\nEthernet adapter Ethernet:\n   IPv4 Address: 192.168.1.20\nEthernet adapter Other tunnel:\n   IPv4 Address: 198.19.0.1\n";
+        let expected = vec!["TUN 172.19.0.1".to_string(), "TUN 198.19.0.1".to_string()];
+        assert_eq!(parse_windows_tun(sample), expected);
+        #[cfg(windows)]
+        assert_eq!(parse_tun(sample), expected);
     }
 }

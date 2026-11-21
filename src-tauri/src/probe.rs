@@ -413,8 +413,11 @@ mod tests {
         let error = measure_delay(
             &client,
             &format!("http://{address}/generate_204"),
-            Duration::from_secs(2),
-            Duration::from_secs(2),
+            // Windows may retry a refused SYN for several seconds. Give the
+            // OS time to return its connection error; production probe budgets
+            // and the separate unresponsive-node timeout test are unchanged.
+            Duration::from_secs(10),
+            Duration::from_secs(10),
         )
         .unwrap_err();
         assert_ne!(error, "native.probeTimedOut");
