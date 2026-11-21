@@ -1,0 +1,51 @@
+fn main() {
+    println!(
+        "cargo:rustc-env=AIRPORT_TARGET={}",
+        std::env::var("TARGET").expect("target triple")
+    );
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "send_desktop_notification",
+            "tun_service_status",
+            "install_tun_service",
+            "uninstall_tun_service",
+            "get_exit_info",
+            "get_lan_addresses",
+            "network_check",
+            "unlock_check",
+            "unlock_cancel",
+            "get_auto_selection",
+            "set_shortcut_recording",
+            "load_shortcuts",
+            "save_shortcuts",
+            "list_connections",
+            "application_icon",
+            "close_connections",
+            "sync_tray",
+            "load_network_settings",
+            "get_client_setting",
+            "set_client_setting",
+            "proxy_diagnostics",
+            "save_network_settings",
+            "connection_state",
+            "take_crash_recovery",
+            "read_logs",
+            "probe_node",
+            "begin_probe",
+            "probe_delay",
+            "end_probe",
+            "fetch_subscription",
+            "fetch_subscription_details",
+            "convert_subscription",
+            "load_subscriptions",
+            "save_subscriptions",
+            "save_profile",
+            "clear_profile",
+            "set_connection_mode",
+            "connect",
+            "disconnect",
+            "open_external",
+        ]),
+    ))
+    .expect("tauri-build 失败");
+}

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-convert-subscription"
+description = "Enables the convert_subscription command without any pre-configured scope."
+commands.allow = ["convert_subscription"]
+
+[[permission]]
+identifier = "deny-convert-subscription"
+description = "Denies the convert_subscription command without any pre-configured scope."
+commands.deny = ["convert_subscription"]

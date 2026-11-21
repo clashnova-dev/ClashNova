@@ -1,0 +1,13 @@
+proxies:
+  - name: Local SOCKS
+    type: socks5
+    server: 127.0.0.1
+    port: 1081
+    username: demo
+    password: fixture-only
+  - name: Local Trojan
+    type: trojan
+    server: example.invalid
+    port: 443
+    password: fixture-only
+    sni: example.invalid

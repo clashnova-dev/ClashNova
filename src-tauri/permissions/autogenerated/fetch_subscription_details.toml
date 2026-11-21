@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-fetch-subscription-details"
+description = "Enables the fetch_subscription_details command without any pre-configured scope."
+commands.allow = ["fetch_subscription_details"]
+
+[[permission]]
+identifier = "deny-fetch-subscription-details"
+description = "Denies the fetch_subscription_details command without any pre-configured scope."
+commands.deny = ["fetch_subscription_details"]

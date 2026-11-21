@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-take-crash-recovery"
+description = "Enables the take_crash_recovery command without any pre-configured scope."
+commands.allow = ["take_crash_recovery"]
+
+[[permission]]
+identifier = "deny-take-crash-recovery"
+description = "Denies the take_crash_recovery command without any pre-configured scope."
+commands.deny = ["take_crash_recovery"]

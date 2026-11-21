@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+src-tauri/target/
+tun-service/target/
+src-tauri/binaries/*
+!src-tauri/binaries/*LICENSE*
+src-tauri/updater.key
+src-tauri/updater.key.pub
+__pycache__/
+*.pyc
+*.log
+.DS_Store

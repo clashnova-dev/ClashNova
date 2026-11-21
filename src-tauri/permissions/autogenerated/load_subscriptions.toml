@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-load-subscriptions"
+description = "Enables the load_subscriptions command without any pre-configured scope."
+commands.allow = ["load_subscriptions"]
+
+[[permission]]
+identifier = "deny-load-subscriptions"
+description = "Denies the load_subscriptions command without any pre-configured scope."
+commands.deny = ["load_subscriptions"]

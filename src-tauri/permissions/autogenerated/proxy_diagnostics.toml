@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxy-diagnostics"
+description = "Enables the proxy_diagnostics command without any pre-configured scope."
+commands.allow = ["proxy_diagnostics"]
+
+[[permission]]
+identifier = "deny-proxy-diagnostics"
+description = "Denies the proxy_diagnostics command without any pre-configured scope."
+commands.deny = ["proxy_diagnostics"]

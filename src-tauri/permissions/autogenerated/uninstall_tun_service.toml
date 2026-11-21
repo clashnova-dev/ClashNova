@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-uninstall-tun-service"
+description = "Enables the uninstall_tun_service command without any pre-configured scope."
+commands.allow = ["uninstall_tun_service"]
+
+[[permission]]
+identifier = "deny-uninstall-tun-service"
+description = "Denies the uninstall_tun_service command without any pre-configured scope."
+commands.deny = ["uninstall_tun_service"]

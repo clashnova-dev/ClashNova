@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ClashNova",
+  "version": "0.1.0",
+  "identifier": "dev.airport.client",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "node scripts/run-python.mjs scripts/prepare-sidecars.py && node scripts/run-python.mjs scripts/prepare-tun-service.py && npm run dev",
+    "beforeBuildCommand": "node scripts/run-python.mjs scripts/prepare-sidecars.py && node scripts/run-python.mjs scripts/prepare-tun-service.py && npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ClashNova",
+        "width": 900,
+        "height": 670,
+        "minWidth": 820,
+        "minHeight": 650,
+        "resizable": true,
+        "visible": false,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; frame-ancestors 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/airport-core",
+      "binaries/sing-box-sub",
+      "binaries/airport-tun-service"
+    ],
+    "resources": {
+      "binaries/sing-box-LICENSE": "sing-box-LICENSE",
+      "binaries/sing-box-sub-LICENSE": "sing-box-sub-LICENSE"
+    },
+    "createUpdaterArtifacts": true,
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "nsis/firewall-hooks.nsh"
+      }
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "clashnova",
+          "clash",
+          "clashmeta"
+        ]
+      }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI3NjA1RUVCNTlGRDdDMEIKUldRTGZQMVo2MTVnSjZWdXdML0JaY1dLRXNaTzZYd3kyQmJKY1ZOTmpjOUNoYXpqeG9OVXAwSjQK",
+      "endpoints": [
+        "https://github.com/clashnova-dev/ClashNova/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

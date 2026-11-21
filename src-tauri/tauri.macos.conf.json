@@ -1,0 +1,22 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ClashNova",
+        "width": 360,
+        "height": 500,
+        "minWidth": 360,
+        "minHeight": 500,
+        "resizable": true,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 16,
+          "y": 22
+        }
+      }
+    ]
+  }
+}

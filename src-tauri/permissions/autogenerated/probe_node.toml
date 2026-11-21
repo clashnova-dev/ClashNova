@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-probe-node"
+description = "Enables the probe_node command without any pre-configured scope."
+commands.allow = ["probe_node"]
+
+[[permission]]
+identifier = "deny-probe-node"
+description = "Denies the probe_node command without any pre-configured scope."
+commands.deny = ["probe_node"]

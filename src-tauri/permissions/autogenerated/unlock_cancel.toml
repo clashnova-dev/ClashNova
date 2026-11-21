@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-unlock-cancel"
+description = "Enables the unlock_cancel command without any pre-configured scope."
+commands.allow = ["unlock_cancel"]
+
+[[permission]]
+identifier = "deny-unlock-cancel"
+description = "Denies the unlock_cancel command without any pre-configured scope."
+commands.deny = ["unlock_cancel"]

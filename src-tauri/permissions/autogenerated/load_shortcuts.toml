@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-load-shortcuts"
+description = "Enables the load_shortcuts command without any pre-configured scope."
+commands.allow = ["load_shortcuts"]
+
+[[permission]]
+identifier = "deny-load-shortcuts"
+description = "Denies the load_shortcuts command without any pre-configured scope."
+commands.deny = ["load_shortcuts"]

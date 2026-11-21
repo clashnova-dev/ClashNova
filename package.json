@@ -1,0 +1,37 @@
+{
+  "name": "airport-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "prepare:sidecars": "node scripts/run-python.mjs scripts/prepare-sidecars.py"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.72.0",
+    "@tauri-apps/api": "^2.3.0",
+    "@tauri-apps/plugin-autostart": "^2.7.0",
+    "@tauri-apps/plugin-deep-link": "^2.6.3",
+    "@tauri-apps/plugin-log": "^2.10.2",
+    "@tauri-apps/plugin-notification": "^2.8.1",
+    "@tauri-apps/plugin-os": "^2.4.0",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
+    "uqr": "^0.1.3",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.3.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vue-tsc": "^2.2.8"
+  },
+  "author": "clashnova-dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clashnova-dev/ClashNova.git"
+  },
+  "homepage": "https://github.com/clashnova-dev/ClashNova"
+}

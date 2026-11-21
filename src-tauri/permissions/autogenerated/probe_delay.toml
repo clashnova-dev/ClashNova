@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-probe-delay"
+description = "Enables the probe_delay command without any pre-configured scope."
+commands.allow = ["probe_delay"]
+
+[[permission]]
+identifier = "deny-probe-delay"
+description = "Denies the probe_delay command without any pre-configured scope."
+commands.deny = ["probe_delay"]

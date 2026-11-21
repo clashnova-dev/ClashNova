@@ -1,0 +1,58 @@
+name: Desktop packages
+on:
+  workflow_dispatch:
+  push:
+    tags: ['desktop-v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: --bundles nsis
+          - os: macos-15
+            target: aarch64-apple-darwin
+            args: --bundles app,dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            args: --bundles app,dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            args: --bundles deb,appimage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+      - run: corepack enable
+      - run: corepack prepare pnpm@10.30.3 --activate
+      - run: pnpm install --frozen-lockfile
+      - run: python scripts/prepare-sidecars.py --target ${{ matrix.target }}
+      - run: python scripts/prepare-sidecars.py --test
+      - run: node --test --experimental-strip-types tests/*.test.ts
+      - run: python scripts/prepare-tun-service.py
+      - run: cargo test --locked --manifest-path tun-service/Cargo.toml
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - run: pnpm tauri build --target ${{ matrix.target }} ${{ matrix.args }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: airport-${{ matrix.target }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/
+          if-no-files-found: error

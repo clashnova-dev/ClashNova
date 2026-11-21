@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-subscriptions"
+description = "Enables the save_subscriptions command without any pre-configured scope."
+commands.allow = ["save_subscriptions"]
+
+[[permission]]
+identifier = "deny-save-subscriptions"
+description = "Denies the save_subscriptions command without any pre-configured scope."
+commands.deny = ["save_subscriptions"]

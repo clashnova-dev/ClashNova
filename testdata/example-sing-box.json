@@ -1,0 +1,5 @@
+{
+  "outbounds": [
+    { "type": "socks", "tag": "本机测试节点", "server": "127.0.0.1", "server_port": 1081 }
+  ]
+}

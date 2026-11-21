@@ -1,0 +1,20 @@
+[package]
+authors = ["clashnova-dev"]
+name = "airport-tun-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+aes-gcm = "0.10"
+getrandom = "0.3"
+sha2 = "0.10"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.8"
+windows-sys = { version = "0.61", features = ["Win32_System_Console", "Win32_System_Com", "Win32_System_JobObjects", "Win32_Security", "Win32_System_Threading", "Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_NetworkManagement_WindowsFilteringPlatform", "Win32_System_Rpc"] }
