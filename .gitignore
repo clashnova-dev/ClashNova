@@ -13,3 +13,6 @@ __pycache__/
 *.pyc
 *.log
 .DS_Store
+
+.release/
+release-artifacts/

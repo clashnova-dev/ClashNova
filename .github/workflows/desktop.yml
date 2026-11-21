@@ -1,29 +1,45 @@
 name: Desktop packages
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Platforms to package
+        type: choice
+        default: windows-linux
+        options: [windows-linux, windows, linux, all]
   push:
     tags: ['desktop-v*']
 permissions:
   contents: read
 jobs:
+  metadata:
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.release.outputs.matrix }}
+      name: ${{ steps.release.outputs.name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: release
+        env:
+          RELEASE_PLATFORM: ${{ inputs.platform || 'all' }}
+        run: python scripts/release-metadata.py --platform "$RELEASE_PLATFORM"
   build:
+    needs: metadata
+    timeout-minutes: 90
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: --bundles nsis
-          - os: macos-15
-            target: aarch64-apple-darwin
-            args: --bundles app,dmg
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
-            args: --bundles app,dmg
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: --bundles deb,appimage
+      matrix: ${{ fromJSON(needs.metadata.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
+    env:
+      TAURI_ENV_TARGET_TRIPLE: ${{ matrix.target }}
+      VITE_ENABLE_LOGIN: 'false'
+      VITE_GITHUB_URL: https://github.com/clashnova-dev/ClashNova
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,25 +50,47 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.27.x'
+          go-version-file: core/go.mod
+          cache-dependency-path: core/go.sum
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+            tun-service/target
+          key: clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
       - run: corepack enable
       - run: corepack prepare pnpm@10.30.3 --activate
       - run: pnpm install --frozen-lockfile
+      - name: Validate release identity and signing configuration
+        run: python scripts/release-metadata.py --ci-config
+      - run: pnpm build
+      - name: Frontend tests
+        shell: bash
+        run: node --test --experimental-strip-types tests/*.test.ts
       - run: python scripts/prepare-sidecars.py --target ${{ matrix.target }}
       - run: python scripts/prepare-sidecars.py --test
-      - run: node --test --experimental-strip-types tests/*.test.ts
+      - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path tun-service/Cargo.toml
       - run: python scripts/prepare-tun-service.py
-      - run: cargo test --locked --manifest-path tun-service/Cargo.toml
-      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
-      - run: pnpm tauri build --target ${{ matrix.target }} ${{ matrix.args }}
+      - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
+      - name: Package application
+        run: pnpm tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config .release/tauri-ci.json
+      - name: Verify Windows executable metadata and icons
+        if: runner.os == 'Windows'
+        run: ./scripts/verify-windows-package.ps1 -Target ${{ matrix.target }}
+      - name: Verify and collect installable packages
+        run: python scripts/collect-packages.py --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: airport-${{ matrix.target }}
-          path: src-tauri/target/${{ matrix.target }}/release/bundle/
+          name: ${{ needs.metadata.outputs.name }}-${{ needs.metadata.outputs.version }}-${{ matrix.label }}
+          path: release-artifacts/
+          compression-level: 0
           if-no-files-found: error
+          retention-days: 30

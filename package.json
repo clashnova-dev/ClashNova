@@ -33,5 +33,7 @@
     "type": "git",
     "url": "https://github.com/clashnova-dev/ClashNova.git"
   },
-  "homepage": "https://github.com/clashnova-dev/ClashNova"
+  "homepage": "https://github.com/clashnova-dev/ClashNova",
+  "version": "0.1.0",
+  "description": "ClashNova desktop proxy client"
 }

@@ -3,7 +3,7 @@ authors = ["clashnova-dev"]
 name = "airport-client"
 version = "0.1.0"
 edition = "2021"
-description = "Airport desktop client"
+description = "ClashNova desktop proxy client"
 
 [lib]
 name = "airport_client_lib"

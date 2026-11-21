@@ -51,7 +51,12 @@
         "installerIcon": "icons/icon.ico",
         "installerHooks": "nsis/firewall-hooks.nsh"
       }
-    }
+    },
+    "publisher": "clashnova-dev",
+    "homepage": "https://github.com/clashnova-dev/ClashNova",
+    "category": "Utility",
+    "shortDescription": "ClashNova desktop proxy client",
+    "longDescription": "ClashNova desktop proxy client powered by sing-box."
   },
   "plugins": {
     "deep-link": {
@@ -69,5 +74,6 @@
         "https://github.com/clashnova-dev/ClashNova/releases/latest/download/latest.json"
       ]
     }
-  }
+  },
+  "mainBinaryName": "ClashNova"
 }
