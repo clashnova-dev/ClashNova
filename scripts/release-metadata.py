@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import struct
 import tomllib
@@ -22,6 +23,9 @@ def main():
     assert config['version'] == package['version'] == cargo['version'], 'Application versions differ'
     assert config['bundle']['publisher'] == 'clashnova-dev'
     assert cargo['authors'] == ['clashnova-dev']
+    rust_source = ROOT / 'src-tauri/src/connection.rs'
+    for included in re.findall(r'include_str!\("([^"]+)"\)', rust_source.read_text()):
+        assert (rust_source.parent / included).is_file(), 'Missing Rust contract include: ' + included
     for name, size in [('32x32.png', 32), ('128x128.png', 128), ('128x128@2x.png', 256)]:
         image = (ROOT / 'src-tauri/icons' / name).read_bytes()
         assert image[:8] == b'\x89PNG\r\n\x1a\n'

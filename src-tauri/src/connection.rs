@@ -42,7 +42,7 @@ struct Transition {
 fn table() -> &'static Vec<Transition> {
     static TABLE: OnceLock<Vec<Transition>> = OnceLock::new();
     TABLE.get_or_init(|| {
-        let raw = include_str!("../../../contracts/connection-state.vectors.json");
+        let raw = include_str!("../../contracts/connection-state.vectors.json");
         let parsed: Vectors =
             serde_json::from_str(raw).expect("connection state contract cannot be parsed");
         parsed.transitions
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn follows_contract() {
-        let raw = include_str!("../../../contracts/connection-state.vectors.json");
+        let raw = include_str!("../../contracts/connection-state.vectors.json");
         let parsed: Vectors = serde_json::from_str(raw).unwrap();
         for item in parsed.transitions {
             assert_eq!(reduce(item.from, item.event).unwrap(), item.to);

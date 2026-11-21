@@ -32,7 +32,7 @@ Because the bundled sing-box core is compiled from source (GPL-3.0), the project
 
 ## Building
 
-Windows and Linux packages can be built from [Actions → Desktop packages](https://github.com/clashnova-dev/ClashNova/actions/workflows/desktop.yml), using the default `windows-linux` option. Artifacts include the Windows installer, Linux DEB/AppImage, version metadata and SHA-256 checksums. The application name is **ClashNova**; `src-tauri/tauri.conf.json`, `package.json` and Cargo use the same version. CI checks the packaged launcher/executable name, icon and version. Updater signatures are generated only when the repository's `TAURI_SIGNING_PRIVATE_KEY` secret is configured; standard installers do not require that key.
+Packages can be built from [Actions → Desktop packages](https://github.com/clashnova-dev/ClashNova/actions/workflows/desktop.yml). The default `all` option builds Windows x64, Linux x64 and separate Apple Silicon / Intel macOS versions. Artifacts include the Windows installer, Linux DEB/AppImage, macOS DMGs, version metadata and SHA-256 checksums. The application name is **ClashNova**; `src-tauri/tauri.conf.json`, `package.json` and Cargo use the same version. CI checks the packaged launcher/executable name, icon and version. Updater signatures are generated only when the repository's `TAURI_SIGNING_PRIVATE_KEY` secret is configured; standard installers do not require that key.
 
 You'll need Node.js with pnpm, Rust, Go, Python 3, and the Tauri system dependencies for your platform.
 
