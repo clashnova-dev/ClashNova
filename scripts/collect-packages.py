@@ -4,6 +4,7 @@ import argparse
 import configparser
 import hashlib
 import json
+import plistlib
 from pathlib import Path
 import shlex
 import shutil
@@ -37,6 +38,18 @@ def main():
     bundle = ROOT / 'src-tauri/target' / args.target / 'release/bundle'
     output = ROOT / 'release-artifacts'
     output.mkdir(exist_ok=True)
+    if 'apple' in args.target:
+        apps = list((bundle / 'macos').glob('*.app'))
+        assert len(apps) == 1, 'Expected one macOS application'
+        contents = apps[0] / 'Contents'
+        info = plistlib.loads((contents / 'Info.plist').read_bytes())
+        assert info['CFBundleName'] == name and info['CFBundleShortVersionString'] == version
+        assert info['CFBundleExecutable'] == name
+        icon_name = info['CFBundleIconFile']
+        if not icon_name.endswith('.icns'):
+            icon_name += '.icns'
+        assert (contents / 'Resources' / icon_name).read_bytes() == (ROOT / 'src-tauri/icons/icon.icns').read_bytes()
+        print('Verified macOS application name, version, executable and ClashNova icon')
     patterns = ['nsis/*-setup.exe'] if 'windows' in args.target else ['deb/*.deb', 'appimage/*.AppImage'] if 'linux' in args.target else ['dmg/*.dmg']
     records = []
     for pattern in patterns:
