@@ -232,6 +232,7 @@ pub struct NetworkCheck {
     exit_ip: String,
     direct_ip: String,
     ipv6_ip: String,
+    proxy_ipv6_ip: String,
     connected: bool,
     mode: String,
     tun_ipv6: bool,
@@ -259,13 +260,13 @@ async fn trace(proxy_port: Option<u16>, url: &str) -> (bool, String) {
         return (false, String::new());
     }
     let Ok(raw) = bounded(response).await else {
-        return (true, String::new());
+        return (false, String::new());
     };
     let text = String::from_utf8_lossy(&raw);
     let ip = parse_trace(&text, false)
         .map(|info| info.ip)
         .unwrap_or_default();
-    (true, ip)
+    (!ip.is_empty(), ip)
 }
 
 async fn proxy_trace(connected: bool, port: u16) -> (bool, String) {
@@ -304,21 +305,36 @@ async fn dns_resolves() -> bool {
 /// Local network, proxy, DNS and IPv6 run together. Nothing here changes the system proxy.
 #[tauri::command]
 pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<NetworkCheck, String> {
-    let (connected, mode, tun_ipv6, port) = match state.inner().try_lock() {
-        Ok(core) => (
-            core.phase == Phase::Connected,
-            core.mode.clone(),
-            core.network.tun.ipv6,
-            core.network.proxy_port,
-        ),
-        Err(_) => (false, String::new(), false, 0),
+    // Capture identity as well as settings: reconnecting to another node must invalidate
+    // in-flight observations, even when the new connection uses the same local port.
+    let snapshot = || -> Result<_, String> {
+        let core = state.inner().try_lock().map_err(|_| "native.connectionStateBusy")?;
+        if !matches!(core.phase, Phase::Idle | Phase::Failed | Phase::Connected) {
+            return Err("native.connectionStateBusy".into());
+        }
+        Ok((core.phase, core.mode.clone(), core.network.tun.ipv6,
+            core.network.proxy_port, core.traffic_endpoint.clone()))
     };
-    let (direct, v6, proxied, dns_ok) = tokio::join!(
+    let before = snapshot()?;
+    let (phase, mode, tun_ipv6, port, _) = before.clone();
+    let connected = phase == Phase::Connected;
+    let (direct, v6, proxied, proxy_v6, dns_ok) = tokio::join!(
         trace(None, "https://www.cloudflare.com/cdn-cgi/trace"),
         trace(None, "https://ipv6.cloudflare.com/cdn-cgi/trace"),
         proxy_trace(connected, port),
+        async {
+            if connected && port > 0 {
+                trace(Some(port), "https://ipv6.cloudflare.com/cdn-cgi/trace").await
+            } else { (false, String::new()) }
+        },
         dns_resolves(),
     );
+    if snapshot()? != before {
+        return Err("native.networkChangedRecheckExit".into());
+    }
+    let proxy_ipv6_ip = if proxy_v6.0 && proxy_v6.1.contains(':') {
+        proxy_v6.1
+    } else { String::new() };
     let ipv6_ip = if v6.0 && v6.1.contains(':') {
         v6.1
     } else {
@@ -341,6 +357,7 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
         exit_ip,
         direct_ip,
         ipv6_ip,
+        proxy_ipv6_ip,
         connected,
         mode,
         tun_ipv6,
@@ -350,6 +367,25 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test(flavor = "current_thread")]
+    async fn trace_rejects_success_status_without_valid_ip() {
+        for body in ["<html>captive portal</html>", "ip=invalid\n", "ip=8.8.8.8\nloc=US\n"] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let address = listener.local_addr().unwrap();
+            let response = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body);
+            let server = std::thread::spawn(move || {
+                use std::io::{Read, Write};
+                let (mut stream, _) = listener.accept().unwrap();
+                stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                let mut request = [0; 2048];
+                stream.read(&mut request).unwrap();
+                stream.write_all(response.as_bytes()).unwrap();
+            });
+            let result = trace(None, &format!("http://{address}")).await;
+            assert_eq!(result.0, body.starts_with("ip=8.8.8.8"));
+            server.join().unwrap();
+        }
+    }
     #[test]
     fn geolocation_validates_success_ip_and_coordinates() {
         let info=parse_geo(br#"{"success":true,"ip":"203.0.113.10","country_code":"SG","region":"Singapore","city":"Singapore","latitude":1.3,"longitude":999,"connection":{"asn":64512,"isp":"Example ISP","org":"Example Org"},"timezone":{"id":"Asia/Singapore"}}"#,true).unwrap();

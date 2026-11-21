@@ -12,7 +12,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { DEFAULT_PROXY_PORT, DEFAULT_TUN_MTU, defaultTunSettings, parseRouteExclude, validateProxyPort, validateTunMtu, proxyAddress, type NetworkSettings, type TunSettings } from "../lib/network-settings";
 import { preferencesKey, type Preferences } from "../lib/preferences";
 import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, subscriptionsStoreKey, writeStored, type SettingStore, type StoreStatus } from "../lib/settings-store";
-import { defaultNetworkSecurity, parseNetworkSecurity, type Ipv6Policy, type NetworkSecurity } from "../lib/network-security";
+import { defaultNetworkSecurity, parseNetworkSecurity, type NetworkSecurity } from "../lib/network-security";
 import { appPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
 import { parseSingBoxProfile } from "../lib/profiles";
 import { sortByLatency } from "../lib/node-order";
@@ -1396,18 +1396,39 @@ async function setAppPolicy(app: string, policy: AppPolicy) {
 
 // Kill Switch 与 IPv6 的实际生效落在既有 TUN 设置;连接中不可更改(与设置页一致)。
 async function setTunProtection(patch: Partial<Pick<TunSettings, "killSwitch" | "ipv6">>) {
-  if (busy.value || connected.value || !networkLoaded.value) return;
+  if (busy.value || connected.value || !networkLoaded.value || connectionMode.value !== "tun") return;
+  busy.value = true;
   networkError.value = "";
-  const settings: NetworkSettings = { ...networkSettings.value, tun: { ...networkSettings.value.tun, ...patch } };
   try {
+    if (!await confirmation.request({
+      title: "confirmation.networkTitle", body: "confirmation.networkBody",
+      details: patch.killSwitch === false ? ["confirmation.guardWarning"] : [],
+    })) return;
+    const settings: NetworkSettings = { ...networkSettings.value, tun: { ...networkSettings.value.tun, ...patch } };
     applyNetworkSettings(await (await bridge()).saveNetworkSettings(settings));
     await writeStored(settingsStore, networkSettingsStoreKey, networkSettings.value, preferenceStoreStatus);
   } catch (error) { networkError.value = error instanceof Error ? error.message : String(error); }
+  finally { busy.value = false; }
 }
 
-async function setIpv6Policy(policy: Ipv6Policy) {
-  await setNetworkSecurity({ ipv6Policy: policy });
-  await setTunProtection({ ipv6: policy !== "block" });
+/** Explicit resync, unlike selecting the already-selected mode (which is a no-op). */
+async function repairNetwork() {
+  if (busy.value || tunServiceBusy.value) return false;
+  busy.value = true;
+  try {
+    if (!await confirmation.request({ title: "secnet.repairTitle", body: "check.reconnectConfirm" })) return false;
+    const client = await bridge();
+    const reconnect = connected.value;
+    applySnapshot(await client.disconnect());
+    await client.setConnectionMode(connectionMode.value);
+    if (rawProfile.value) await client.saveProfile(buildProfileConfig());
+    if (reconnect) applySnapshot(await client.connect(connectionMode.value));
+    logs.value = await client.logs();
+    return true;
+  } catch (error) {
+    await reconcileConnectionError(error);
+    return false;
+  } finally { busy.value = false; }
 }
 
 async function toggleAutostart() {
@@ -1506,7 +1527,7 @@ async function toggle() {
     void refreshProxyDiagnostics();
   }
 }
-  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setIpv6Policy,setTunProtection,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
+  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setTunProtection,repairNetwork,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
 }
 export type AppStore = ReturnType<typeof create>;
 let store: AppStore | null = null;

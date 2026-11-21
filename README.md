@@ -98,3 +98,13 @@ GPL-3.0. See [LICENSE](LICENSE). The project links the GPL-3.0 sing-box core, so
 The desktop updater reads signed updates from [GitHub Releases](https://github.com/clashnova-dev/ClashNova/releases), using the release's `latest.json` manifest. Update payloads are verified with the embedded public key before installation. This update signature is independent of Windows Authenticode and Apple notarization.
 
 Version 0.1.1 establishes the public release signing key. Install it manually once when moving from the initial 0.1.0 packages; subsequent compatible releases use the built-in updater. Private release keys are kept outside the repository and supplied to GitHub Actions through encrypted secrets.
+
+## Privacy checks and routing coverage
+
+The Network page shows the actual proxy mode and saved TUN options. IPv6 and kill-switch changes require confirmation and a disconnected TUN session; the displayed switches update only after the native host accepts the settings. Reapply/reconnect also requires confirmation.
+
+System/manual proxy covers proxy-aware applications. It does not capture all system DNS, IPv6 or WebRTC UDP traffic. TUN config captures DNS and IPv6 and routes STUN through the selected proxy; configured direct rules and route exclusions remain effective. The domestic TUN resolver uses pinned AliDNS/DNSPod DoH; the automatic choice is AliDNS DoH. These settings alone do not verify absence of leaks.
+
+Checks are user initiated. HTTP exit probes use Cloudflare trace, and WebRTC candidate gathering uses Cloudflare STUN. The built-in WebRTC result applies only to the app webview. Use the BrowserLeaks DNS, WebRTC and IP links from the browser you actually use to validate its behavior. A timeout, unavailable IPv6, or absent ICE candidates stays unconfirmed. Matching IPs describe the observed probes, not a guarantee for all traffic. Probe observations are discarded when the connection, node, routing mode or network settings change.
+
+Regression coverage includes mapped IPv4/IPv6 candidates, dual-stack exits, ICE cancellation and timeouts, invalid successful HTTP responses, native TUN DNS/STUN configuration, and settings confirmation. Browser interaction checks use mocked native calls; they do not replace a live OS-level TUN routing test.

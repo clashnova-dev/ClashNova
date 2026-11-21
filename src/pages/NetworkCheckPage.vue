@@ -1,22 +1,29 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { CircleCheck, Crosshair, Globe, Network, Power, ShieldAlert, ShieldCheck, SlidersHorizontal, Wifi, Wrench } from "@lucide/vue";
+import { CircleCheck, Crosshair, Globe, Network, Power, ExternalLink, ShieldCheck, Wifi, Wrench } from "@lucide/vue";
 import HelpTip from "../components/ui/HelpTip.vue";
-import SelectMenu from "../components/ui/SelectMenu.vue";
 import UnlockCheck from "../components/UnlockCheck.vue";
 import { useApp } from "../composables/useApp";
-import { isPublicIp, webrtcAssessment, type PrivacyTone, type RtcObservation } from '../lib/privacy-check';
-import type { Ipv6Policy } from "../lib/network-security";
+import { ipv6Assessment, webrtcAssessment, type PrivacyTone, type RtcObservation } from '../lib/privacy-check';
+import { collectWebrtc } from "../lib/webrtc-check";
+import { confirmation } from "../lib/confirmation";
 import type { MessageKey, Text } from "../i18n";
 
-const { t, tx, isNative, networkSecurity, setNetworkSecurity, setIpv6Policy, setTunProtection, networkSettings, connected, busy, networkLoaded, connectionMode, setConnectionMode, selectedNode } = useApp();
-
-const ipv6Options = computed(() => ([
-  { value: "follow", label: t("secnet.ipv6Follow") },
-  { value: "proxyOnly", label: t("secnet.ipv6ProxyOnly") },
-  { value: "block", label: t("secnet.ipv6Block") },
-] as { value: Ipv6Policy; label: string }[]));
+const { t, tx, isNative, setTunProtection, repairNetwork, networkError, networkSettings, connected, busy, networkLoaded, connectionMode, setConnectionMode, selectedNode, routeMode, phase, tab, openExternal } = useApp();
+const modeOptions = computed(() => [
+  { value: 'system' as const, label: t('common.systemProxy') },
+  { value: 'tun' as const, label: 'TUN' },
+  { value: 'manual' as const, label: t('settings.manualProxy') },
+]);
+const resolverName = computed(() => networkSettings.value.tun.dnsDomestic === 'dnspod' ? 'DNSPod DoH' : 'AliDNS DoH');
+const remoteName = computed(() => ({cloudflare: 'Cloudflare DoH', google: 'Google DoH', quad9: 'Quad9 DoH'})[networkSettings.value.tun.dnsRemote]);
+async function changeMode(value: 'system' | 'tun' | 'manual') {
+  const previous = connectionMode.value;
+  if (busy.value || value === previous) return;
+  if (!await confirmation.request({ title: 'confirmation.proxyTitle', body: 'confirmation.proxyBody' })) return;
+  if (!busy.value && connectionMode.value === previous) await setConnectionMode(value);
+}
 
 // 网络修复:打开即自动检测,逐项给出状态,支持单项修复与一键修复。
 type RepairKey = "connection" | "systemProxy" | "dns";
@@ -32,7 +39,7 @@ const problemKeys = computed(() => REPAIR_KEYS.filter((key) => repairChecks.valu
 const detecting = computed(() => REPAIR_KEYS.some((key) => repairChecks.value[key] === "checking"));
 
 function evaluateNative(native: Native): Record<RepairKey, "ok" | "problem"> {
-  const proxyHealthy = native.proxy === "ok" || (native.mode === "tun" && native.proxy === "off");
+  const proxyHealthy = native.proxy === "ok";
   return {
     connection: native.connected ? "ok" : "problem",
     systemProxy: proxyHealthy ? "ok" : "problem",
@@ -50,11 +57,14 @@ async function detectRepairs() {
 }
 // 实际修复动作:重新同步系统代理(重新应用当前连接模式),再按项复检。
 async function runRepair(keys: RepairKey[]) {
-  if (repairBusy.value || !isNative || !keys.length) return;
+  if (repairBusy.value || busy.value || !isNative || !keys.length) return;
   repairBusy.value = true;
   for (const key of keys) repairChecks.value[key] = "fixing";
   try {
-    await setConnectionMode(connectionMode.value);
+    closeRepair();
+    const repaired = await repairNetwork();
+    repairDialog.value?.showModal();
+    if (!repaired) { await detectRepairs(); return; }
     const result = evaluateNative(await invoke<Native>("network_check"));
     for (const key of REPAIR_KEYS) {
       if (keys.includes(key)) repairChecks.value[key] = result[key] === "ok" ? "fixed" : "failed";
@@ -73,6 +83,7 @@ type Native = {
   exitIp: string;
   directIp?: string;
   ipv6Ip: string;
+  proxyIpv6Ip?: string;
   connected: boolean;
   mode: string;
   tunIpv6: boolean;
@@ -86,12 +97,17 @@ let generation = 0;
 let cancelRtc: (() => void) | undefined;
 onUnmounted(() => { generation++; cancelRtc?.(); });
 const privacyBusy = ref(false);
-watch([connected, connectionMode, selectedNode], () => { generation++; ran.value = false; status.value = 'idle'; });
+watch([phase, connectionMode, selectedNode, routeMode, networkSettings], () => {
+  generation++;
+  cancelRtc?.();
+  resetResults();
+  status.value = 'idle';
+});
 async function protectPrivacy() {
   if (busy.value || privacyBusy.value) return;
   privacyBusy.value = true;
   try {
-    await setConnectionMode('tun');
+    await changeMode('tun');
     if (connectionMode.value === 'tun' && connected.value) await run();
   } finally { privacyBusy.value = false; }
 }
@@ -111,57 +127,20 @@ const dnsToneRow = ref<Tone>("idle");
 const ipv6Tone = ref<Tone>("idle");
 const webrtcTone = ref<Tone>("idle");
 
-function addressOf(candidate: string): string {
-  const parts = candidate.trim().replace(/^a=/, "").split(/\s+/);
-  if (!parts[0]?.startsWith("candidate:") || parts.length < 6) return "";
-  const ip = parts[4];
-  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && !ip.includes(":")) return "";
-  return ip;
+const checkedAt = ref('');
+function resetResults() {
+  ran.value = false;
+  checkedAt.value = '';
+  error.value = '';
+  for (const value of [localText, proxyText, dnsText, exitText]) value.value = 'check.pending';
+  for (const value of [dnsLeak, ipv6Leak, webrtcLeak]) value.value = 'check.notRun';
+  for (const tone of [localTone, proxyTone, dnsTone, exitTone, dnsToneRow, ipv6Tone, webrtcTone]) tone.value = 'idle';
 }
-
 function gatherWebrtc(): Promise<Rtc> {
   cancelRtc?.();
-  return new Promise((resolve) => {
-    if (typeof RTCPeerConnection === "undefined") {
-      resolve({ kind: "off" });
-      return;
-    }
-    let pc: RTCPeerConnection;
-    try {
-      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
-    } catch {
-      resolve({ kind: "off" });
-      return;
-    }
-    const found = new Set<string>();
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      cancelRtc = undefined;
-      try { pc.close(); } catch { /* The peer connection is already gone. */ }
-      const ips = [...found];
-      const pub = ips.find(isPublicIp);
-      if (pub) resolve({ kind: "public", ips: ips.filter(isPublicIp) });
-      else if (ips.length) resolve({ kind: "lan" });
-      else resolve({ kind: "none" });
-    };
-    const timer = setTimeout(finish, 4000);
-    cancelRtc = () => { clearTimeout(timer); finish(); };
-    pc.onicecandidate = (event) => {
-      if (!event.candidate) {
-        clearTimeout(timer);
-        finish();
-        return;
-      }
-      const ip = addressOf(event.candidate.candidate);
-      if (ip && !ip.endsWith(".local")) found.add(ip);
-    };
-    try { pc.createDataChannel("check"); } catch { /* Gathering can continue without a channel. */ }
-    pc.createOffer()
-      .then((offer) => pc.setLocalDescription(offer))
-      .catch(() => { clearTimeout(timer); if (!settled) { settled = true; cancelRtc = undefined; try { pc.close(); } catch {} resolve({ kind: "off" }); } });
-  });
+  const check = collectWebrtc();
+  cancelRtc = check.cancel;
+  return check.result;
 }
 
 function applyWebrtc(rtc: Rtc, native?: Native) {
@@ -182,19 +161,17 @@ function applyNative(native: Native, rtc: Rtc) {
   if (!native.connected) { dnsLeak.value = "check.dnsLeakNeedConnection"; dnsToneRow.value = "idle"; }
   else if (native.mode === "tun") { dnsLeak.value = "check.dnsLeakTun"; dnsToneRow.value = "warn"; }
   else { dnsLeak.value = "check.dnsLeakSystem"; dnsToneRow.value = "warn"; }
-  const ipv6Bypass = native.connected && !!native.ipv6Ip && !(native.mode === "tun" && native.tunIpv6);
-  if (!native.ipv6Ip) { ipv6Leak.value = "check.ipv6None"; ipv6Tone.value = "ok"; }
-  else if (!native.connected) { ipv6Leak.value = "check.ipv6Present"; ipv6Tone.value = "idle"; }
-  else if (ipv6Bypass) { ipv6Leak.value = "check.ipv6Bypass"; ipv6Tone.value = "bad"; }
-  else { ipv6Leak.value = "check.ipv6Through"; ipv6Tone.value = "ok"; }
+  const ipv6 = ipv6Assessment(native);
+  ipv6Leak.value = ipv6.text;
+  ipv6Tone.value = ipv6.tone;
   applyWebrtc(rtc, native);
 }
 
 async function run() {
-  if (status.value === "running") return;
+  if (status.value === "running" || busy.value) return;
   const runId = ++generation;
+  resetResults();
   status.value = "running";
-  error.value = "";
   const [nativeResult, rtcResult] = await Promise.allSettled([
     isNative ? invoke<Native>("network_check") : Promise.reject(new Error("check.desktopOnly")),
     gatherWebrtc(),
@@ -203,6 +180,7 @@ async function run() {
   const rtc: Rtc = rtcResult.status === "fulfilled" ? rtcResult.value : { kind: "off" };
   ran.value = true;
   status.value = "done";
+  checkedAt.value = new Date().toLocaleString();
   if (nativeResult.status === "fulfilled") {
     applyNative(nativeResult.value, rtc);
     return;
@@ -224,36 +202,37 @@ async function run() {
       </div>
     </header>
     <div class="secnet-field">
-      <label class="sr-label"><SlidersHorizontal class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.mode") }}<HelpTip :text="t('secnet.modeHint')" /></label>
-      <div class="seg" role="group" :aria-label="t('secnet.mode')">
-        <button type="button" :aria-pressed="networkSecurity.protectionMode === 'compat'" :class="{ chosen: networkSecurity.protectionMode === 'compat' }" @click="setNetworkSecurity({ protectionMode: 'compat' })">{{ t("secnet.modeCompat") }}</button>
-        <button type="button" :aria-pressed="networkSecurity.protectionMode === 'balanced'" :class="{ chosen: networkSecurity.protectionMode === 'balanced' }" @click="setNetworkSecurity({ protectionMode: 'balanced' })">{{ t("secnet.modeBalanced") }}</button>
-        <button type="button" :aria-pressed="networkSecurity.protectionMode === 'strict'" :class="{ chosen: networkSecurity.protectionMode === 'strict' }" @click="setNetworkSecurity({ protectionMode: 'strict' })">{{ t("secnet.modeStrict") }}</button>
+      <span class="sr-label">{{ t('common.proxyHandling') }}</span>
+      <div class="seg" role="group" :aria-label="t('common.proxyHandling')">
+        <button v-for="mode in modeOptions" :key="mode.value" type="button" :aria-pressed="connectionMode === mode.value" :class="{ chosen: connectionMode === mode.value }" :disabled="busy || privacyBusy" @click="changeMode(mode.value)">{{ mode.label }}</button>
       </div>
     </div>
-    <div class="setting-row">
-      <span class="sr-label"><Globe class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.dnsLeak") }}<HelpTip :text="t('secnet.dnsLeakHint')" /></span>
-      <button type="button" role="switch" :aria-checked="connectionMode === 'tun'" :aria-label="t('secnet.dnsLeak')" class="toggle-switch" :class="{ enabled: connectionMode === 'tun' }" :disabled="busy || privacyBusy || connectionMode === 'tun'" @click="protectPrivacy"><span /></button>
-    </div>
-    <div class="secnet-field secnet-sub">
-      <label class="sr-label"><Network class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.ipv6") }}</label>
-      <SelectMenu :model-value="networkSecurity.ipv6Policy" :options="ipv6Options" :label="t('secnet.ipv6')" @update:model-value="setIpv6Policy" />
-    </div>
-    <div class="setting-row">
-      <span class="sr-label"><Power class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.killSwitch") }}<HelpTip :text="t('secnet.killSwitchHint')" /></span>
-      <button type="button" role="switch" :aria-checked="networkSettings.tun.killSwitch" :aria-label="t('secnet.killSwitch')" class="toggle-switch" :class="{ enabled: networkSettings.tun.killSwitch }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ killSwitch: !networkSettings.tun.killSwitch })"><span /></button>
-    </div>
-    <div class="setting-row">
-      <span class="sr-label"><ShieldAlert class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.malicious") }}<HelpTip :text="t('secnet.maliciousHint')" /></span>
-      <button type="button" role="switch" :aria-checked="networkSecurity.maliciousDomainBlock" :aria-label="t('secnet.malicious')" class="toggle-switch" :class="{ enabled: networkSecurity.maliciousDomainBlock }" @click="setNetworkSecurity({ maliciousDomainBlock: !networkSecurity.maliciousDomainBlock })"><span /></button>
-    </div>
+    <p class="scope-note">{{ t(connectionMode === 'tun' ? 'check.tunScope' : 'check.proxyScope') }}</p>
+    <template v-if="connectionMode === 'tun'">
+      <div class="setting-row">
+        <span class="sr-label"><Network class="sr-icon" :size="17" />{{ t('settings.tunIpv6') }}<HelpTip :text="t('settings.tunIpv6Help')" /></span>
+        <button type="button" role="switch" :aria-checked="networkSettings.tun.ipv6" :aria-label="t('settings.tunIpv6')" class="toggle-switch" :class="{ enabled: networkSettings.tun.ipv6 }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ ipv6: !networkSettings.tun.ipv6 })"><span /></button>
+      </div>
+      <div class="setting-row">
+        <span class="sr-label"><Power class="sr-icon" :size="17" />{{ t('secnet.killSwitch') }}<HelpTip :text="t('secnet.killSwitchHint')" /></span>
+        <button type="button" role="switch" :aria-checked="networkSettings.tun.killSwitch" :aria-label="t('secnet.killSwitch')" class="toggle-switch" :class="{ enabled: networkSettings.tun.killSwitch }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ killSwitch: !networkSettings.tun.killSwitch })"><span /></button>
+      </div>
+      <p v-if="connected" class="scope-note">{{ t('settings.disconnectToChangeNetworkSettings') }}</p>
+      <div class="dns-path">
+        <span>{{ t('check.dnsConfiguration') }}</span>
+        <strong>{{ resolverName }} · {{ networkSettings.tun.dnsMode === 'fakeip' ? t('settings.dnsFakeip') : remoteName }}</strong>
+        <span v-if="networkSettings.tun.routeExclude.length">{{ t('check.routeExceptions', { count: networkSettings.tun.routeExclude.length }) }}</span>
+        <button type="button" @click="tab = 'settings'">{{ t('settings.dnsSettings') }}</button>
+      </div>
+    </template>
+    <p v-if="networkError" class="form-error" role="alert">{{ tx(networkError) }}</p>
     <div class="setting-row">
       <span class="sr-label"><Wrench class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.repair") }}<HelpTip :text="t('secnet.repairHint')" /></span>
       <button type="button" class="secnet-repair" @click="openRepair">{{ t("secnet.repairOpen") }}</button>
     </div>
   </section>
-  <dialog ref="repairDialog" class="secnet-dialog">
-    <h3>{{ t("secnet.repairTitle") }}</h3>
+  <dialog ref="repairDialog" class="secnet-dialog" aria-labelledby="repair-title">
+    <h3 id="repair-title">{{ t("secnet.repairTitle") }}</h3>
     <p class="secnet-dialog-desc">{{ t("secnet.repairDesc") }}</p>
     <p v-if="repairUnavailable" class="secnet-result bad">{{ t("secnet.repairDesktopOnly") }}</p>
     <template v-else>
@@ -264,7 +243,7 @@ async function run() {
           <button v-if="repairChecks[key] === 'problem'" type="button" class="repair-fix" :disabled="repairBusy" @click="runRepair([key])">{{ t("secnet.fix") }}</button>
         </li>
       </ul>
-      <p v-if="!detecting && !problemKeys.length" class="secnet-result ok">{{ t("secnet.repairNoIssue") }}</p>
+      <p v-if="!detecting && REPAIR_KEYS.every(key => ['ok', 'fixed'].includes(repairChecks[key]))" class="secnet-result ok">{{ t("secnet.repairNoIssue") }}</p>
     </template>
     <div class="secnet-dialog-actions">
       <button type="button" :disabled="detecting || repairBusy || repairUnavailable" @click="detectRepairs">{{ t("secnet.repairRecheck") }}</button>
@@ -275,7 +254,7 @@ async function run() {
   <section class="card check-page" :aria-label="t('nav.networkCheck')">
     <div class="check-health">
       <h3>{{ t("check.health") }}<HelpTip :text="t('check.healthHint')" /></h3>
-      <button class="primary" :disabled="status === 'running'" @click="run"><Crosshair :size="16" :stroke-width="2" />{{ status === "running" ? t("check.running") : ran ? t("check.again") : t("check.start") }}</button>
+      <button class="primary" :disabled="status === 'running' || busy" @click="run"><Crosshair :size="16" :stroke-width="2" />{{ status === "running" ? t("check.running") : ran ? t("check.again") : t("check.start") }}</button>
     </div>
     <div class="check-grid">
       <div class="check-item"><span><Wifi :size="16" :stroke-width="1.8" />{{ t("check.local") }}</span><strong :class="localTone">{{ tx(localText) }}</strong></div>
@@ -289,6 +268,12 @@ async function run() {
     <div class="check-row"><span class="check-label">{{ t("check.ipv6Leak") }}<HelpTip :text="t('check.ipv6LeakHint')" /></span><span class="pill" :class="ipv6Tone">{{ tx(ipv6Leak) }}</span></div>
     <div class="check-row"><span class="check-label">{{ t("check.webrtcLeak") }}<HelpTip :text="t('check.webrtcLeakHint')" /></span><span class="pill" :class="webrtcTone">{{ tx(webrtcLeak) }}</span></div>
     <div v-if="ran && connected && connectionMode !== 'tun'" class="privacy-repair"><p>{{ t('check.privacyRepairHint') }}</p><button type="button" :disabled="busy || privacyBusy || status === 'running'" @click="protectPrivacy">{{ t('check.privacyRepair') }}</button></div>
+    <p class="scope-note">{{ t('check.webviewScope') }}</p>
+    <div class="manual-checks" :aria-label="t('check.browserChecks')">
+      <span>{{ t('check.browserChecks') }}</span>
+      <button v-for="kind in ['dns', 'webrtc', 'ip']" :key="kind" type="button" @click="openExternal('https://browserleaks.com/' + kind)"><ExternalLink :size="13" />{{ kind === 'dns' ? 'DNS' : kind === 'webrtc' ? 'WebRTC' : 'IP / IPv6' }}</button>
+    </div>
+    <p v-if="checkedAt" class="checked-time">{{ t('check.checkedAt', { time: checkedAt }) }}</p>
     <p v-if="error" class="form-error" role="alert">{{ tx(error) }}</p>
   </section>
   <UnlockCheck />
@@ -296,6 +281,15 @@ async function run() {
 </template>
 
 <style scoped>
+.scope-note { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.dns-path { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 0; color: var(--muted); font-size: 12px; }
+.dns-path strong { font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
+.dns-path button { margin-left: auto; min-height: 32px; font-size: 12px; }
+.manual-checks { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.manual-checks button { min-height: 32px; padding: 0 10px; gap: 6px; font-size: 12px; }
+.checked-time { font-size: 11px; color: var(--muted); margin: 12px 0 0; font-variant-numeric: tabular-nums; }
+.check-item strong { overflow-wrap: anywhere; }
+
 .check-stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .check-page { display: flex; flex-direction: column; gap: 0; }
 .check-page h3, .check-label { display: inline-flex; align-items: center; white-space: nowrap; }
