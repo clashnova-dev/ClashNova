@@ -100,9 +100,9 @@ pub fn configure(config: &mut Value, enabled: bool, settings: &TunSettings) -> R
             json!({"inbound":["tun-in"],"ip_version":6,"action":"reject","no_drop":true}),
         );
     }
-    // Mirror every direct route rule's domain_suffix (the China domain list) into the DNS so
+    // Mirror direct-route domain suffixes (including the compact domestic list) into DNS so
     // those names resolve through the domestic resolver for a real address instead of a fake-IP;
-    // the route's domain_suffix/ip_cidr rules then keep that traffic off the proxy.
+    // the route's domain_suffix rules then keep that traffic off the proxy.
     let direct_domains: Vec<Value> = config["route"]["rules"]
         .as_array()
         .into_iter()

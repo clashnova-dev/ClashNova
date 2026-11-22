@@ -4,10 +4,6 @@ const de: Record<keyof typeof zhCN, string> = {
 
   "nav.rules": "Regeln",
   "common.clearSearch": "Suche löschen",
-  "rules.ruleMode": "Regelmodus",
-  "rules.globalMode": "Globalmodus",
-  "rules.summary": "{groups} Gruppen · {entries} Einträge",
-  "rules.previewHint": "Reihenfolge der Konfiguration; die erste passende Regel gilt. TUN-DNS/UDP-Regeln ergänzt der Kern separat.",
   "rules.application": "Anwendung",
   "rules.builtin": "Integriert",
   "rules.subscription": "Abonnement",

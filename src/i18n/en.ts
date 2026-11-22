@@ -4,10 +4,6 @@ const en: Record<keyof typeof zhCN, string> = {
 
   "nav.rules": "Rules",
   "common.clearSearch": "Clear search",
-  "rules.ruleMode": "Rule mode",
-  "rules.globalMode": "Global mode",
-  "rules.summary": "{groups} groups · {entries} entries",
-  "rules.previewHint": "Shown in configuration order; the first matching rule applies. The core adds TUN DNS/UDP capture rules separately.",
   "rules.application": "Application",
   "rules.builtin": "Built-in",
   "rules.subscription": "Subscription",

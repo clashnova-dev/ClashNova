@@ -19,8 +19,7 @@ import { sortByLatency } from "../lib/node-order";
 import { regionCode } from "../lib/regions";
 import { encode, msg, translator, type Locale, type MessageKey, type Text } from "../i18n";
 import { parseDeepLink, redeemedSubscription } from "../lib/deep-link";
-import { CHINA_IPV4, CHINA_IPV6 } from "../lib/china-ip";
-import { CHINA_DOMAINS } from "../lib/china-domains";
+import { builtinRouteRules } from "../lib/routing-rules";
 
 export function create() {
 const locale = ref<Locale>("en");
@@ -1342,11 +1341,9 @@ function buildProfileConfig() {
   configureSelection(cfg, chainExit ?? selectedNode.value, nodes.value, external);
   cfg.route ??= {};
   cfg.route.final = "select";
-  // Rule mode keeps China traffic off the proxy: private/LAN ranges, China domains
-  // (geosite:cn equivalent), and China IPv4+IPv6 ranges (GeoIP-CN) all go direct;
-  // everything else takes the proxy. Domains and IPs are inlined because the privileged
-  // TUN service forbids rule_set; the TUN DNS mirrors the same domain list (see tun.rs).
-  cfg.route.rules = routeMode.value === "rule" ? [{ ip_is_private: true, outbound: "direct" }, { domain_suffix: [...CHINA_DOMAINS], outbound: "direct" }, { ip_cidr: [...CHINA_IPV4, ...CHINA_IPV6], outbound: "direct" }, ...(profileKind.value === "external" && Array.isArray(cfg.route.rules) ? cfg.route.rules : [])] : [];
+  // Keep the built-in policy small: LAN and 500 domestic service/resource domains.
+  // The TUN DNS mirrors these direct domains; unmatched traffic uses the proxy.
+  cfg.route.rules = routeMode.value === "rule" ? [...builtinRouteRules(true), ...(profileKind.value === "external" && Array.isArray(cfg.route.rules) ? cfg.route.rules : [])] : [];
   // 进程级策略:按应用注入 process 规则,放在最前,优先于默认与中国直连规则。
   cfg.route.rules = [...appPolicyRules(appPolicies.value), ...cfg.route.rules];
   cfg.inbounds = [{ type: "mixed", tag: "mixed-in", listen: networkSettings.value.allowLan ? "0.0.0.0" : "127.0.0.1", listen_port: networkSettings.value.proxyPort }];

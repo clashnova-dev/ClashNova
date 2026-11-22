@@ -155,31 +155,6 @@ pub fn parse_scutil_proxy(text: &str, own_port: u16) -> Vec<String> {
     found
 }
 
-/// `networksetup -getwebproxy` text. Enabled proxies that are not this app's port.
-pub fn enabled_manual_proxy(service: &str, text: &str, own_port: u16) -> Option<String> {
-    let field = |name: &str| {
-        text.lines()
-            .find_map(|line| line.trim().strip_prefix(name))
-            .unwrap_or("")
-            .trim()
-            .to_string()
-    };
-    if field("Enabled:") != "Yes" {
-        return None;
-    }
-    let server = field("Server:");
-    let port = field("Port:");
-    if server.is_empty() || port == "0" {
-        return None;
-    }
-    let own = (server == "127.0.0.1" || server == "localhost") && port == own_port.to_string();
-    if own {
-        None
-    } else {
-        Some(format!("{service} {server}:{port}"))
-    }
-}
-
 /// TUN that is already up.
 ///
 /// macOS `ifconfig`: a `utun`/`tun` interface with an IPv4 address. System tunnels only have
@@ -304,19 +279,6 @@ mod tests {
         assert_eq!(parse_scutil_proxy(sample, 2080), vec!["127.0.0.1:7890".to_string()]);
         let ours = sample.replace("7890", "2080");
         assert_eq!(parse_scutil_proxy(&ours, 2080), Vec::<String>::new());
-    }
-
-    #[test]
-    fn an_enabled_system_proxy_is_reported_and_our_port_is_not() {
-        let sample = "Enabled: Yes\nServer: 127.0.0.1\nPort: 7890\nAuthenticated Proxy Enabled: 0\n";
-        assert_eq!(
-            enabled_manual_proxy("Wi-Fi", sample, 2080).as_deref(),
-            Some("Wi-Fi 127.0.0.1:7890")
-        );
-        let ours = "Enabled: Yes\nServer: 127.0.0.1\nPort: 2080\n";
-        assert_eq!(enabled_manual_proxy("Wi-Fi", ours, 2080), None);
-        let off = "Enabled: No\nServer: 127.0.0.1\nPort: 7890\n";
-        assert_eq!(enabled_manual_proxy("Wi-Fi", off, 2080), None);
     }
 
     #[test]

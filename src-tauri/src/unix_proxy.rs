@@ -131,11 +131,6 @@ pub fn commit_enable(
     ))
 }
 
-pub fn enable(path: &Path, port: u16) -> Result<Backup, String> {
-    let (backup, changes) = prepare_enable(port)?;
-    commit_enable(path, backup, changes)
-}
-
 /// Inspect through the same platform adapter used to create rollback snapshots.
 /// Reading never mutates the user's current proxy configuration.
 pub fn diagnose() -> Result<String, String> {
@@ -413,7 +408,8 @@ mod tests {
             }
         }
         let _recovery = Recovery(path.clone());
-        enable(&path, port).unwrap();
+        let (backup, changes) = prepare_enable(port).unwrap();
+        commit_enable(&path, backup, changes).unwrap();
         verify(port).unwrap();
         // A fresh Core represents startup after an interrupted process.
         let mut fresh = crate::Core::new();

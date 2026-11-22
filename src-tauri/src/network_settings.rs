@@ -181,8 +181,8 @@ impl NetworkSettings {
         // LAN listener or a tunnel. Native TUN configuration is added later from validated settings.
         *inbounds = vec![serde_json::json!({"type":"mixed", "tag":"mixed-in", "listen":self.listen_address(), "listen_port":self.proxy_port})];
         airport_tun_service::validate_profile_options(&config)?;
-        // The file is loaded and validated again on connect. Pretty-printing the built-in
-        // China rules grows a 1.72 MiB profile to ~2.98 MiB and used to reject our own output.
+        // The file is loaded and validated again on connect. Large imported rules can grow
+        // past the old 2 MiB limit when pretty-printed, so persist compact JSON instead.
         let encoded = serde_json::to_string(&config).map_err(|error| error.to_string())?;
         if encoded.len() > MAX_CONFIG_BYTES {
             return Err("native.configTooLarge".into());
@@ -230,9 +230,6 @@ mod tests {
     /// Exercise the exact production rule lists, not a small hand-written fixture.
     fn rule_profile() -> Value {
         let domains = builtin_csv(include_str!("../../src/lib/china-domains.ts"), "RAW");
-        let ip_source = include_str!("../../src/lib/china-ip.ts");
-        let mut prefixes = builtin_csv(ip_source, "V4");
-        prefixes.extend(builtin_csv(ip_source, "V6"));
         serde_json::json!({
             "inbounds":[{"type":"mixed","listen":"127.0.0.1","listen_port":2080}],
             "outbounds":[
@@ -242,17 +239,18 @@ mod tests {
             ],
             "route":{"final":"select","rules":[
                 {"ip_is_private":true,"outbound":"direct"},
-                {"domain_suffix":domains,"outbound":"direct"},
-                {"ip_cidr":prefixes,"outbound":"direct"}
+                {"domain_suffix":domains,"outbound":"direct"}
             ]}
         })
     }
 
     #[test]
-    fn production_rules_survive_legacy_pretty_save_and_reconnect() {
+    fn compact_production_rules_survive_save_and_reconnect() {
         let source = rule_profile();
         let legacy = serde_json::to_string_pretty(&source).unwrap();
-        assert!(legacy.len() > 2 * 1024 * 1024, "fixture must reproduce the shipped failure");
+        assert_eq!(source["route"]["rules"][1]["domain_suffix"].as_array().unwrap().len(), 500);
+        assert_eq!(source["route"]["rules"].as_array().unwrap().len(), 2);
+        assert!(legacy.len() < 32 * 1024, "built-in rules must remain compact");
         let settings = NetworkSettings::default();
         // Existing cached config files must work without deleting or reimporting subscriptions.
         let saved = settings.apply_to_config(&legacy).unwrap();
@@ -264,6 +262,11 @@ mod tests {
             for _ in 0..3 {
                 runtime = serde_json::from_str(&settings.apply_to_config(&runtime.to_string()).unwrap()).unwrap();
                 crate::tun::configure(&mut runtime, tun, &settings.tun).unwrap();
+                if tun {
+                    let rules = runtime["dns"]["rules"].as_array().unwrap();
+                    let domestic = rules.iter().find(|rule| rule["domain_suffix"].is_array()).unwrap();
+                    assert_eq!(domestic["domain_suffix"], source["route"]["rules"][1]["domain_suffix"]);
+                }
                 endpoint.configure(&mut runtime);
                 let request = airport_tun_service::Request {
                     id: "0".repeat(32), time: 1,
@@ -277,6 +280,24 @@ mod tests {
                 assert!(frame.len() <= airport_tun_service::MAX_FRAME + 4);
             }
         }
+    }
+
+    #[test]
+    fn legacy_large_profiles_still_save_and_reconnect() {
+        let mut source = rule_profile();
+        // Preserve coverage for pre-upgrade/provider configs without shipping the old lists.
+        let domains: Vec<String> = (0..100_000)
+            .map(|index| format!("legacy-site-{index}.example.test"))
+            .collect();
+        source["route"]["rules"][1]["domain_suffix"] = serde_json::json!(domains);
+        let legacy = serde_json::to_string_pretty(&source).unwrap();
+        assert!(legacy.len() > 2 * 1024 * 1024);
+        let settings = NetworkSettings::default();
+        let saved = settings.apply_to_config(&legacy).unwrap();
+        assert!(!saved.contains('\n'));
+        assert_eq!(settings.apply_to_config(&saved).unwrap(), saved);
+        let restored: Value = serde_json::from_str(&saved).unwrap();
+        assert_eq!(restored["route"]["rules"][1]["domain_suffix"], source["route"]["rules"][1]["domain_suffix"]);
     }
 
     #[test]

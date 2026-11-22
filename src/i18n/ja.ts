@@ -4,10 +4,6 @@ const ja: Record<keyof typeof zhCN, string> = {
 
   "nav.rules": "ルール",
   "common.clearSearch": "検索をクリア",
-  "rules.ruleMode": "ルールモード",
-  "rules.globalMode": "グローバルモード",
-  "rules.summary": "{groups} グループ・{entries} 件",
-  "rules.previewHint": "設定順に表示し、最初に一致するルールが適用されます。TUN の DNS/UDP 処理ルールはコアが追加します。",
   "rules.application": "アプリ設定",
   "rules.builtin": "組み込み",
   "rules.subscription": "サブスクリプション",

@@ -4,10 +4,6 @@ export default {
 
   "nav.rules": "规则",
   "common.clearSearch": "清空搜索",
-  "rules.ruleMode": "规则模式",
-  "rules.globalMode": "全局模式",
-  "rules.summary": "{groups} 组 · {entries} 条规则",
-  "rules.previewHint": "按当前配置的顺序展示，首个匹配规则生效。TUN 的 DNS／UDP 接管规则由内核追加。",
   "rules.application": "应用策略",
   "rules.builtin": "内置分流",
   "rules.subscription": "订阅规则",

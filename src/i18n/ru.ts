@@ -4,10 +4,6 @@ const ru: Record<keyof typeof zhCN, string> = {
 
   "nav.rules": "Правила",
   "common.clearSearch": "Очистить поиск",
-  "rules.ruleMode": "Режим правил",
-  "rules.globalMode": "Глобальный режим",
-  "rules.summary": "Групп: {groups} · Правил: {entries}",
-  "rules.previewHint": "Правила показаны в порядке конфигурации; применяется первое совпадение. Правила перехвата TUN DNS/UDP добавляет ядро.",
   "rules.application": "Приложение",
   "rules.builtin": "Встроенное",
   "rules.subscription": "Подписка",

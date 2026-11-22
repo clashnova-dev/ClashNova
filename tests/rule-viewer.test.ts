@@ -2,18 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {ruleGroups,rulePage} from '../src/lib/rule-viewer.ts';
 import {CHINA_DOMAINS} from '../src/lib/china-domains.ts';
-import {CHINA_IPV4,CHINA_IPV6} from '../src/lib/china-ip.ts';
+import {builtinRouteRules} from '../src/lib/routing-rules.ts';
 import {connectionSearch} from '../src/lib/connection-search.ts';
 test('production rules page keeps ordering and renders only a bounded page',()=>{
  const groups=ruleGroups([
   {process_name:['Example.exe'],outbound:'direct'},
-  {ip_is_private:true,outbound:'direct'},
-  {domain_suffix:CHINA_DOMAINS,outbound:'direct'},
-  {ip_cidr:[...CHINA_IPV4,...CHINA_IPV6],outbound:'direct'},
+  ...builtinRouteRules(true),
   {domain_suffix:['example.net'],outbound:'select'},
- ],'select',1,3);
+ ],'select',1,2);
  const first=rulePage(groups,1,100,'all');
- assert.equal(first.total,1+1+CHINA_DOMAINS.length+CHINA_IPV4.length+CHINA_IPV6.length+1+1);
+ assert.equal(first.total,1+1+CHINA_DOMAINS.length+1+1);
  assert.equal(first.rows.length,100);
  assert.equal(first.rows[0].source,'application');assert.equal(first.rows[1].kind,'IP-PRIVATE');
  const end=rulePage(groups,first.pages,100,'all');

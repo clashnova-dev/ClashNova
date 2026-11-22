@@ -4,10 +4,6 @@ const ko: Record<keyof typeof zhCN, string> = {
 
   "nav.rules": "규칙",
   "common.clearSearch": "검색 지우기",
-  "rules.ruleMode": "규칙 모드",
-  "rules.globalMode": "전역 모드",
-  "rules.summary": "{groups}개 그룹 · {entries}개 규칙",
-  "rules.previewHint": "설정 순서대로 표시되며 첫 번째 일치 규칙이 적용됩니다. TUN DNS/UDP 처리 규칙은 코어가 별도로 추가합니다.",
   "rules.application": "앱 정책",
   "rules.builtin": "기본 분기",
   "rules.subscription": "구독 규칙",

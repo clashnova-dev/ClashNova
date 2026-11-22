@@ -64,6 +64,8 @@ sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 
 ## Configuration
 
+Rule mode keeps LAN traffic and a compact list of 500 domestic service/resource domains direct; other destinations use the selected proxy unless a provider or application rule overrides them. The curated list includes subdomains and essential static/CDN hosts, and is not a live traffic ranking. It replaces the former full China domain and IP datasets. TUN DNS uses the same direct-domain list. Global mode skips these built-in rules. Inspect the resulting configuration on the **Rules** page.
+
 Build-time options are read by Vite from a `.env` file (ignored by `.gitignore`):
 
 ```
