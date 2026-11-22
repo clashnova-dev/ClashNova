@@ -1,6 +1,13 @@
 // Chinese copy. Keys are namespaced by the screen or concern that owns the text;
 // en.ts must define exactly the same keys (the compiler enforces it).
 export default {
+  "confirmation.portTitle": "端口被占用",
+  "confirmation.portBody": "端口 {port} 正被以下进程占用。结束进程可能中断对应应用及连接，是否释放端口并继续连接？",
+  "confirmation.portRelease": "结束进程并连接",
+  "native.portOwnerUnknown": "无法识别端口 {port} 的占用进程，请手动关闭占用程序或更换端口。",
+  "native.portOwnerProtected": "端口 {port} 由系统或受保护进程占用，请更换端口。",
+  "native.portConflictChanged": "端口占用情况已变化或确认已过期，请重新连接后确认。",
+  "native.portReleaseFailed": "无法释放端口 {port}，可能权限不足，请手动关闭占用程序或更换端口。",
 
   "nav.rules": "规则",
   "common.clearSearch": "清空搜索",

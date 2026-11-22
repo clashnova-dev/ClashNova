@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const ja: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "ポート使用中",
+  "confirmation.portBody": "ポート {port} は以下のプロセスが使用しています。終了するとアプリや接続が中断される場合があります。ポートを解放して接続しますか？",
+  "confirmation.portRelease": "終了して接続",
+  "native.portOwnerUnknown": "ポート {port} のプロセスを特定できません。手動で終了するかポートを変更してください。",
+  "native.portOwnerProtected": "ポート {port} は保護されたプロセスが使用しています。別のポートを選んでください。",
+  "native.portConflictChanged": "プロセスが変更されたか確認の期限が切れました。再度接続してください。",
+  "native.portReleaseFailed": "ポート {port} を解放できません。プロセスを手動で終了するかポートを変更してください。",
 
   "nav.rules": "ルール",
   "common.clearSearch": "検索をクリア",

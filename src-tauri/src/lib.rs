@@ -753,7 +753,8 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
     } else {
         None
     };
-    let reclaiming = thread::spawn(move || port_reclaim::reclaim(port));
+    let listen = core.network.listen_address().to_owned();
+    let reclaiming = thread::spawn(move || port_reclaim::reclaim(port, &listen));
     let config = fs::read_to_string(&path).map_err(|error| error.to_string())?;
     let mut config: serde_json::Value =
         serde_json::from_str(&core.network.apply_to_config(&config)?).map_err(|e| e.to_string())?;
@@ -1368,6 +1369,7 @@ pub fn run() {
                 .build(),
         )
         .manage(core.clone())
+        .manage(Arc::new(port_reclaim::Reclaimer::default()))
         .invoke_handler(tauri::generate_handler![
             notifications::send_desktop_notification,
             tun_service::tun_service_status,
@@ -1390,6 +1392,8 @@ pub fn run() {
             settings_store::get_client_setting,
             settings_store::set_client_setting,
             proxy_diagnostics,
+            port_reclaim::inspect_proxy_port,
+            port_reclaim::release_proxy_port,
             save_network_settings,
             connection_state,
             take_crash_recovery,

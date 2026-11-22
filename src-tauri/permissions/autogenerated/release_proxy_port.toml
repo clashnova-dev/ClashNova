@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-release-proxy-port"
+description = "Enables the release_proxy_port command without any pre-configured scope."
+commands.allow = ["release_proxy_port"]
+
+[[permission]]
+identifier = "deny-release-proxy-port"
+description = "Denies the release_proxy_port command without any pre-configured scope."
+commands.deny = ["release_proxy_port"]

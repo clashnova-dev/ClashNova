@@ -2097,6 +2097,12 @@
           "markdownDescription": "Enables the get_lan_addresses command without any pre-configured scope."
         },
         {
+          "description": "Enables the inspect_proxy_port command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-inspect-proxy-port",
+          "markdownDescription": "Enables the inspect_proxy_port command without any pre-configured scope."
+        },
+        {
           "description": "Enables the install_tun_service command without any pre-configured scope.",
           "type": "string",
           "const": "allow-install-tun-service",
@@ -2161,6 +2167,12 @@
           "type": "string",
           "const": "allow-read-logs",
           "markdownDescription": "Enables the read_logs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the release_proxy_port command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-release-proxy-port",
+          "markdownDescription": "Enables the release_proxy_port command without any pre-configured scope."
         },
         {
           "description": "Enables the save_network_settings command without any pre-configured scope.",
@@ -2343,6 +2355,12 @@
           "markdownDescription": "Denies the get_lan_addresses command without any pre-configured scope."
         },
         {
+          "description": "Denies the inspect_proxy_port command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-inspect-proxy-port",
+          "markdownDescription": "Denies the inspect_proxy_port command without any pre-configured scope."
+        },
+        {
           "description": "Denies the install_tun_service command without any pre-configured scope.",
           "type": "string",
           "const": "deny-install-tun-service",
@@ -2407,6 +2425,12 @@
           "type": "string",
           "const": "deny-read-logs",
           "markdownDescription": "Denies the read_logs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the release_proxy_port command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-release-proxy-port",
+          "markdownDescription": "Denies the release_proxy_port command without any pre-configured scope."
         },
         {
           "description": "Denies the save_network_settings command without any pre-configured scope.",

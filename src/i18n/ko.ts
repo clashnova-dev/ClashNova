@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const ko: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "포트 사용 중",
+  "confirmation.portBody": "포트 {port}를 아래 프로세스가 사용 중입니다. 종료하면 해당 앱과 연결이 중단될 수 있습니다. 포트를 비우고 연결할까요?",
+  "confirmation.portRelease": "종료 후 연결",
+  "native.portOwnerUnknown": "포트 {port}를 사용하는 프로세스를 확인할 수 없습니다. 직접 종료하거나 포트를 변경하세요.",
+  "native.portOwnerProtected": "포트 {port}는 보호된 프로세스가 사용 중입니다. 다른 포트를 선택하세요.",
+  "native.portConflictChanged": "프로세스가 변경되었거나 확인이 만료되었습니다. 다시 연결하세요.",
+  "native.portReleaseFailed": "포트 {port}를 비울 수 없습니다. 프로세스를 직접 종료하거나 포트를 변경하세요.",
 
   "nav.rules": "규칙",
   "common.clearSearch": "검색 지우기",

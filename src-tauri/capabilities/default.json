@@ -43,6 +43,8 @@
     "allow-sync-tray",
     "allow-load-network-settings",
     "allow-proxy-diagnostics",
+    "allow-inspect-proxy-port",
+    "allow-release-proxy-port",
     "allow-save-network-settings",
     "autostart:allow-enable",
     "autostart:allow-disable",

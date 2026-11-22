@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const ru: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "Порт занят",
+  "confirmation.portBody": "Порт {port} занят указанными процессами. Их завершение может прервать работу приложений и соединений. Освободить порт и подключиться?",
+  "confirmation.portRelease": "Завершить и подключить",
+  "native.portOwnerUnknown": "Не удалось определить процесс на порту {port}. Закройте его вручную или смените порт.",
+  "native.portOwnerProtected": "Порт {port} занят защищённым процессом. Выберите другой порт.",
+  "native.portConflictChanged": "Процесс изменился или подтверждение истекло. Подключитесь снова.",
+  "native.portReleaseFailed": "Не удалось освободить порт {port}. Закройте процесс вручную или смените порт.",
 
   "nav.rules": "Правила",
   "common.clearSearch": "Очистить поиск",

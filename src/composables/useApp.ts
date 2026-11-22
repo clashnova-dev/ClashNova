@@ -1,4 +1,6 @@
 import { prepareConnection } from "../lib/connection-startup";
+import { resolveProxyPort, type PortConflict } from "../lib/port-conflict";
+import { createAuthenticatedApi } from "../lib/authenticated-api";
 import { confirmation } from "../lib/confirmation";
 import { restoreCrashConnection } from "../lib/crash-recovery";
 import { ref, computed, watch, nextTick, type Component } from "vue";
@@ -365,6 +367,8 @@ type Bridge = {
   state(): Promise<Snapshot>;
   logs(): Promise<string[]>;
   proxyDiagnostics(): Promise<string>;
+  inspectProxyPort(): Promise<PortConflict | null>;
+  releaseProxyPort(token: string): Promise<void>;
   loadNetworkSettings(): Promise<NetworkSettings>;
   saveNetworkSettings(settings: NetworkSettings): Promise<NetworkSettings>;
   saveProfile(config: string): Promise<void>;
@@ -394,6 +398,8 @@ async function bridge(): Promise<Bridge> {
       state: () => invoke("connection_state"),
       logs: () => invoke("read_logs"),
       proxyDiagnostics: () => invoke("proxy_diagnostics"),
+      inspectProxyPort: () => invoke("inspect_proxy_port"),
+      releaseProxyPort: (token) => invoke("release_proxy_port", { token }),
       loadNetworkSettings: () => invoke("load_network_settings"),
       saveNetworkSettings: (settings) => invoke("save_network_settings", { settings }),
       saveProfile: (config) => invoke("save_profile", { config }),
@@ -438,6 +444,8 @@ function browserBridge(): Bridge {
   let lines: string[] = [];
   return {
     async proxyDiagnostics() { return "settings.proxyCheckDesktopOnly"; },
+    async inspectProxyPort() { return null; },
+    async releaseProxyPort() {},
     async loadNetworkSettings() { return previewSettings; },
     async saveNetworkSettings(settings) { previewSettings = settings; return settings; },
     async state() {
@@ -741,29 +749,13 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
   cancelProbes();
   };
 
-async function api(path: string, init: RequestInit = {}, retry = true): Promise<any> {
-  const headers = new Headers(init.headers);
-  headers.set("content-type", "application/json");
-  if (access.value) headers.set("authorization", `Bearer ${access.value}`);
-  // A request that never reaches the server rejects with engine-specific text ("Load failed", "Failed to fetch").
-  const res = await fetch(`${baseUrl.value.replace(/\/$/, "")}${path}`, { ...init, headers }).catch(() => { throw new Error("error.network"); });
-  if (res.status === 401 && retry && refreshToken.value && path !== "/api/v1/app/auth/refresh") {
-    const renewal = await fetch(`${baseUrl.value.replace(/\/$/, "")}/api/v1/app/auth/refresh`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ refreshToken: refreshToken.value }),
-    });
-    if (renewal.ok) {
-      const renewed = await renewal.json();
-      access.value = renewed.data.accessToken;
-      refreshToken.value = renewed.data.refreshToken;
-      return api(path, init, false);
-    }
-    access.value = "";
-    refreshToken.value = "";
-  }
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.message || "error.requestFailed");
-  return body.data;
-}
+let sessionRevision = 0;
+const api = createAuthenticatedApi({
+  baseUrl: () => baseUrl.value,
+  session: () => ({ accessToken: access.value, refreshToken: refreshToken.value, revision: sessionRevision }),
+  replaceSession: tokens => { access.value = tokens.accessToken; refreshToken.value = tokens.refreshToken; },
+  persistSession,
+});
 
 async function login() {
   if (!baseUrl.value) { loginError.value = "error.noServer"; return; }
@@ -774,6 +766,7 @@ async function login() {
       method: "POST",
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
+    sessionRevision++;
     access.value = data.tokens.accessToken;
     refreshToken.value = data.tokens.refreshToken;
     await persistSession();
@@ -814,6 +807,7 @@ async function refreshData() {
 }
 
 async function logout() {
+  sessionRevision++;
   busy.value = true;
   try { await (await bridge()).clearProfile(); }
   catch (error) { message.value = msg("error.clearProfileFailed", { error: String(error) }); busy.value = false; return; }
@@ -849,6 +843,7 @@ async function restoreSession() {
     const res = await fetch(`${baseUrl.value.replace(/\/$/, "")}/api/v1/app/auth/refresh`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ refreshToken: saved.refreshToken }) });
     if (!res.ok) { await writeClientSetting("session", { refreshToken: "" }, sessionKey); return; }
     const body = await res.json();
+    sessionRevision++;
     access.value = body.data.accessToken; refreshToken.value = body.data.refreshToken;
     await persistSession();
     tab.value = "home";
@@ -1505,21 +1500,36 @@ async function selectNode(id: string) {
 
 async function toggle() {
   if (busy.value || tunServiceBusy.value) return;
+  // Keep the user's intent even if a native disconnect/crash event arrives
+  // while awaiting IPC or the port confirmation dialog.
+  const disconnecting = connected.value;
   busy.value = true;
-  connectionAction.value = connected.value ? "disconnect" : "connect";
-  connectionProgress.value = connected.value ? "status.disconnecting" : "startup.preparing";
+  connectionAction.value = disconnecting ? "disconnect" : "connect";
+  connectionProgress.value = disconnecting ? "status.disconnecting" : "startup.preparing";
   dismissNotice();
   try {
     const apiBridge = await bridge();
-    if (!connected.value) {
+    if (!disconnecting) {
       // Only profile/service readiness gates connecting. Notification consent must not.
       await prepareConnection({
         prepareNotifications,
         ensureTunnel: () => connectionMode.value === "tun" ? ensureTunService(locale.value) : Promise.resolve(),
         saveProfile: () => apiBridge.saveProfile(buildProfileConfig()),
       });
+      if (!await resolveProxyPort({
+        inspect: () => apiBridge.inspectProxyPort(),
+        release: token => apiBridge.releaseProxyPort(token),
+        confirm: async conflict => {
+          await revealMain();
+          return confirmation.request({
+            title: "confirmation.portTitle", body: msg("confirmation.portBody", { port: conflict.port }),
+            confirmLabel: "confirmation.portRelease", danger: true,
+            details: conflict.listeners.map(process => `${process.name} · PID ${process.pid}`),
+          });
+        },
+      })) return;
     }
-    const snapshot = connected.value ? await apiBridge.disconnect() : await apiBridge.connect(connectionMode.value);
+    const snapshot = disconnecting ? await apiBridge.disconnect() : await apiBridge.connect(connectionMode.value);
     applySnapshot(snapshot);
     addActivity(msg("log.connectionState", { state: msg(label.value) }));
     logs.value = snapshot.logs || (await apiBridge.logs());

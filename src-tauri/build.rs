@@ -26,6 +26,8 @@ fn main() {
             "get_client_setting",
             "set_client_setting",
             "proxy_diagnostics",
+            "inspect_proxy_port",
+            "release_proxy_port",
             "save_network_settings",
             "connection_state",
             "take_crash_recovery",

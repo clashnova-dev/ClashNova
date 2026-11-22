@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const de: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "Port belegt",
+  "confirmation.portBody": "Port {port} wird von den folgenden Prozessen verwendet. Das Beenden kann Anwendungen und Verbindungen unterbrechen. Port freigeben und verbinden?",
+  "confirmation.portRelease": "Beenden und verbinden",
+  "native.portOwnerUnknown": "Der Prozess auf Port {port} ist unbekannt. Manuell schließen oder einen anderen Port wählen.",
+  "native.portOwnerProtected": "Port {port} gehört einem geschützten Prozess. Einen anderen Port wählen.",
+  "native.portConflictChanged": "Die Portbelegung hat sich geändert oder die Bestätigung ist abgelaufen. Erneut verbinden.",
+  "native.portReleaseFailed": "Port {port} kann nicht freigegeben werden. Prozess manuell schließen oder einen anderen Port wählen.",
 
   "nav.rules": "Regeln",
   "common.clearSearch": "Suche löschen",

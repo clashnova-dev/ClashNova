@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const fr: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "Port occupé",
+  "confirmation.portBody": "Le port {port} est utilisé par les processus ci-dessous. Les arrêter peut interrompre leurs applications et connexions. Libérer le port et continuer ?",
+  "confirmation.portRelease": "Arrêter et connecter",
+  "native.portOwnerUnknown": "Impossible d’identifier le processus sur le port {port}. Fermez-le manuellement ou changez de port.",
+  "native.portOwnerProtected": "Le port {port} appartient à un processus protégé. Changez de port.",
+  "native.portConflictChanged": "Le processus a changé ou la confirmation a expiré. Relancez la connexion.",
+  "native.portReleaseFailed": "Impossible de libérer le port {port}. Fermez le processus manuellement ou changez de port.",
 
   "nav.rules": "Règles",
   "common.clearSearch": "Effacer la recherche",

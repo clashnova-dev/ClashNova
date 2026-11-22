@@ -1,6 +1,13 @@
 import type zhCN from "./zh-CN.ts";
 
 const en: Record<keyof typeof zhCN, string> = {
+  "confirmation.portTitle": "Port in use",
+  "confirmation.portBody": "Port {port} is used by the processes below. Stopping them may interrupt their applications and connections. Free the port and continue?",
+  "confirmation.portRelease": "Stop and connect",
+  "native.portOwnerUnknown": "Cannot identify the process using port {port}. Close it manually or choose another port.",
+  "native.portOwnerProtected": "Port {port} belongs to a system or protected process. Choose another port.",
+  "native.portConflictChanged": "The port owner changed or confirmation expired. Connect again to review.",
+  "native.portReleaseFailed": "Cannot free port {port}, possibly due to insufficient permissions. Close the process manually or choose another port.",
 
   "nav.rules": "Rules",
   "common.clearSearch": "Clear search",

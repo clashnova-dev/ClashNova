@@ -32,3 +32,21 @@ test("a profile/service preparation failure prevents connection and notification
     assert.equal(requested, false);
   }
 });
+
+test('failed preparation waits for the other side effect before allowing another connection attempt', async () => {
+  for (const failing of ['profile', 'service']) {
+    let finish!: () => void, settled = false, notifications = 0;
+    const waiting = new Promise<void>(resolve => { finish = resolve; });
+    const operation = prepareConnection({
+      saveProfile: () => failing === 'profile' ? Promise.reject(new Error('profile failed')) : waiting,
+      ensureTunnel: () => failing === 'service' ? Promise.reject(new Error('service failed')) : waiting,
+      prepareNotifications: async () => { notifications++; },
+    });
+    const checked = assert.rejects(operation, new RegExp(`${failing} failed`)).then(() => { settled = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(settled, false);
+    finish(); await checked;
+    assert.equal(settled, true);
+    assert.equal(notifications, 0);
+  }
+});
