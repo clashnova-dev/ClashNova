@@ -633,6 +633,29 @@ async fn convert_subscription(raw: String) -> Result<String, String> {
     .map_err(|err| err.to_string())?
 }
 
+fn load_subscription_file(path: &std::path::Path) -> Result<String, String> {
+    let metadata = match fs::symlink_metadata(path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok("null".into()),
+        other => other.map_err(|error| error.to_string())?,
+    };
+    if !metadata.is_file() || metadata.file_type().is_symlink() {
+        return Err("native.subscriptionListInvalid".into());
+    }
+    let mut bytes = Vec::new();
+    fs::File::open(path)
+        .map_err(|error| error.to_string())?
+        .take(16 * 1024 * 1024 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
+    if bytes.len() > 16 * 1024 * 1024 {
+        return Err("native.subscriptionListInvalid".into());
+    }
+    let value: serde_json::Value = serde_json::from_slice(&bytes)
+        .map_err(|_| "native.subscriptionListInvalid")?;
+    if !value.is_array() { return Err("native.subscriptionListInvalid".into()); }
+    String::from_utf8(bytes).map_err(|_| "native.subscriptionListInvalid".into())
+}
+
 #[tauri::command]
 fn load_subscriptions(app: AppHandle) -> Result<String, String> {
     let path = app
@@ -640,11 +663,7 @@ fn load_subscriptions(app: AppHandle) -> Result<String, String> {
         .app_config_dir()
         .map_err(|err| err.to_string())?
         .join("subscriptions.json");
-    match fs::read_to_string(path) {
-        Ok(value) => Ok(value),
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok("[]".into()),
-        Err(err) => Err(err.to_string()),
-    }
+    load_subscription_file(&path)
 }
 
 #[tauri::command]
@@ -1472,6 +1491,33 @@ pub fn run() {
 mod runtime_tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn subscription_files_distinguish_missing_empty_and_invalid_data() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("subscriptions.json");
+        assert_eq!(load_subscription_file(&path).unwrap(), "null");
+        fs::write(&path, b"[]").unwrap();
+        assert_eq!(load_subscription_file(&path).unwrap(), "[]");
+        for invalid in ["broken", "null", "{}"] {
+            fs::write(&path, invalid).unwrap();
+            assert!(load_subscription_file(&path).is_err());
+            assert_eq!(fs::read_to_string(&path).unwrap(), invalid);
+        }
+        fs::write(&path, vec![b' '; 16 * 1024 * 1024 + 1]).unwrap();
+        assert!(load_subscription_file(&path).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn subscription_files_do_not_follow_symbolic_links() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = dir.path().join("original.json");
+        fs::write(&original, b"[]").unwrap();
+        let link = dir.path().join("subscriptions.json");
+        std::os::unix::fs::symlink(&original, &link).unwrap();
+        assert!(load_subscription_file(&link).is_err());
+    }
 
     struct RunningCore(Core);
     impl Drop for RunningCore {

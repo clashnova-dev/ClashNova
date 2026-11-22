@@ -44,7 +44,12 @@ export function appNameFromPath(path: string): string {
 
 // 把应用名转成匹配其全部进程路径的正则(覆盖多进程应用,如浏览器的 Helper 子进程)。
 export function appPathRegex(app: string): string {
-  return app.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const name = app.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Match an executable/bundle boundary, never another application's name as a substring.
+  // Windows process paths are case-insensitive; macOS/Linux retain case-sensitive names.
+  return /\.exe$/i.test(app)
+    ? `(?i)(?:^|[\\\\/])${name}$`
+    : `(?:^|/)${name}(?:\\.app/|$)`;
 }
 
 // 由已配置策略生成 sing-box route 规则(注入在默认/中国直连规则之前,优先生效)。

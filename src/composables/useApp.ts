@@ -11,7 +11,8 @@ import { parseSubscriptionUsage, subscriptionHost, type SubscriptionUsage, type 
 import { platform } from "@tauri-apps/plugin-os";
 import { DEFAULT_PROXY_PORT, DEFAULT_TUN_MTU, defaultTunSettings, parseRouteExclude, validateProxyPort, validateTunMtu, proxyAddress, type NetworkSettings, type TunSettings } from "../lib/network-settings";
 import { preferencesKey, type Preferences } from "../lib/preferences";
-import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, subscriptionsStoreKey, writeStored, readClientSetting, writeClientSetting, readLegacyClientValue, removeLegacyClientValue, type SettingStore, type StoreStatus } from "../lib/settings-store";
+import { loadExternalSubscriptions } from "../lib/subscriptions-store";
+import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, writeStored, readClientSetting, writeClientSetting, readLegacyClientValue, removeLegacyClientValue, type SettingStore, type StoreStatus } from "../lib/settings-store";
 import { defaultNetworkSecurity, parseNetworkSecurity, type NetworkSecurity } from "../lib/network-security";
 import { appPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
 import { parseSingBoxProfile } from "../lib/profiles";
@@ -96,9 +97,6 @@ function storedNetwork(value: unknown): NetworkSettings | null {
 function sameNetwork(left: NetworkSettings, right: NetworkSettings) {
   const a = storedNetwork(left), b = storedNetwork(right);
   return !!a && !!b && a.proxyPort === b.proxyPort && a.allowLan === b.allowLan && JSON.stringify(a.tun) === JSON.stringify(b.tun);
-}
-function subscriptionList(value: unknown): unknown[] | null {
-  return Array.isArray(value) ? value : null;
 }
 function applyNetworkSettings(settings: NetworkSettings) {
   // An older native build does not send the device options.
@@ -674,9 +672,8 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
   applySnapshot(await apiBridge.state());
   logs.value = await apiBridge.logs();
   try {
-    const nativeList = JSON.parse(await apiBridge.loadSubscriptions());
-    const chosen = await rememberStored(settingsStore, subscriptionsStoreKey, Array.isArray(nativeList) ? nativeList : [], subscriptionList, preferenceStoreStatus);
-    const profiles = (Array.isArray(chosen) ? chosen : []).filter((item): item is ExternalProfile =>
+    const nativeList = await loadExternalSubscriptions(apiBridge, settingsStore, preferenceStoreStatus);
+    const profiles = nativeList.filter((item: any): item is ExternalProfile =>
       typeof item?.id === "string" && typeof item?.name === "string" && typeof item?.url === "string" && typeof item?.raw === "string" && typeof item?.updatedAt === "string");
     externalProfiles.value = profiles;
     if (JSON.stringify(profiles) !== JSON.stringify(nativeList)) await apiBridge.saveSubscriptions(JSON.stringify(profiles));
@@ -1047,9 +1044,8 @@ async function normalizeExternalRaw(raw: string): Promise<string> {
   catch { const converted = await (await bridge()).convertSubscription(raw); parseSingBoxProfile(converted); return converted; }
 }
 
-async function persistExternal() {
-  await (await bridge()).saveSubscriptions(JSON.stringify(externalProfiles.value));
-  await writeStored(settingsStore, subscriptionsStoreKey, externalProfiles.value, preferenceStoreStatus);
+async function persistExternal(profiles = externalProfiles.value) {
+  await (await bridge()).saveSubscriptions(JSON.stringify(profiles));
 }
 
 async function activateExternal(profile: ExternalProfile) {
@@ -1170,8 +1166,9 @@ async function addExternal() {
     const downloaded: SubscriptionDownload = selectedFile.value ? { raw: await selectedFile.value.text(), userinfo: null } : await (await bridge()).fetchSubscriptionDetails(url);
     const raw = await normalizeExternalRaw(downloaded.raw);
     const profile = { id: crypto.randomUUID(), name, url: selectedFile.value ? "" : url, raw, updatedAt: new Date().toISOString(), usage: parseSubscriptionUsage(downloaded.userinfo) };
-    externalProfiles.value.push(profile);
-    await persistExternal();
+    const profiles = [...externalProfiles.value, profile];
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
     newProfileName.value = ""; newProfileUrl.value = ""; selectedFile.value = null;
     await activateExternal(profile);
     profileDialog.value?.close();
@@ -1189,11 +1186,11 @@ async function refreshExternal(profile: ExternalProfile) {
     if (connected.value && activeExternalId.value === profile.id && !await confirmation.request({ title: "confirmation.refreshTitle", body: "confirmation.refreshBody", confirmLabel: "subscriptions.updateSubscription" })) return;
     const downloaded = await (await bridge()).fetchSubscriptionDetails(profile.url);
     const raw = await normalizeExternalRaw(downloaded.raw);
-    profile.raw = raw;
-    profile.usage = parseSubscriptionUsage(downloaded.userinfo);
-    profile.updatedAt = new Date().toISOString();
-    await persistExternal();
-    if (activeExternalId.value === profile.id) await activateExternal(profile);
+    const updated = { ...profile, raw, usage: parseSubscriptionUsage(downloaded.userinfo), updatedAt: new Date().toISOString() };
+    const profiles = externalProfiles.value.map(item => item.id === profile.id ? updated : item);
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
+    if (activeExternalId.value === profile.id) await activateExternal(updated);
     message.value = downloaded.metadataSupported === false ? "subscriptions.updatedRestartForUsage" : msg("subscriptions.updatedNamed", { name: profile.name });
   } catch (error) { message.value = error instanceof Error ? error.message : String(error); }
   finally { busy.value = false; }
@@ -1219,7 +1216,6 @@ async function removeExternal(profile: ExternalProfile) {
     const remaining = externalProfiles.value.filter(item => item.id !== profile.id);
     await client.saveSubscriptions(JSON.stringify(remaining));
     externalProfiles.value = remaining;
-    await writeStored(settingsStore, subscriptionsStoreKey, externalProfiles.value, preferenceStoreStatus);
     delete selectedNodes[profile.id];
     persistPreferences();
   } catch (error) {
