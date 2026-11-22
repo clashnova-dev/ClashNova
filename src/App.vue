@@ -14,6 +14,7 @@
         <Nodes v-else-if="tab === 'nodes'" />
         <Subscriptions v-else-if="tab === 'sub'" />
         <ConnectionsPage v-else-if="tab === 'connections'" :locale="locale" :node-names="connectionNodeNames" />
+        <RulesPage v-else-if="tab === 'rules'" />
         <Logs v-else-if="tab === 'logs'" />
         <NetworkCheck v-else-if="tab === 'network'" />
         <SettingsPage v-else-if="tab === 'settings'" />
@@ -49,6 +50,7 @@ import { onMounted, onUnmounted } from "vue";
 import { useApp } from "./composables/useApp";
 import icon from "./assets/icon/favicon.png";
 import ConnectionsPage from "./pages/ConnectionsPage.vue";
+import RulesPage from "./pages/RulesPage.vue";
 import HelpPage from "./pages/HelpPage.vue";
 import NotificationHost from "./components/NotificationHost.vue";
 import ConfirmationHost from "./components/ui/ConfirmationHost.vue";

@@ -14,6 +14,11 @@ const KEYS: &[&str] = &[
     "networkSettings",
     "networkSecurity",
     "appPolicies",
+    "mainWindow",
+    "notifications",
+    "ipVisible",
+    "ipAutoRefresh",
+    "session",
 ];
 pub struct SettingsStore {
     path: PathBuf,
@@ -105,6 +110,24 @@ pub async fn set_client_setting(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ui_and_remembered_session_settings_share_the_private_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("airport-settings.json");
+        let store = SettingsStore::open(path.clone());
+        store.set("mainWindow", serde_json::json!({"width":900,"height":670})).unwrap();
+        store.set("notifications", Value::Bool(false)).unwrap();
+        store.set("ipVisible", Value::Bool(false)).unwrap();
+        store.set("ipAutoRefresh", Value::Bool(true)).unwrap();
+        store.set("session", serde_json::json!({"refreshToken":"test-only-token"})).unwrap();
+        let reread = SettingsStore::open(path);
+        assert_eq!(reread.get("mainWindow").unwrap().unwrap()["width"], 900);
+        assert_eq!(reread.get("notifications").unwrap(), Some(Value::Bool(false)));
+        assert_eq!(reread.get("session").unwrap().unwrap()["refreshToken"], "test-only-token");
+        // Empty token is an explicit logout marker, not a missing key that could reimport a legacy token.
+        reread.set("session", serde_json::json!({"refreshToken":""})).unwrap();
+        assert_eq!(reread.get("session").unwrap().unwrap()["refreshToken"], "");
+    }
     #[test]
     fn preserves_old_values_with_private_atomic_writes() {
         let dir = tempfile::tempdir().unwrap();

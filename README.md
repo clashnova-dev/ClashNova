@@ -108,3 +108,18 @@ System/manual proxy covers proxy-aware applications. It does not capture all sys
 Checks are user initiated. HTTP exit probes use Cloudflare trace, and WebRTC candidate gathering uses Cloudflare STUN. The built-in WebRTC result applies only to the app webview. Use the BrowserLeaks DNS, WebRTC and IP links from the browser you actually use to validate its behavior. A timeout, unavailable IPv6, or absent ICE candidates stays unconfirmed. Matching IPs describe the observed probes, not a guarantee for all traffic. Probe observations are discarded when the connection, node, routing mode or network settings change.
 
 Regression coverage includes mapped IPv4/IPv6 candidates, dual-stack exits, ICE cancellation and timeouts, invalid successful HTTP responses, native TUN DNS/STUN configuration, and settings confirmation. Browser interaction checks use mocked native calls; they do not replace a live OS-level TUN routing test.
+
+## Local configuration and rules
+
+On Windows, client files live under `%APPDATA%\dev.airport.client\`:
+
+- `config.json`: the generated core configuration.
+- `network-settings.json`: native proxy/DNS/TUN options.
+- `subscriptions.json`: locally saved subscriptions.
+- `airport-settings.json`: preferences, application policies, window/IP/notification options and an opt-in remembered session.
+
+The desktop app uses private native files, not browser storage. Older webview preferences are read only for migration and removed after the native write is verified. Native read/write failures are reported rather than silently falling back to localStorage. A browser-only development preview keeps settings in memory.
+
+The Rules navigation page shows routing generated from the selected subscription and application policies. It preserves ordering and compound conditions, supports source filtering and case/word/regex search, and renders at most 100 entries per page. TUN-specific DNS/UDP capture rules are appended separately by the native core.
+
+Version 0.1.3 fixes rule-mode startup rejecting the client's own pretty-printed config: the full built-in rules occupy about 1.72 MiB compactly and 2.98 MiB with indentation. Saved runtime JSON is now compact. Generated configurations have a separate bounded 8 MiB budget; subscription imports remain limited to 2 MiB and the authenticated TUN frame budget remains 4 MiB. Regression tests use the complete production domain/IP lists, cached legacy files, repeated system/TUN configuration, and actual encrypted IPC framing. Existing subscriptions do not need to be deleted or reimported.

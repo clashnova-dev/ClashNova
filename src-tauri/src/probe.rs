@@ -54,7 +54,7 @@ impl Session {
 }
 
 fn isolated_config(raw: &str, targets: &[(String, u16)]) -> Result<Value, String> {
-    if raw.len() > 2 * 1024 * 1024 {
+    if raw.len() > crate::network_settings::MAX_CONFIG_BYTES {
         return Err("native.configTooLarge".into());
     }
     if targets.is_empty() || targets.len() > 512 {

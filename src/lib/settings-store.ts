@@ -32,53 +32,50 @@ export function preferencesForStore(value: Preferences): Preferences | null {
   return preferencesFromUnknown(raw);
 }
 
-/**
- * Desktop reads the fixed-file native store. A missing key is copied once from the old localStorage value.
- * Browser preview has no plugin and keeps using that localStorage value.
- * A store read failure also falls back, and does not overwrite the store.
- */
+/** Desktop files are authoritative. Legacy webview values are read only for migration. */
 export async function loadStoredPreferences(
   store: SettingStore | null,
   readLegacy: () => string | null,
   status?: StoreStatus,
+  clearLegacy: () => void = () => {},
 ): Promise<Preferences | null> {
-  const legacy = () => {
-    try { return parsePreferences(readLegacy()); }
-    catch { return null; }
-  };
   const mark = (useStore: boolean) => { if (status) status.useStore = useStore; };
-  if (!store) { mark(false); return legacy(); }
-  let current: unknown;
-  try { current = await store.get(preferencesStoreKey); }
-  catch { mark(false); return legacy(); }
-  if (current != null) { mark(true); return preferencesFromUnknown(current); }
-  const migrated = legacy();
-  if (!migrated) { mark(true); return null; }
+  if (!store) { mark(false); return null; }
   try {
-    await store.set(preferencesStoreKey, migrated);
+    const current = await store.get(preferencesStoreKey);
+    if (current != null) {
+      const parsed = preferencesFromUnknown(current);
+      if (!parsed) throw new Error("error.preferencesNotSaved");
+      mark(true);
+      clearLegacy();
+      return parsed;
+    }
+    let migrated: Preferences | null = null;
+    try { migrated = preferencesFromUnknown(readLegacy()); } catch { /* No readable legacy data. */ }
+    if (!migrated) { mark(true); return null; }
+    const clean = preferencesForStore(migrated)!;
+    await store.set(preferencesStoreKey, clean);
     await store.save();
+    if (JSON.stringify(preferencesFromUnknown(await store.get(preferencesStoreKey))) !== JSON.stringify(clean))
+      throw new Error("error.preferencesNotSaved");
     mark(true);
-  } catch { mark(false); /* The old copy is still there; the next launch can try again. */ }
-  return migrated;
+    clearLegacy();
+    return clean;
+  } catch (error) { mark(false); throw error; }
 }
 
 export async function saveStoredPreferences(
   store: SettingStore | null,
   value: Preferences,
-  writeLegacy: (raw: string) => void,
   status?: StoreStatus,
 ): Promise<void> {
   const clean = preferencesForStore(value);
-  if (!clean) throw new Error("error.preferencesNotSaved");
-  if (store && status?.useStore !== false) {
-    try {
-      await store.set(preferencesStoreKey, clean);
-      await store.save();
-      if (status) status.useStore = true;
-      return;
-    } catch { if (status) status.useStore = false; /* Plugin unavailable; keep the previous local cache. */ }
-  }
-  writeLegacy(JSON.stringify(clean));
+  if (!clean || !store || status?.useStore === false) throw new Error("error.preferencesNotSaved");
+  try {
+    await store.set(preferencesStoreKey, clean);
+    await store.save();
+    if (status) status.useStore = true;
+  } catch (error) { if (status) status.useStore = false; throw error; }
 }
 
 /** Uses the stored value when it is present. Otherwise copies the previous copy in once. */
@@ -109,27 +106,81 @@ export async function writeStored(
   value: unknown,
   status?: StoreStatus,
 ): Promise<void> {
-  if (!store || status?.useStore === false) return;
+  if (!store || status?.useStore === false) throw new Error("error.preferencesNotSaved");
   try {
     await store.set(key, value);
     await store.save();
     if (status) status.useStore = true;
-  } catch { if (status) status.useStore = false; }
+  } catch (error) { if (status) status.useStore = false; throw error; }
 }
 
-/** Null when this is a browser preview or the plugin cannot be loaded. */
-export async function openSettingsStore(): Promise<SettingStore | null> {
-  if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return null;
-  try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    // Native owns the filename, key allowlist and private atomic writes.
-    await invoke("get_client_setting", { key: preferencesStoreKey });
-    return {
-      get: key => invoke("get_client_setting", { key }),
-      set: (key, value) => invoke<void>("set_client_setting", { key, value }),
-      save: async () => {}, // Each native set is committed atomically before returning.
-    };
-  } catch {
-    return null;
-  }
+/** A web preview keeps state in memory; it never writes browser storage. */
+const previewValues = new Map<string, unknown>();
+const previewStore: SettingStore = {
+  async get(key) { return previewValues.get(key); },
+  async set(key, value) { previewValues.set(key, structuredClone(value)); },
+  async save() {},
+};
+let nativeStore: Promise<SettingStore> | undefined;
+export async function openSettingsStore(): Promise<SettingStore> {
+  if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return previewStore;
+  return nativeStore ??= import("@tauri-apps/api/core").then(({ invoke }) => ({
+    get: (key: string) => invoke("get_client_setting", { key }),
+    set: (key: string, value: unknown) => invoke<void>("set_client_setting", { key, value }),
+    save: async () => {}, // Native commits each write atomically.
+  }));
 }
+
+/** Migration-only access. Failed native reads/writes never fall back to the webview. */
+export function readLegacyClientValue(key: string): string | null {
+  if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return null;
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+export function removeLegacyClientValue(key: string): void {
+  if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+  try { window.localStorage.removeItem(key); } catch { /* Native data is already durable. */ }
+}
+
+export async function migrateClientSetting<T>(
+  store: SettingStore,
+  key: string,
+  fallback: T,
+  accept: (value: unknown) => T | null,
+  legacy?: { read: () => string | null; parse: (raw: string) => T | null; clear: () => void },
+): Promise<T> {
+  const current = await store.get(key);
+  if (current != null) {
+    const parsed = accept(current);
+    if (parsed === null) throw new Error("error.preferencesNotSaved");
+    legacy?.clear();
+    return parsed;
+  }
+  const raw = legacy?.read();
+  const migrated = raw == null ? null : legacy!.parse(raw);
+  if (migrated === null) return fallback;
+  await store.set(key, migrated);
+  await store.save();
+  const checked = accept(await store.get(key));
+  if (JSON.stringify(checked) !== JSON.stringify(migrated)) throw new Error("error.preferencesNotSaved");
+  legacy?.clear();
+  return migrated;
+}
+
+export async function readClientSetting<T>(
+  key: string, fallback: T, accept: (value: unknown) => T | null,
+  legacy?: { key: string; parse: (raw: string) => T | null },
+): Promise<T> {
+  return migrateClientSetting(await openSettingsStore(), key, fallback, accept, legacy ? {
+    read: () => readLegacyClientValue(legacy.key),
+    parse: legacy.parse,
+    clear: () => removeLegacyClientValue(legacy.key),
+  } : undefined);
+}
+export async function writeClientSetting(key: string, value: unknown, legacyKey?: string): Promise<void> {
+  const store = await openSettingsStore();
+  await store.set(key, value);
+  await store.save();
+  if (legacyKey) removeLegacyClientValue(legacyKey);
+}
+export const acceptBoolean = (value: unknown): boolean | null => typeof value === "boolean" ? value : null;
+export const legacyBoolean = (raw: string): boolean | null => raw === "true" ? true : raw === "false" ? false : null;

@@ -30,7 +30,7 @@ function stripUnsupportedRules(section: unknown): void {
 }
 
 export function parseSingBoxProfile(raw: string): { config: Record<string, unknown>; nodes: ProfileNode[] } {
-  if (raw.length > 2 * 1024 * 1024) throw new Error("error.subscriptionTooLarge");
+  if (new TextEncoder().encode(raw).byteLength > 2 * 1024 * 1024) throw new Error("error.subscriptionTooLarge");
   let config: Record<string, unknown>;
   try { config = JSON.parse(raw); }
   catch { throw new Error("error.subscriptionNotSingBox"); }

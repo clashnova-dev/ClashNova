@@ -67,6 +67,7 @@ jobs:
           restore-keys: |
             clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}-
             clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}
+            clashnova-${{ runner.os }}-${{ matrix.target }}-
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf

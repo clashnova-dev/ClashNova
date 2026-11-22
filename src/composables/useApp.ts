@@ -2,16 +2,16 @@ import { prepareConnection } from "../lib/connection-startup";
 import { confirmation } from "../lib/confirmation";
 import { restoreCrashConnection } from "../lib/crash-recovery";
 import { ref, computed, watch, nextTick, type Component } from "vue";
-import { House, Layers, Rss, Network, ScrollText, Settings, Radar } from "@lucide/vue";
+import { House, Layers, Rss, Network, ScrollText, Settings, Radar, Route } from "@lucide/vue";
 import { reduce, type Phase } from "../lib/connection";
-import { notifications, prepareNotifications, dismissNotice } from "../lib/notifications";
+import { notifications, loadNotificationPreference, prepareNotifications, dismissNotice } from "../lib/notifications";
 import { ensureTunService, refreshTunService, tunServiceBusy } from "../lib/tun-service";
 import { AUTOMATIC_NODE_ID, AUTOMATIC_OUTBOUND_TAG, activeChain, configureSelection, outboundTag } from "../lib/automatic-selection";
 import { parseSubscriptionUsage, subscriptionHost, type SubscriptionUsage, type SubscriptionDownload } from "../lib/subscription-info";
 import { platform } from "@tauri-apps/plugin-os";
 import { DEFAULT_PROXY_PORT, DEFAULT_TUN_MTU, defaultTunSettings, parseRouteExclude, validateProxyPort, validateTunMtu, proxyAddress, type NetworkSettings, type TunSettings } from "../lib/network-settings";
 import { preferencesKey, type Preferences } from "../lib/preferences";
-import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, subscriptionsStoreKey, writeStored, type SettingStore, type StoreStatus } from "../lib/settings-store";
+import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, subscriptionsStoreKey, writeStored, readClientSetting, writeClientSetting, readLegacyClientValue, removeLegacyClientValue, type SettingStore, type StoreStatus } from "../lib/settings-store";
 import { defaultNetworkSecurity, parseNetworkSecurity, type NetworkSecurity } from "../lib/network-security";
 import { appPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
 import { parseSingBoxProfile } from "../lib/profiles";
@@ -41,7 +41,7 @@ function applyTheme() {
 watch([theme, locale], applyTheme, { immediate: true });
 colorScheme.addEventListener("change", applyTheme);
 
-const tab = ref<"home" | "nodes" | "sub" | "connections" | "logs" | "network" | "settings" | "help">("home");
+const tab = ref<"home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "settings" | "help">("home");
 const mainContent = ref<HTMLElement | null>(null);
 const logViewport = ref<HTMLElement | null>(null);
 const followLogs = ref(true);
@@ -232,9 +232,9 @@ const routeMode = ref<"rule" | "global">("rule");
 const nodes = ref<{ id: string; name: string; region: string; host: string; port: number; protocol: string; agentOnline: boolean; appliedConfigVersion: number; latestConfigVersion: number }[]>([]);
 const activeSub = ref<{ planName: string; usedChargedBytes: number; limitBytes: number; expiresAt?: string | null; subscriptionUrl?: string } | null>(null);
 const navigation = computed(() => {
-  const items: { key: "home" | "nodes" | "sub" | "connections" | "logs" | "network" | "settings" | "help"; label: MessageKey; icon: Component }[] = [
+  const items: { key: "home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "settings" | "help"; label: MessageKey; icon: Component }[] = [
     { key: "home", label: "nav.overview", icon: House }, { key: "nodes", label: "nav.nodes", icon: Layers },
-    { key: "sub", label: "nav.subscriptions", icon: Rss }, { key: "connections", label: "nav.connections", icon: Network }, { key: "logs", label: "nav.logs", icon: ScrollText },
+    { key: "sub", label: "nav.subscriptions", icon: Rss }, { key: "connections", label: "nav.connections", icon: Network }, { key: "rules", label: "nav.rules", icon: Route }, { key: "logs", label: "nav.logs", icon: ScrollText },
     { key: "network", label: "nav.networkCheck", icon: Radar },
     { key: "settings", label: "nav.settings", icon: Settings },
   ];
@@ -247,7 +247,7 @@ const chainActive = computed(() => chain.value.length >= 2);
 const chainNames = computed(() => chain.value.map((id) => nodes.value.find((n) => n.id === id)?.name || id));
 const chainSummary = computed(() => chainNames.value.join(" → "));
 const connectionNodeNames = computed(() => Object.fromEntries([["select",t("connections.selector")],["direct",t("connections.direct")],[AUTOMATIC_OUTBOUND_TAG,t("nodes.automatic")],...nodes.value.map(node => [profileKind.value === "external" ? node.id : `node-${node.id.replaceAll("-", "").slice(0, 8)}`, node.name])]));
-const title = computed<MessageKey>(() => (({ home: "nav.overview", nodes: "nav.nodes", sub: "nav.subscriptions", connections: "nav.connections", logs: "nav.logs", network: "nav.networkCheck", settings: "nav.settings", help: "nav.help" } as const)[tab.value]));
+const title = computed<MessageKey>(() => (({ home: "nav.overview", nodes: "nav.nodes", sub: "nav.subscriptions", connections: "nav.connections", rules: "nav.rules", logs: "nav.logs", network: "nav.networkCheck", settings: "nav.settings", help: "nav.help" } as const)[tab.value]));
 const label = computed<MessageKey>(() => (({
   IDLE: "status.idle",
   PREPARING: "status.preparing",
@@ -534,7 +534,7 @@ function persistPreferences() {
   const value: Preferences = { version: 1, showTraySpeed: showTraySpeed.value, baseUrl: baseUrl.value, email: email.value,
     connectionMode: connectionMode.value, routeMode: routeMode.value,
     activeProfileId: activeExternalId.value, nodeSort: nodeSort.value, probeConcurrency: probeConcurrency.value, locale: locale.value, theme: theme.value, selectedNodes, chains, chainGroups: chainGroupsByProfile };
-  void saveStoredPreferences(settingsStore, value, (raw) => localStorage.setItem(preferencesKey, raw), preferenceStoreStatus)
+  void saveStoredPreferences(settingsStore, value, preferenceStoreStatus)
     .catch(() => { message.value = "error.preferencesNotSaved"; });
 }
 watch([baseUrl, email, connectionMode, routeMode, activeExternalId, selectedNode, chain, chainGroups, nodeSort, probeConcurrency, locale, theme, showTraySpeed], persistPreferences, { deep: true });
@@ -577,13 +577,14 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
   let windowQueue: Promise<void> = Promise.resolve();
   let stopWindowResize: (() => void) | undefined;
   let windowSaveTimer: ReturnType<typeof setTimeout> | undefined;
-  function savedMainWindow() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(mainWindowKey) || "null");
-      if (Number.isFinite(saved?.width) && Number.isFinite(saved?.height)) return { width: Math.max(MAIN_WINDOW.minWidth, Math.round(saved.width)), height: Math.max(MAIN_WINDOW.minHeight, Math.round(saved.height)) };
-    } catch { /* Fall back to the default size. */ }
-    return { width: MAIN_WINDOW.width, height: MAIN_WINDOW.height };
-  }
+  let rememberedMainWindow = { width: MAIN_WINDOW.width, height: MAIN_WINDOW.height };
+  const acceptMainWindow = (value: unknown) => {
+    const saved = value as { width?: number; height?: number } | null;
+    return Number.isFinite(saved?.width) && Number.isFinite(saved?.height)
+      ? { width: Math.max(MAIN_WINDOW.minWidth, Math.round(saved!.width!)), height: Math.max(MAIN_WINDOW.minHeight, Math.round(saved!.height!)) }
+      : null;
+  };
+  function savedMainWindow() { return rememberedMainWindow; }
   // Queued so a sign-in that lands while an earlier resize is still running cannot interleave with it.
   function syncWindowMode() {
     if (!isNative) return windowQueue;
@@ -623,7 +624,9 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
         try {
           if (windowMode !== "main" || await win.isMaximized() || await win.isFullscreen()) return;
           const size = (await win.innerSize()).toLogical(await win.scaleFactor());
-          localStorage.setItem(mainWindowKey, JSON.stringify({ width: Math.round(size.width), height: Math.round(size.height) }));
+          const next = { width: Math.round(size.width), height: Math.round(size.height) };
+          await writeClientSetting("mainWindow", next, mainWindowKey);
+          rememberedMainWindow = next;
         } catch { /* Remembering the size is best effort. */ }
       }, 400);
     });
@@ -636,7 +639,13 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
   void watchWindowSize().catch(() => { /* The window still works without size memory. */ });
   settingsStore = await openSettingsStore();
   let savedPrefs: Preferences | null = null;
-  try { savedPrefs = await loadStoredPreferences(settingsStore, () => localStorage.getItem(preferencesKey), preferenceStoreStatus); } catch { /* Storage may be unavailable. */ }
+  try {
+    savedPrefs = await loadStoredPreferences(settingsStore, () => readLegacyClientValue(preferencesKey), preferenceStoreStatus, () => removeLegacyClientValue(preferencesKey));
+    rememberedMainWindow = await readClientSetting("mainWindow", rememberedMainWindow, acceptMainWindow, {
+      key: mainWindowKey, parse: raw => { try { return acceptMainWindow(JSON.parse(raw)); } catch { return null; } },
+    });
+    await loadNotificationPreference();
+  } catch (error) { message.value = failure(error, "error.preferencesNotSaved"); }
   if (savedPrefs) {
     baseUrl.value = defaultServer || savedPrefs.baseUrl; email.value = savedPrefs.email;
     connectionMode.value = savedPrefs.connectionMode; routeMode.value = savedPrefs.routeMode;
@@ -771,7 +780,7 @@ async function login() {
     });
     access.value = data.tokens.accessToken;
     refreshToken.value = data.tokens.refreshToken;
-    persistSession();
+    await persistSession();
     password.value = "";
     dismissNotice();
     addActivity("log.signedIn");
@@ -812,8 +821,9 @@ async function logout() {
   busy.value = true;
   try { await (await bridge()).clearProfile(); }
   catch (error) { message.value = msg("error.clearProfileFailed", { error: String(error) }); busy.value = false; return; }
+  try { await writeClientSetting("session", { refreshToken: "" }, sessionKey); }
+  catch (error) { showError(failure(error, "error.preferencesNotSaved")); busy.value = false; return; }
   access.value = ""; refreshToken.value = ""; password.value = ""; subUrl.value = ""; dismissNotice();
-  try { localStorage.removeItem(sessionKey); } catch { /* storage may be unavailable */ }
   rawProfile.value = ""; activeSub.value = null; nodes.value = []; selectedNode.value = ""; chain.value = []; chainGroups.value = [];
   cancelProbes(); probeStates.value = {};
   localMode.value = false; activeExternalId.value = ""; profileKind.value = "airport";
@@ -823,27 +833,31 @@ async function logout() {
 const sessionKey = "airport.session";
 // Opt-in "remember me": persist only the refresh token (never the password) so a
 // relaunch can silently renew the session. Off by default keeps the secure default.
-function persistSession() {
-  try {
-    if (rememberMe.value && refreshToken.value) localStorage.setItem(sessionKey, JSON.stringify({ refreshToken: refreshToken.value }));
-    else localStorage.removeItem(sessionKey);
-  } catch { /* storage may be unavailable */ }
+async function persistSession() {
+  await writeClientSetting("session", { refreshToken: rememberMe.value ? refreshToken.value : "" }, sessionKey);
 }
+const acceptSession = (value: unknown): { refreshToken: string } | null => {
+  const item = value as { refreshToken?: unknown } | null;
+  return typeof item?.refreshToken === "string" && item.refreshToken.length <= 16384 ? { refreshToken: item.refreshToken } : null;
+};
 async function restoreSession() {
-  if (access.value || activeExternalId.value) return;
-  let saved: { refreshToken?: string } | null = null;
-  try { const raw = localStorage.getItem(sessionKey); if (raw) saved = JSON.parse(raw); } catch { return; }
-  if (!saved?.refreshToken || !baseUrl.value) return;
+  let saved: { refreshToken: string };
+  try {
+    saved = await readClientSetting("session", { refreshToken: "" }, acceptSession, {
+      key: sessionKey, parse: raw => { try { return acceptSession(JSON.parse(raw)); } catch { return null; } },
+    });
+  } catch (error) { showError(failure(error, "error.preferencesNotSaved")); return; }
+  if (!enableLogin || access.value || activeExternalId.value || !saved.refreshToken || !baseUrl.value) return;
   rememberMe.value = true;
   try {
     const res = await fetch(`${baseUrl.value.replace(/\/$/, "")}/api/v1/app/auth/refresh`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ refreshToken: saved.refreshToken }) });
-    if (!res.ok) { try { localStorage.removeItem(sessionKey); } catch { /* ignore */ } return; }
+    if (!res.ok) { await writeClientSetting("session", { refreshToken: "" }, sessionKey); return; }
     const body = await res.json();
     access.value = body.data.accessToken; refreshToken.value = body.data.refreshToken;
-    persistSession();
+    await persistSession();
     tab.value = "home";
     await refreshData();
-  } catch { /* stay on the login screen */ }
+  } catch { /* Stay on the login screen after a failed refresh. */ }
 }
 // Lifting the kill switch is disconnecting: the user chooses to be without the tunnel.
 async function releaseGuard() {
@@ -1380,8 +1394,9 @@ async function saveNetworkSettings() {
 }
 
 async function setNetworkSecurity(patch: Partial<NetworkSecurity>) {
-  networkSecurity.value = { ...networkSecurity.value, ...patch };
-  await writeStored(settingsStore, networkSecurityStoreKey, networkSecurity.value, preferenceStoreStatus);
+  const next = { ...networkSecurity.value, ...patch };
+  await writeStored(settingsStore, networkSecurityStoreKey, next, preferenceStoreStatus);
+  networkSecurity.value = next;
 }
 
 // 进程级网络管理:记录某应用的路由策略。inherit(跟随规则)是默认值,不落库。
@@ -1390,8 +1405,8 @@ async function setAppPolicy(app: string, policy: AppPolicy) {
   const next = { ...appPolicies.value };
   if (policy === "inherit") delete next[app];
   else next[app] = policy;
+  await writeStored(settingsStore, appPoliciesStoreKey, next, preferenceStoreStatus);
   appPolicies.value = next;
-  await writeStored(settingsStore, appPoliciesStoreKey, appPolicies.value, preferenceStoreStatus);
 }
 
 // Kill Switch 与 IPv6 的实际生效落在既有 TUN 设置;连接中不可更改(与设置页一致)。

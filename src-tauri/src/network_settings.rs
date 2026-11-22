@@ -5,7 +5,9 @@ use std::{net::TcpListener, path::Path};
 
 pub const DEFAULT_PROXY_PORT: u16 = 2080;
 pub const MIN_PROXY_PORT: u16 = 1024;
-const MAX_CONFIG_BYTES: usize = 2 * 1024 * 1024;
+// Generated profiles include application-owned route/DNS data in addition to the
+// separately bounded 2 MiB subscription. Reconnects also read the expanded TUN profile.
+pub(crate) const MAX_CONFIG_BYTES: usize = 8 * 1024 * 1024;
 
 pub fn default_proxy_port() -> u16 {
     DEFAULT_PROXY_PORT
@@ -179,7 +181,13 @@ impl NetworkSettings {
         // LAN listener or a tunnel. Native TUN configuration is added later from validated settings.
         *inbounds = vec![serde_json::json!({"type":"mixed", "tag":"mixed-in", "listen":self.listen_address(), "listen_port":self.proxy_port})];
         airport_tun_service::validate_profile_options(&config)?;
-        serde_json::to_string_pretty(&config).map_err(|error| error.to_string())
+        // The file is loaded and validated again on connect. Pretty-printing the built-in
+        // China rules grows a 1.72 MiB profile to ~2.98 MiB and used to reject our own output.
+        let encoded = serde_json::to_string(&config).map_err(|error| error.to_string())?;
+        if encoded.len() > MAX_CONFIG_BYTES {
+            return Err("native.configTooLarge".into());
+        }
+        Ok(encoded)
     }
 }
 
@@ -211,6 +219,74 @@ pub fn load(path: &Path) -> Result<NetworkSettings, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn builtin_csv(source: &str, name: &str) -> Vec<String> {
+        let declaration = format!("const {name} =");
+        let literal = source.split_once(declaration.as_str()).unwrap().1.trim_start();
+        let end = literal.find(';').unwrap();
+        let csv: String = serde_json::from_str(&literal[..end]).unwrap();
+        csv.split(',').map(str::to_owned).collect()
+    }
+
+    /// Exercise the exact production rule lists, not a small hand-written fixture.
+    fn rule_profile() -> Value {
+        let domains = builtin_csv(include_str!("../../src/lib/china-domains.ts"), "RAW");
+        let ip_source = include_str!("../../src/lib/china-ip.ts");
+        let mut prefixes = builtin_csv(ip_source, "V4");
+        prefixes.extend(builtin_csv(ip_source, "V6"));
+        serde_json::json!({
+            "inbounds":[{"type":"mixed","listen":"127.0.0.1","listen_port":2080}],
+            "outbounds":[
+                {"type":"socks","tag":"node","server":"127.0.0.1","server_port":1081},
+                {"type":"selector","tag":"select","outbounds":["node"],"default":"node"},
+                {"type":"direct","tag":"direct"}
+            ],
+            "route":{"final":"select","rules":[
+                {"ip_is_private":true,"outbound":"direct"},
+                {"domain_suffix":domains,"outbound":"direct"},
+                {"ip_cidr":prefixes,"outbound":"direct"}
+            ]}
+        })
+    }
+
+    #[test]
+    fn production_rules_survive_legacy_pretty_save_and_reconnect() {
+        let source = rule_profile();
+        let legacy = serde_json::to_string_pretty(&source).unwrap();
+        assert!(legacy.len() > 2 * 1024 * 1024, "fixture must reproduce the shipped failure");
+        let settings = NetworkSettings::default();
+        // Existing cached config files must work without deleting or reimporting subscriptions.
+        let saved = settings.apply_to_config(&legacy).unwrap();
+        assert!(!saved.contains('\n'));
+        assert_eq!(settings.apply_to_config(&saved).unwrap(), saved);
+        for tun in [false, true] {
+            let mut runtime: Value = serde_json::from_str(&saved).unwrap();
+            let endpoint = crate::tray_speed::Endpoint::new().unwrap();
+            for _ in 0..3 {
+                runtime = serde_json::from_str(&settings.apply_to_config(&runtime.to_string()).unwrap()).unwrap();
+                crate::tun::configure(&mut runtime, tun, &settings.tun).unwrap();
+                endpoint.configure(&mut runtime);
+                let request = airport_tun_service::Request {
+                    id: "0".repeat(32), time: 1,
+                    action: airport_tun_service::Action::Start {
+                        config: runtime.clone(), session: "1".repeat(32),
+                    },
+                };
+                let mut frame = Vec::new();
+                // Preserve the installed service's existing 4 MiB protocol budget.
+                airport_tun_service::write_message(&mut frame, &[7;32], b"airport/request/v1", &request).unwrap();
+                assert!(frame.len() <= airport_tun_service::MAX_FRAME + 4);
+            }
+        }
+    }
+
+    #[test]
+    fn oversized_generated_profiles_remain_bounded() {
+        assert_eq!(
+            NetworkSettings::default().apply_to_config(&" ".repeat(MAX_CONFIG_BYTES + 1)),
+            Err("native.configTooLarge".into())
+        );
+    }
+
     #[test]
     fn validates_ports_and_defaults_to_loopback() {
         let mut settings = NetworkSettings::default();

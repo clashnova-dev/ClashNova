@@ -69,3 +69,12 @@ test("拒绝把代理节点伪装成直连保留标签", () => {
     { type: "socks", tag: "direct", server: "127.0.0.1", server_port: 1081 },
   ] })), /error\.subscriptionTagDirect/);
 });
+
+test("subscription size uses UTF-8 bytes rather than JavaScript character count", () => {
+  const config = {outbounds:[{type:"socks",tag:"node",server:"127.0.0.1",server_port:1081}],description:"x".repeat(710000)};
+  assert.equal(parseSingBoxProfile(JSON.stringify(config)).nodes.length,1);
+  config.description = "节".repeat(710000);
+  const raw = JSON.stringify(config);
+  assert.ok(raw.length < 2 * 1024 * 1024);
+  assert.throws(() => parseSingBoxProfile(raw),/error\.subscriptionTooLarge/);
+});
