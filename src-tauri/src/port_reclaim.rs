@@ -147,7 +147,7 @@ impl Reclaimer {
         {
             return Err("native.portConflictChanged".into());
         }
-        let mut stopped = stop_targets(port, &pending.listeners);
+        let mut stopped = stop_targets(port, address, &pending.listeners);
         stopped.extend(reclaim(port, address));
         if !available(port, address) {
             return Err(port_error("native.portReleaseFailed", port));
@@ -246,24 +246,36 @@ pub fn reclaim(port: u16, address: &str) -> Vec<u32> {
         .into_iter()
         .filter(|p| p.eligible() && is_own_core(&p.name))
         .collect();
-    stop_targets(port, &own)
+    stop_targets(port, address, &own)
 }
 
-fn stop_targets(port: u16, targets: &[Listener]) -> Vec<u32> {
-    let mut signaled = Vec::new();
-    for target in targets.iter().filter(|p| p.eligible()) {
-        if listeners(port).contains(target) {
-            signal(target.pid, "-TERM");
-            signaled.push(target.pid);
-        }
+fn stop_targets(port: u16, address: &str, targets: &[Listener]) -> Vec<u32> {
+    if targets.is_empty() {
+        return Vec::new();
     }
-    wait_until_gone(port, targets, Duration::from_millis(1200));
+    let mut signaled = Vec::new();
+    let deadline = Instant::now() + Duration::from_millis(1200);
+    loop {
+        let current = listeners(port);
+        for target in targets.iter().filter(|p| p.eligible()) {
+            if !signaled.contains(&target.pid) && current.contains(target) {
+                signal(target.pid, "-TERM");
+                signaled.push(target.pid);
+            }
+        }
+        // A process snapshot can briefly omit an exiting owner before its
+        // socket is reusable. Only an actual bind proves that startup can proceed.
+        if available(port, address) || Instant::now() >= deadline {
+            break;
+        }
+        thread::sleep(Duration::from_millis(40));
+    }
     for target in targets.iter().filter(|p| p.eligible()) {
         if signaled.contains(&target.pid) && listeners(port).contains(target) {
             signal(target.pid, "-KILL");
         }
     }
-    wait_until_gone(port, targets, Duration::from_millis(400));
+    wait_available(port, address, Duration::from_millis(800));
     let remaining = listeners(port);
     signaled.retain(|pid| {
         targets
@@ -274,11 +286,14 @@ fn stop_targets(port: u16, targets: &[Listener]) -> Vec<u32> {
     signaled
 }
 
-fn wait_until_gone(port: u16, targets: &[Listener], budget: Duration) {
+fn wait_available(port: u16, address: &str, budget: Duration) -> bool {
     let deadline = Instant::now() + budget;
-    while Instant::now() < deadline {
-        if listeners(port).iter().all(|p| !targets.contains(p)) {
-            return;
+    loop {
+        if available(port, address) {
+            return true;
+        }
+        if Instant::now() >= deadline {
+            return false;
         }
         thread::sleep(Duration::from_millis(40));
     }
@@ -654,6 +669,31 @@ mod tests {
     }
 
     #[test]
+    fn waits_for_delayed_socket_release_without_terminating_an_owner() {
+        let socket = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        let release = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(100));
+            drop(socket);
+        });
+        assert!(wait_available(port, "127.0.0.1", Duration::from_secs(2)));
+        release.join().unwrap();
+    }
+
+    #[test]
+    fn occupied_socket_wait_is_bounded_and_does_not_terminate_its_owner() {
+        let socket = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        assert!(!wait_available(
+            port,
+            "127.0.0.1",
+            Duration::from_millis(60)
+        ));
+        assert!(!available(port, "127.0.0.1"));
+        drop(socket);
+    }
+
+    #[test]
     #[ignore = "test-only child listener; launched explicitly by the parent test"]
     fn port_listener_fixture() {
         let ready = std::env::var_os("AIRPORT_PORT_FIXTURE_READY").expect("fixture only");
@@ -738,7 +778,13 @@ mod tests {
         );
         let stopped = reclaimer
             .release(child.port, "127.0.0.1", &conflict.token)
-            .unwrap();
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{error}; child={:?}; owners={:?}",
+                    child.child.try_wait(),
+                    listeners(child.port)
+                )
+            });
         assert!(stopped.contains(&child.child.id()));
         assert!(available(child.port, "127.0.0.1"));
         assert!(
