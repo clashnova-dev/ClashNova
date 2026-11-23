@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-application-policy"
+description = "Enables the set_application_policy command without any pre-configured scope."
+commands.allow = ["set_application_policy"]
+
+[[permission]]
+identifier = "deny-set-application-policy"
+description = "Denies the set_application_policy command without any pre-configured scope."
+commands.deny = ["set_application_policy"]

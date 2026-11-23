@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-open-path"
+description = "Enables the lan_open_path command without any pre-configured scope."
+commands.allow = ["lan_open_path"]
+
+[[permission]]
+identifier = "deny-lan-open-path"
+description = "Denies the lan_open_path command without any pre-configured scope."
+commands.deny = ["lan_open_path"]

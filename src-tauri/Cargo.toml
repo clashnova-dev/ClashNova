@@ -1,7 +1,7 @@
 [package]
 authors = ["clashnova-dev"]
 name = "airport-client"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "ClashNova desktop proxy client"
 
@@ -14,10 +14,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 airport-tun-service = { path = "../tun-service" }
+airport-lan = { path = "../airport-lan" }
 sha2 = "0.10"
 tauri-plugin-notification = "2"
 getrandom = "0.3"
-tokio = { version = "1", features = ["time", "macros"] }
+tokio = { version = "1", features = ["time", "macros", "sync"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = ["tray-icon"] }
@@ -32,6 +33,8 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-log = "2"
 log = "0.4"
 tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 tauri-plugin-persisted-scope = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"

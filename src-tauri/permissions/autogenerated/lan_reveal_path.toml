@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-reveal-path"
+description = "Enables the lan_reveal_path command without any pre-configured scope."
+commands.allow = ["lan_reveal_path"]
+
+[[permission]]
+identifier = "deny-lan-reveal-path"
+description = "Denies the lan_reveal_path command without any pre-configured scope."
+commands.deny = ["lan_reveal_path"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-refresh-devices"
+description = "Enables the lan_refresh_devices command without any pre-configured scope."
+commands.allow = ["lan_refresh_devices"]
+
+[[permission]]
+identifier = "deny-lan-refresh-devices"
+description = "Denies the lan_refresh_devices command without any pre-configured scope."
+commands.deny = ["lan_refresh_devices"]

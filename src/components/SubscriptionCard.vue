@@ -34,7 +34,7 @@ function date(value: string | number, time = false) { const d = new Date(value);
 const expiryLabel = computed(() => expiry.value === undefined ? t('common.notProvided') : date(expiry.value) + (expired.value ? ` · ${t('subscriptions.expired')}` : ''));
 </script>
 <style scoped>
-.subscription-card { display:flex; flex-direction:column; gap:11px; min-width:0; height:100%; padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:var(--shadow-card); }
+.subscription-card { display:flex; flex-direction:column; gap:12px; min-width:0; min-height:236px; height:100%; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:var(--shadow-card); }
 .subscription-card.selected { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
 header { display:flex; align-items:center; gap:10px; }
 .sub-icon { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:10px; background:var(--pill-bg); color:var(--pill-text); }
@@ -42,7 +42,7 @@ header { display:flex; align-items:center; gap:10px; }
 .sub-title { flex:1; min-width:0; }
 h3 { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:16px; line-height:1.35; font-weight:650; color:var(--text); }
 .sub-title small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; line-height:16px; color:var(--muted); }
-.sub-usage > div:first-child { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.sub-usage > div:first-child { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 10px; }
 .sub-usage span { font-size:14px; color:var(--muted); }
 .sub-usage strong { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
 .subscription-meter { height:6px; margin-top:6px; overflow:hidden; border-radius:8px; background:var(--line); }
@@ -53,6 +53,6 @@ dt { color:var(--muted); }
 dd { margin:2px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
 .expired { color:var(--danger); }
 footer { margin-top:auto; }
-footer :deep(button) { min-height:34px; padding:4px 12px; border-radius:9px; font-size:14px; }
-footer :deep(.icon-button) { width:34px; height:34px; padding:0; }
+footer :deep(button) { min-height:36px; padding:4px 12px; border-radius:9px; font-size:14px; }
+footer :deep(.icon-button) { width:36px; height:36px; padding:0; }
 </style>

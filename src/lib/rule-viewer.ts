@@ -11,8 +11,14 @@ export function ruleGroups(rules: unknown, final: string, appCount: number, buil
  const list = Array.isArray(rules) ? rules : [];
  const groups: RuleGroup[] = [];
  for (let index=0;index<list.length;index++) {
-  const rule=list[index];
+  let rule=list[index];
   if(!rule || typeof rule!=='object' || Array.isArray(rule))continue;
+  if(Array.isArray(rule.inbound) && rule.inbound.length===1 && /^clashnova-app-(block|proxy|direct)$/.test(rule.inbound[0])) {
+   const expressions=(Array.isArray(rule.process_path_regex)?rule.process_path_regex:[]).filter((value:unknown)=>value!=='^$');
+   if(!expressions.length)continue;
+   const {inbound: _marker,...fields}=rule;
+   rule={...fields,process_path_regex:expressions};
+  }
   const source: RuleSource=index<appCount?'application':index<appCount+builtinCount?'builtin':'subscription';
   const target=typeof rule.outbound==='string'?rule.outbound:typeof rule.action==='string'?rule.action:'route';
   const fields=Object.keys(rule).filter(key=>!['outbound','action'].includes(key));

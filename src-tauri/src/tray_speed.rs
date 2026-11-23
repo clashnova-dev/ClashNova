@@ -15,6 +15,9 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
+    pub(crate) fn blocking_request(&self, client: &reqwest::blocking::Client, method: reqwest::Method, path: &str) -> reqwest::blocking::RequestBuilder {
+        client.request(method, format!("http://127.0.0.1:{}{path}", self.port)).bearer_auth(&self.secret)
+    }
     pub(crate) fn request(
         &self,
         client: &reqwest::Client,

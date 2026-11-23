@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-copy-file-to-clipboard"
+description = "Enables the lan_copy_file_to_clipboard command without any pre-configured scope."
+commands.allow = ["lan_copy_file_to_clipboard"]
+
+[[permission]]
+identifier = "deny-lan-copy-file-to-clipboard"
+description = "Denies the lan_copy_file_to_clipboard command without any pre-configured scope."
+commands.deny = ["lan_copy_file_to_clipboard"]

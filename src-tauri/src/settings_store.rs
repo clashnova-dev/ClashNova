@@ -61,7 +61,7 @@ impl SettingsStore {
             Err("native.settingsKeyInvalid".into())
         }
     }
-    fn get(&self, key: &str) -> Result<Option<Value>, String> {
+    pub(crate) fn get(&self, key: &str) -> Result<Option<Value>, String> {
         Self::key(key)?;
         let data = self
             .data
@@ -69,7 +69,7 @@ impl SettingsStore {
             .map_err(|_| "native.settingsStoreInvalid")?;
         Ok(data.as_ref().map_err(Clone::clone)?.get(key).cloned())
     }
-    fn set(&self, key: &str, value: Value) -> Result<(), String> {
+    pub(crate) fn set(&self, key: &str, value: Value) -> Result<(), String> {
         Self::key(key)?;
         let mut data = self
             .data

@@ -7,7 +7,7 @@
           <button type="button" :aria-pressed="view === 'connections'" :class="{ on: view === 'connections' }" @click="changeView('connections')"><Network :size="16" />{{ t('connections.count') }}</button>
         </div>
         <dl class="pnm-stats">
-          <div><dt>{{ t('connections.statApps') }}</dt><dd>{{ groups.length }}</dd></div>
+          <div><dt>{{ t('connections.statApps') }}</dt><dd>{{ groups.filter(group => group.rows.length).length }}</dd></div>
           <div><dt>{{ t('connections.statConns') }}</dt><dd>{{ totalConns }}</dd></div>
           <div><dt>{{ t('connections.statRules') }}</dt><dd>{{ configuredCount }}</dd></div>
         </dl>
@@ -27,12 +27,13 @@
         </div>
         <span v-else class="pnm-list-label">{{ t('connections.appList') }} <span>{{ filteredGroups.length }}</span></span>
       </div>
+      <div class="pnm-inspector-layout" @keydown.esc.stop.prevent="closeConnection">
       <div class="pnm-table-scroll">
         <table v-if="view === 'apps'" class="pnm-table pnm-app-table">
           <colgroup><col style="width:36%" /><col style="width:12%" /><col style="width:19%" /><col style="width:19%" /><col style="width:14%" /></colgroup>
           <thead><tr><th>{{ t('connections.apps') }}</th><th class="number">{{ t('connections.count') }}</th><th class="number">{{ t('connections.downloadSpeed') }}</th><th class="number">{{ t('connections.uploadSpeed') }}</th><th class="policy-cell">{{ t('connections.policy') }}</th></tr></thead>
           <tbody><tr v-for="group in filteredGroups" :key="group.app" class="pnm-app-row" @click="showAppConnections(group.app)">
-            <td><button type="button" class="pnm-app-identity" :aria-label="`${group.app || t('connections.unknownApp')} · ${t('connections.count')}`" @click.stop="showAppConnections(group.app)"><AppIcon :path="group.rows[0]?.metadata.processPath" /><span class="pnm-app-text"><strong :title="group.app || t('connections.unknownApp')">{{ group.app || t('connections.unknownApp') }}</strong><small v-if="group.exe && group.exe !== group.app" :title="group.exe">{{ group.exe }}</small></span></button></td>
+            <td><button type="button" class="pnm-app-identity" :aria-label="`${group.app || t('connections.unknownApp')} · ${t('connections.count')}`" @click.stop="showAppConnections(group.app)"><AppIcon :path="group.path" /><span class="pnm-app-text"><strong :title="group.app || t('connections.unknownApp')">{{ group.app || t('connections.unknownApp') }}</strong><small v-if="!group.rows.length">{{ t('connections.noActiveConnections') }}</small><small v-else-if="group.exe && group.exe !== group.app" :title="group.exe">{{ group.exe }}</small></span></button></td>
             <td class="number">{{ group.rows.length }}</td><td class="number">{{ bytes(group.downloadSpeed) }}/s</td><td class="number">{{ bytes(group.uploadSpeed) }}/s</td>
             <td class="policy-cell"><button type="button" class="pnm-policy-trigger" :aria-label="`${group.app || t('connections.unknownApp')} · ${t('connections.netPolicy')}`" aria-haspopup="dialog" :aria-expanded="detailOpen && selectedApp === group.app" @click.stop="openDetail(group, $event)">{{ policyShort(group.app) }}<ChevronDown :size="14" /></button></td>
           </tr></tbody>
@@ -40,15 +41,17 @@
         <table v-else class="pnm-table pnm-connection-table">
           <colgroup><col style="width:25%" /><col style="width:13%" /><col style="width:13%" /><col style="width:14%" /><col style="width:14%" /><col style="width:21%" /></colgroup>
           <thead><tr><th>{{ t('connections.host') }}</th><th class="number">{{ t('connections.downloaded') }}</th><th class="number">{{ t('connections.uploaded') }}</th><th class="number">{{ t('connections.downloadSpeed') }}</th><th class="number">{{ t('connections.uploadSpeed') }}</th><th>{{ t('connections.chain') }}</th></tr></thead>
-          <tbody><tr v-for="row in filteredRows" :key="row.id"><td :title="host(row)">{{ host(row) }}</td><td class="number">{{ bytes(row.download) }}</td><td class="number">{{ bytes(row.upload) }}</td><td class="number">{{ bytes(status === 'closed' ? 0 : row.downloadSpeed) }}/s</td><td class="number">{{ bytes(status === 'closed' ? 0 : row.uploadSpeed) }}/s</td><td :title="chain(row)">{{ chain(row) }}</td></tr></tbody>
+          <tbody><tr v-for="row in filteredRows" :key="row.id" class="pnm-connection-row" :class="{ selected: selection?.row.id === row.id }" @click="openConnection(row, $event)"><td :title="host(row)"><button type="button" class="pnm-connection-host" :aria-pressed="selection?.row.id === row.id" :aria-label="`${t('connections.detailTitle')} · ${host(row)}`" @click.stop="openConnection(row, $event)">{{ host(row) }}</button></td><td class="number">{{ bytes(row.download) }}</td><td class="number">{{ bytes(row.upload) }}</td><td class="number">{{ bytes(status === 'closed' ? 0 : row.downloadSpeed) }}/s</td><td class="number">{{ bytes(status === 'closed' ? 0 : row.uploadSpeed) }}/s</td><td :title="chain(row)">{{ chain(row) }}</td></tr></tbody>
         </table>
         <div v-if="view === 'apps' ? !filteredGroups.length : !filteredRows.length" class="pnm-empty"><Network :size="24" /><span>{{ t(query ? 'connections.noMatchingConnections' : snapshot.running ? status === 'closed' && view === 'connections' ? 'connections.noClosedConnections' : 'connections.noActiveConnections' : 'connections.connectToSeeNetworkRequests') }}</span></div>
+      </div>
+      <ConnectionDetails v-if="view === 'connections' && selection" :row="selection.row" :active="selectedConnectionActive" :locale="locale" :chain="chain(selection.row)" @close="closeConnection" />
       </div>
     </div>
     <div ref="dialog" popover="auto" role="dialog" :aria-label="t('connections.appDetails')" class="pnm-popover" @toggle="detailOpen = $event.newState === 'open'">
         <template v-if="activeApp">
           <div class="pnm-dialog-head">
-            <div class="pnm-detail-head"><AppIcon :path="activeApp.rows[0]?.metadata.processPath" /><div><h3>{{ activeApp.app || t('connections.unknownApp') }}</h3><span class="pnm-app-exe">{{ activeApp.exe }}</span></div></div>
+            <div class="pnm-detail-head"><AppIcon :path="activeApp.path" /><div><h3>{{ activeApp.app || t('connections.unknownApp') }}</h3><span class="pnm-app-exe">{{ activeApp.exe }}</span></div></div>
             <button type="button" class="pnm-dialog-close" :aria-label="t('common.close')" @click="closeDetail()"><X :size="19" /></button>
           </div>
           <dl class="pnm-detail-stats">
@@ -58,18 +61,20 @@
           <h4>{{ t('connections.netPolicy') }}</h4>
           <p v-if="!activeApp.app" class="pnm-policy-notice"><Info :size="14" /><span>{{ t('connections.unknownPolicyHint') }}</span></p>
           <div class="pnm-policies">
-            <button v-for="opt in policyMeta" :key="opt.value" type="button" class="pnm-policy" :disabled="generating || !activeApp.app" :aria-pressed="policyOf(activeApp.app) === opt.value" :class="{ on: policyOf(activeApp.app) === opt.value }" @click="pick(activeApp.app, opt.value)">
-              <component :is="opt.icon" class="pnm-policy-icon" :size="18" :stroke-width="1.8" />
-              <span class="pnm-policy-text"><span class="pnm-policy-label">{{ t(opt.label) }}</span><span class="pnm-policy-desc">{{ t(opt.desc) }}</span></span>
-              <Check v-if="policyOf(activeApp.app) === opt.value" class="pnm-policy-check" :size="16" :stroke-width="2" /><span v-else class="pnm-policy-check" />
-            </button>
+            <div v-for="opt in policyMeta" :key="opt.value" class="pnm-policy" :class="{ on: policyOf(activeApp.app) === opt.value }">
+              <button type="button" class="pnm-policy-choice" :disabled="generating || !activeApp.app" :aria-pressed="policyOf(activeApp.app) === opt.value" @click="pick(activeApp.app, opt.value)">
+                <component :is="opt.icon" class="pnm-policy-icon" :size="18" :stroke-width="1.8" />
+                <span class="pnm-policy-label">{{ t(opt.label) }}</span>
+                <Check v-if="policyOf(activeApp.app) === opt.value" class="pnm-policy-check" :size="16" :stroke-width="2" /><span v-else class="pnm-policy-check" />
+              </button>
+              <HelpTip :text="t(opt.desc)" inline />
+            </div>
           </div>
           <div class="pnm-policy-footer">
-            <span v-if="activeApp.app" class="pnm-policy-timing">{{ t('connections.nextConnect') }}</span>
+            <p v-if="applyMsg" class="pnm-apply" :class="applyTone" role="status">{{ t(applyMsg) }}</p>
             <button v-if="activeApp.app" type="button" class="pnm-generate" :disabled="generating || !dirty" @click="save">{{ generating ? t('connections.generating') : t('connections.savePolicy') }}</button>
             <button v-else type="button" class="pnm-dismiss" @click="closeDetail()">{{ t('common.close') }}</button>
           </div>
-          <p v-if="applyMsg" class="pnm-apply" :class="applyTone">{{ t(applyMsg) }}</p>
         </template>
     </div>
     <div ref="closePopover" popover="auto" role="dialog" :aria-label="t('connections.closeAllConnections')" class="pnm-popover pnm-confirm">
@@ -85,16 +90,28 @@ import { AppWindow, ArrowUpRight, Ban, Check, Info, CaseSensitive, WholeWord, Re
 import AppIcon from '../components/AppIcon.vue';
 import { connectionSearch, type SearchOptions } from '../lib/connection-search';
 import SelectMenu from '../components/ui/SelectMenu.vue';
+import HelpTip from '../components/ui/HelpTip.vue';
+import ConnectionDetails from '../components/ConnectionDetails.vue';
+import { connectionEndpoint, refreshConnectionSelection, type ConnectionRow, type ConnectionSelection } from '../lib/connection-details';
 import { useApp } from '../composables/useApp';
-import { appNameFromPath, connectionsForApp, processExecutablePath, type AppPolicy } from '../lib/app-policies';
+import { applicationGroups, connectionsForApp, type ApplicationGroup, type AppPolicy } from '../lib/app-policies';
 import { translator, type Locale, type MessageKey } from '../i18n';
 const props = defineProps<{ locale: Locale; nodeNames?: Record<string, string> }>();
 const { t, tx } = translator(() => props.locale);
 const { appPolicies, setAppPolicy } = useApp();
-type Row = { id: string; metadata: { host: string; destinationIP: string; destinationPort: string; processPath: string }; upload: number; download: number; uploadSpeed: number; downloadSpeed: number; start: string; chains: string[] };
+type Row = ConnectionRow;
 type Snapshot = { session: number; running: boolean; error?: string; uploadTotal: number; downloadTotal: number; active: Row[]; closed: Row[] };
-type AppGroup = { app: string; exe: string; rows: Row[]; download: number; upload: number; downloadSpeed: number; uploadSpeed: number };
+type AppGroup = ApplicationGroup<Row>;
 const snapshot = ref<Snapshot>({ session: 0, running: false, uploadTotal: 0, downloadTotal: 0, active: [], closed: [] });
+const selection = ref<ConnectionSelection>();
+let connectionAnchor: HTMLElement | undefined;
+const selectedConnectionActive = computed(() => snapshot.value.running && snapshot.value.active.some(row => row.id === selection.value?.row.id));
+function openConnection(row: Row, event: MouseEvent) {
+  selection.value = { session: snapshot.value.session, row };
+  const target = event.currentTarget as HTMLElement;
+  connectionAnchor = target.matches('button') ? target : target.querySelector<HTMLElement>('button') || undefined;
+}
+function closeConnection() { selection.value = undefined; if (connectionAnchor?.isConnected) connectionAnchor.focus(); }
 const selectedApp = ref('');
 const dialog = ref<HTMLElement>();
 const closePopover = ref<HTMLElement>();
@@ -127,11 +144,11 @@ async function openDetail(group: AppGroup, event: MouseEvent) {
   if (dialog.value && anchor) positionPopover(dialog.value, anchor);
 }
 function closeDetail() { dialog.value?.hidePopover(); anchor?.focus(); }
-function changeView(value: 'apps' | 'connections') { closeDetail(); view.value = value; query.value = ''; connectionApp.value = null; }
+function changeView(value: 'apps' | 'connections') { closeDetail(); selection.value = undefined; view.value = value; query.value = ''; connectionApp.value = null; }
 function showAppConnections(app: string) {
-  closeDetail(); connectionApp.value = app; query.value = ''; status.value = 'active'; view.value = 'connections';
+  closeDetail(); selection.value = undefined; connectionApp.value = app; query.value = ''; status.value = 'active'; view.value = 'connections';
 }
-function host(row: Row) { const value = row.metadata.host || row.metadata.destinationIP; return `${value.includes(':') ? `[${value}]` : value}:${row.metadata.destinationPort}`; }
+function host(row: Row) { return connectionEndpoint(row.metadata.host || row.metadata.destinationIP, row.metadata.destinationPort); }
 function chain(row: Row) { return row.chains.map(tag => props.nodeNames?.[tag] || tag).join(' / ') || '—'; }
 const scopedActive = computed(() => connectionsForApp(snapshot.value.active, connectionApp.value));
 const scopedClosed = computed(() => connectionsForApp(snapshot.value.closed, connectionApp.value));
@@ -164,7 +181,7 @@ const policyMeta = [
 const policyShortKey: Record<AppPolicy, MessageKey> = { inherit: 'connections.inheritShort', proxy: 'connections.proxyShort', direct: 'connections.directLabel', block: 'connections.blockShort' };
 // 草稿:选择只改草稿;「生成规则实现方案」按钮才把草稿保存为规则。
 const draft = ref<Record<string, AppPolicy>>({});
-const savedOf = (app: string): AppPolicy => appPolicies.value[app] ?? 'inherit';
+const savedOf = (app: string): AppPolicy => Object.prototype.hasOwnProperty.call(appPolicies.value, app) ? appPolicies.value[app] : 'inherit';
 const dirty = computed(() => draft.value[selectedApp.value] !== undefined && draft.value[selectedApp.value] !== savedOf(selectedApp.value));
 function pick(app: string, policy: AppPolicy) { draft.value = { ...draft.value, [app]: policy }; }
 const filterOptions = computed(() => ([
@@ -175,21 +192,10 @@ const filterOptions = computed(() => ([
   { value: 'block', label: t('connections.blockLabel') },
 ] as { value: typeof filter.value; label: string }[]));
 const policyOf = (app: string): AppPolicy => draft.value[app] ?? savedOf(app);
-const policyShort = (app: string) => t(policyShortKey[policyOf(app)]);
-const exeOf = (path: string) => path.split(/[\\/]/).pop() || '';
+const policyShort = (app: string) => t(policyShortKey[savedOf(app)]);
 function bytes(value: number) { const units = ['B','KB','MB','GB','TB']; let v = Math.max(0,value || 0), i = 0; while(v >= 1024 && i < units.length-1) { v /= 1024; i++; } return `${v.toFixed(i ? 1 : 0)} ${units[i]}`; }
-const groups = computed<AppGroup[]>(() => {
-  const map = new Map<string, AppGroup>();
-  for (const row of snapshot.value.active) {
-    const app = appNameFromPath(row.metadata.processPath);
-    let group = map.get(app);
-    if (!group) { group = { app, exe: exeOf(processExecutablePath(row.metadata.processPath)), rows: [], download: 0, upload: 0, downloadSpeed: 0, uploadSpeed: 0 }; map.set(app, group); }
-    group.rows.push(row);
-    group.download += row.download; group.upload += row.upload; group.downloadSpeed += row.downloadSpeed; group.uploadSpeed += row.uploadSpeed;
-  }
-  return [...map.values()].sort((a, b) => (b.downloadSpeed - a.downloadSpeed) || (b.download - a.download) || a.app.localeCompare(b.app));
-});
-const filteredGroups = computed(() => groups.value.filter(group => (filter.value === 'all' || (filter.value === 'configured' ? policyOf(group.app) !== 'inherit' : policyOf(group.app) === filter.value)) && search.value.matches(`${group.app || t('connections.unknownApp')} ${group.exe}`)));
+const groups = computed<AppGroup[]>(() => applicationGroups(snapshot.value.active, snapshot.value.closed, appPolicies.value));
+const filteredGroups = computed(() => groups.value.filter(group => (filter.value === 'all' || (filter.value === 'configured' ? savedOf(group.app) !== 'inherit' : savedOf(group.app) === filter.value)) && search.value.matches(`${group.app || t('connections.unknownApp')} ${group.exe}`)));
 const activeApp = computed(() => groups.value.find(group => group.app === selectedApp.value) || selectedGroup.value);
 const totalConns = computed(() => groups.value.reduce((sum, group) => sum + group.rows.length, 0));
 const configuredCount = computed(() => Object.keys(appPolicies.value).length);
@@ -197,19 +203,27 @@ async function save() {
   if (generating.value || !dirty.value) return;
   generating.value = true;
   applyMsg.value = '';
-  try { const app = selectedApp.value; const policy = draft.value[app]; if (!app || !policy) return; await setAppPolicy(app, policy); delete draft.value[app]; applyTone.value = 'ok'; applyMsg.value = 'connections.applied'; }
+  try { const app = selectedApp.value; const policy = draft.value[app]; if (!app || !policy) return; await setAppPolicy(app, policy); delete draft.value[app]; applyTone.value = 'ok'; applyMsg.value = 'connections.applied'; await refresh(); }
   catch (e) { applyTone.value = 'bad'; applyMsg.value = 'connections.applyFailed'; error.value = e instanceof Error ? e.message : String(e); }
   finally { generating.value = false; }
 }
 let stopped = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
+let popoverResize: ResizeObserver | undefined;
 async function refresh() {
-  try { const result = await invoke<Snapshot>('list_connections'); if(!stopped) { snapshot.value = result; loadError.value = ''; } }
+  try { const result = await invoke<Snapshot>('list_connections'); if(!stopped) { snapshot.value = result; selection.value = refreshConnectionSelection(selection.value, result); loadError.value = ''; } }
   catch { if(!stopped) loadError.value = t('connections.unableToLoadConnectionsMake'); }
 }
 async function poll() { if(stopped) return; if(!document.hidden) await refresh(); if(!stopped) timer = setTimeout(poll,1500); }
-onMounted(() => { window.addEventListener('resize', dismissPopovers); if('__TAURI_INTERNALS__' in window) void poll(); else error.value = t('connections.connectionMonitoringIsAvailableIn'); });
-onUnmounted(() => { stopped = true; clearTimeout(timer); window.removeEventListener('resize', dismissPopovers); });
+onMounted(() => {
+  popoverResize = new ResizeObserver(() => {
+    if (dialog.value?.matches(':popover-open') && anchor?.isConnected) positionPopover(dialog.value, anchor);
+  });
+  if (dialog.value) popoverResize.observe(dialog.value);
+  window.addEventListener('resize', dismissPopovers);
+  if('__TAURI_INTERNALS__' in window) void poll(); else error.value = t('connections.connectionMonitoringIsAvailableIn');
+});
+onUnmounted(() => { stopped = true; clearTimeout(timer); popoverResize?.disconnect(); window.removeEventListener('resize', dismissPopovers); });
 </script>
 <style scoped>
 .pnm-page { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
@@ -239,7 +253,8 @@ onUnmounted(() => { stopped = true; clearTimeout(timer); window.removeEventListe
 .pnm-search-modes button.on { color:var(--accent-text); background:var(--selected); }
 .pnm-search.invalid { border-color:var(--danger); }
 .pnm-search input::placeholder { color:var(--muted); }
-.pnm-table-scroll { flex:1; min-height:0; overflow:auto; }
+.pnm-inspector-layout { flex:1; min-height:0; display:flex; overflow:hidden; }
+.pnm-table-scroll { flex:1; min-width:0; min-height:0; overflow:auto; }
 .pnm-table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:13px; }
 .pnm-table th { position:sticky; top:0; z-index:1; background:var(--surface); color:var(--muted); font-size:12px; font-weight:500; }
 .pnm-table th,.pnm-table td { text-align:left; height:46px; padding:8px 12px; border-bottom:1px solid var(--line); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -248,6 +263,10 @@ onUnmounted(() => { stopped = true; clearTimeout(timer); window.removeEventListe
 .pnm-table .number { text-align:right; font-variant-numeric:tabular-nums; }
 .pnm-table .policy-cell { text-align:right; }
 .pnm-connection-table { min-width:720px; }
+.pnm-connection-row { cursor:pointer; }
+.pnm-connection-row.selected { background:var(--selected); }
+.pnm-connection-host { display:block; width:100%; min-height:26px; padding:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; border:0; border-radius:3px; background:transparent; color:inherit; font-size:inherit; font-weight:inherit; }
+.pnm-connection-host:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
 .pnm-app-row { cursor:pointer; }
 .pnm-app-identity { display:flex; align-items:center; justify-content:flex-start; gap:10px; min-width:0; width:100%; min-height:28px; padding:0; border:0; border-radius:4px; background:transparent; text-align:left; color:var(--text); }
 .pnm-app-identity:hover:not(:disabled) { background:transparent; color:var(--accent-text); }
@@ -282,23 +301,22 @@ onUnmounted(() => { stopped = true; clearTimeout(timer); window.removeEventListe
 .pnm-policy-notice { display:flex; align-items:flex-start; gap:6px; margin:0 0 8px; color:var(--muted); font-size:11px; line-height:1.5; }
 .pnm-policy-notice svg { flex:none; margin-top:1px; }
 .pnm-policies { display:flex; flex-direction:column; gap:2px; }
-.pnm-policy { display:flex; align-items:center; gap:10px; width:100%; min-height:52px; padding:8px; border:0; border-radius:7px; background:transparent; text-align:left; }
-.pnm-policy:hover:not(:disabled) { background:var(--hover); }
+.pnm-policy { display:flex; align-items:center; gap:4px; width:100%; padding-right:8px; border-radius:7px; }
+.pnm-policy:hover { background:var(--hover); }
 .pnm-policy.on { background:var(--selected); }
-.pnm-policy:disabled { opacity:1; cursor:not-allowed; }
+.pnm-policy-choice { display:flex; align-items:center; gap:10px; flex:1; min-width:0; min-height:40px; padding:8px; border:0; border-radius:7px; background:transparent; text-align:left; }
+.pnm-policy-choice:disabled { opacity:1; cursor:not-allowed; }
+.pnm-policy-choice:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
 .pnm-policy-icon { flex:none; color:var(--muted); }
 .pnm-policy.on .pnm-policy-icon,.pnm-policy.on .pnm-policy-label { color:var(--accent-text); }
-.pnm-policy-text { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
-.pnm-policy-label { font-size:13px; font-weight:500; color:var(--text); }
-.pnm-policy-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+.pnm-policy-label { flex:1; min-width:0; font-size:13px; font-weight:500; color:var(--text); }
 .pnm-policy-check { flex:none; width:16px; color:var(--accent-text); }
 .pnm-policy-footer { display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
-.pnm-policy-timing { flex:1; color:var(--muted); font-size:11px; }
 .pnm-generate,.pnm-dismiss { flex:none; min-height:30px; padding:5px 10px; border-radius:7px; font-size:12px; line-height:18px; }
 .pnm-generate { background:var(--accent); color:#fff; border:0; font-weight:500; }
 .pnm-generate:hover:not(:disabled) { background:var(--primary-hover); color:#fff; }
 .pnm-generate:disabled { opacity:1; background:var(--seg-bg); color:var(--muted); }
-.pnm-apply { margin:10px 0 0; font-size:12px; line-height:1.5; }
+.pnm-apply { flex:1; min-width:0; margin:0; font-size:12px; line-height:1.5; white-space:nowrap; }
 .pnm-apply.ok { color:var(--success); }
 .pnm-apply.bad { color:var(--danger); }
 
@@ -307,6 +325,9 @@ onUnmounted(() => { stopped = true; clearTimeout(timer); window.removeEventListe
   .pnm-app-scope { max-width:120px; }
   .pnm-topbar { flex-wrap:wrap; gap:8px 12px; }
   .pnm-stats { order:3; flex-basis:100%; gap:18px; }
+}
+@container connections (max-width:820px) {
+  .pnm-inspector-layout { flex-direction:column; }
 }
 .pnm-page { container-type:inline-size; container-name:connections; }
 </style>

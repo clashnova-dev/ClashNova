@@ -1,0 +1,33 @@
+[package]
+name = "airport-lan"
+version = "0.1.0"
+edition = "2021"
+authors = ["clashnova-dev"]
+description = "ClashNova 局域网文件传输核心：设备发现、TLS 传输、分块校验与本地存储，独立于代理内核与 Tauri"
+
+# 说明：本 crate 不依赖 Tauri，桌面端由 src-tauri 适配，移动端可经 FFI 复用。
+# 骨架阶段仅引入已实际使用的依赖；传输/TLS/发现实现阶段再加入
+# axum、rustls、rcgen、reqwest、socket2 等（见 docs/desktop/局域网文件传输设计.md 第 4 节技术栈）。
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "macros", "sync", "fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+log = "0.4"
+if-addrs = "0.13"
+rusqlite = { version = "0.32", features = ["bundled"] }
+axum = "0.7"
+reqwest = { version = "0.13", default-features = false, features = ["json", "stream", "rustls"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = "0.3"
+async-trait = "0.1"
+socket2 = { version = "0.5", features = ["all"] }
+rcgen = "0.13"
+rustls = "0.23"
+axum-server = { version = "0.7", features = ["tls-rustls"] }
+
+[dev-dependencies]
+tempfile = "3"

@@ -3,7 +3,7 @@ import { nextTick, ref, useId } from "vue";
 import { CircleHelp } from "@lucide/vue";
 
 // A "?" after a label that shows its explanation on hover or keyboard focus.
-defineProps<{ text: string }>();
+defineProps<{ text: string; inline?: boolean }>();
 const id = useId();
 const open = ref(false);
 const anchor = ref<HTMLElement | null>(null);
@@ -25,8 +25,8 @@ async function show() {
 </script>
 <template>
   <span class="help-tip">
-    <button ref="anchor" type="button" class="help-tip-button" :aria-label="text" :aria-describedby="open ? id : undefined" @mouseenter="show" @mouseleave="open = false" @focus="show" @blur="open = false" @keydown.esc="open = false"><CircleHelp :size="15" /></button>
-    <Teleport to="body"><span v-if="open" :id="id" ref="bubble" class="help-tip-bubble" role="tooltip" :style="position">{{ text }}</span></Teleport>
+    <button ref="anchor" type="button" class="help-tip-button" :aria-label="text" :aria-describedby="open ? id : undefined" @mouseenter="show" @mouseleave="open = false" @focus="show" @blur="open = false" @keydown.esc.stop.prevent="open = false"><CircleHelp :size="15" /></button>
+    <Teleport to="body" :disabled="inline"><span v-if="open" :id="id" ref="bubble" class="help-tip-bubble" role="tooltip" :style="position">{{ text }}</span></Teleport>
   </span>
 </template>
 <style scoped>

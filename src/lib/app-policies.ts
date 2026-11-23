@@ -65,6 +65,47 @@ export function appPolicyRules(policies: Record<string, AppPolicy>): unknown[] {
   return rules;
 }
 
+// Reserved matchers are installed once by the bundled core, before it starts.
+// Their contents can then change without restarting the tunnel or other apps.
+export function liveAppPolicyRules(policies: Record<string, AppPolicy>): unknown[] {
+  return (['block', 'proxy', 'direct'] as const).map(policy => ({
+    inbound: [`clashnova-app-${policy}`],
+    process_path_regex: Object.entries(policies).filter(([, value]) => value === policy).map(([app]) => appPathRegex(app)).concat('^$'),
+    ...(policy === 'block' ? { action: 'reject' } : { outbound: policy === 'proxy' ? 'select' : 'direct' }),
+  }));
+}
+
+export type AppConnection = {
+  metadata: { processPath: string }; download: number; upload: number; downloadSpeed: number; uploadSpeed: number;
+};
+export type ApplicationGroup<T> = { app: string; exe: string; path: string; rows: T[]; download: number; upload: number; downloadSpeed: number; uploadSpeed: number };
+
+/** Configured applications remain manageable even after blocking removes every live connection. */
+export function applicationGroups<T extends AppConnection>(active: T[], closed: T[], policies: Record<string, AppPolicy>): ApplicationGroup<T>[] {
+  const groups = new Map<string, ApplicationGroup<T>>();
+  const ensure = (app: string, path = '') => {
+    let group = groups.get(app);
+    if (!group) {
+      group = { app, exe: '', path: '', rows: [], download: 0, upload: 0, downloadSpeed: 0, uploadSpeed: 0 };
+      groups.set(app, group);
+    }
+    if (path && !group.path) { group.path = path; group.exe = processExecutablePath(path).split(/[\\/]/).pop() || ''; }
+    return group;
+  };
+  for (const [app, policy] of Object.entries(policies)) if (app && policy !== 'inherit') ensure(app);
+  for (const row of active) {
+    const group = ensure(appNameFromPath(row.metadata.processPath), row.metadata.processPath);
+    group.rows.push(row);
+    group.download += row.download; group.upload += row.upload;
+    group.downloadSpeed += row.downloadSpeed; group.uploadSpeed += row.uploadSpeed;
+  }
+  for (const row of closed) {
+    const app = appNameFromPath(row.metadata.processPath);
+    if (groups.has(app)) ensure(app, row.metadata.processPath);
+  }
+  return [...groups.values()].sort((a, b) => b.downloadSpeed - a.downloadSpeed || b.download - a.download || a.app.localeCompare(b.app));
+}
+
 // Use the same process identity as the application groups, never a destination/host substring.
 // null means all applications; an empty name is the explicit unknown-process group.
 export function connectionsForApp<T extends { metadata: { processPath: string } }>(rows: T[], app: string | null): T[] {

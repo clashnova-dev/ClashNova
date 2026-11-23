@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { confirmation } from "../lib/confirmation";
 import { useApp } from "../composables/useApp";
+import LanStorageSettings from "../components/settings/LanStorageSettings.vue";
 import LanProxyAddresses from "../components/settings/LanProxyAddresses.vue";
 import TunServiceSettings from "../components/settings/TunServiceSettings.vue";
 import ShortcutSettings from "../components/settings/ShortcutSettings.vue";
@@ -31,6 +32,7 @@ async function changeRoute(value: "rule" | "global") {
       <div class="setting-row"><span>{{ t("settings.showLiveSpeed") }}<HelpTip :text="t('settings.showUploadAndDownloadSpeed')" /></span><button type="button" role="switch" :aria-checked="showTraySpeed" :aria-label="t('settings.showLiveSpeed')" class="toggle-switch" :class="{ enabled: showTraySpeed }" @click="showTraySpeed = !showTraySpeed"><span /></button></div>
       <div class="setting-row"><span><label for="probe-concurrency">{{ t("settings.testConcurrency") }}</label><HelpTip :text="t('settings.testConcurrencyHelp')" /></span><input id="probe-concurrency" v-model.number="probeConcurrency" @change="probeConcurrency = Math.min(64, Math.max(1, Math.round(Number(probeConcurrency) || 8)))" type="number" min="1" max="64" step="1" inputmode="numeric" autocomplete="off" class="port-input" /></div>
     </section>
+    <LanStorageSettings />
     <section class="settings-card" :aria-label="t('settings.connectionSettings')">
       <h2>{{ t("settings.connectionSettings") }}</h2>
       <div class="setting-row"><span>{{ t("common.proxyHandling") }}<HelpTip :text="t('settings.systemProxyCannotCaptureWebrtc')" /></span><div class="seg" role="group" :aria-label="t('common.proxyHandling')"><button type="button" :aria-pressed="connectionMode === 'system'" :class="{ chosen: connectionMode === 'system' }" @click="changeProxy('system')">{{ t("common.systemProxy") }}</button><button type="button" :aria-pressed="connectionMode === 'tun'" :class="{ chosen: connectionMode === 'tun' }" @click="changeProxy('tun')">TUN</button></div></div>

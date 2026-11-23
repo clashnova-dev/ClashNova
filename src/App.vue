@@ -17,6 +17,7 @@
         <RulesPage v-else-if="tab === 'rules'" />
         <Logs v-else-if="tab === 'logs'" />
         <NetworkCheck v-else-if="tab === 'network'" />
+        <LanTransfer v-else-if="tab === 'lan'" />
         <SettingsPage v-else-if="tab === 'settings'" />
         <HelpPage v-else :locale="locale" @back="tab = 'settings'" />
       </main>
@@ -61,6 +62,7 @@ import Subscriptions from "./pages/SubscriptionsPage.vue";
 import Logs from "./pages/LogsPage.vue";
 import NetworkCheck from "./pages/NetworkCheckPage.vue";
 import SettingsPage from "./pages/SettingsPage.vue";
+import LanTransfer from "./pages/LanTransferPage.vue";
 import { Minus, X, Square, CircleUserRound, ChevronDown, Plus } from "@lucide/vue";
 const { enableLogin, locale, phaseTone, statusChipText, guardBlocking, releaseGuard, access, accountMenu, addExternal, busy, chooseFile, closeProfileDialog, importDialog, importError, importTarget, confirmImport, dismissImport, connectionNodeNames, email, isMac, isNative, label, localMode, logout, logs, mainContent, navigation, newProfileName, newProfileUrl, nodes, profileDialog, profileError, profileNameInput, resetProfileDialog, selectedFile, t, tx, tab, title, windowAction, bootstrap, teardown } = useApp();
 onMounted(bootstrap);

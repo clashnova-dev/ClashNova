@@ -4,6 +4,16 @@ import {ruleGroups,rulePage} from '../src/lib/rule-viewer.ts';
 import {CHINA_DOMAINS} from '../src/lib/china-domains.ts';
 import {builtinRouteRules} from '../src/lib/routing-rules.ts';
 import {connectionSearch} from '../src/lib/connection-search.ts';
+import {liveAppPolicyRules} from '../src/lib/app-policies.ts';
+test('live policy implementation slots do not leak into the rules table or shift source labels',()=>{
+ const empty=ruleGroups([...liveAppPolicyRules({}),...builtinRouteRules(true)],'select',3,2);
+ assert.ok(empty.every(group=>group.source!=='application'));
+ assert.equal(empty[0].source,'builtin');
+ const configured=ruleGroups([...liveAppPolicyRules({Cursor:'block'}),...builtinRouteRules(true)],'select',3,2);
+ assert.equal(configured[0].source,'application');assert.equal(configured[0].kind,'PROCESS-REGEX');
+ assert.equal(configured[0].values.length,1);assert.ok(!configured[0].values[0].includes('clashnova-app-'));
+ assert.equal(configured[1].source,'builtin');
+});
 test('production rules page keeps ordering and renders only a bounded page',()=>{
  const groups=ruleGroups([
   {process_name:['Example.exe'],outbound:'direct'},

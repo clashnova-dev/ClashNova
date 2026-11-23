@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- macOS 14+（含 26 Tahoe）要求声明本地网络用途，否则局域网发现/传输所需的
+	     UDP 组播与同网段连接会被系统静默拦截。Tauri 会把本文件合并进 app 的 Info.plist。 -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ClashNova 需要访问本地网络，用于在局域网内发现你的其他设备并与之互传文件。</string>
+</dict>
+</plist>

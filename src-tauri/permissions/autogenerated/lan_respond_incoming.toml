@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-respond-incoming"
+description = "Enables the lan_respond_incoming command without any pre-configured scope."
+commands.allow = ["lan_respond_incoming"]
+
+[[permission]]
+identifier = "deny-lan-respond-incoming"
+description = "Denies the lan_respond_incoming command without any pre-configured scope."
+commands.deny = ["lan_respond_incoming"]

@@ -63,10 +63,11 @@ jobs:
             ~/.cargo/git
             src-tauri/target
             tun-service/target
-          key: clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}-${{ github.sha }}
+            airport-lan/target
+          key: clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock', 'airport-lan/Cargo.lock') }}-${{ github.sha }}
           restore-keys: |
-            clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}-
-            clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock') }}
+            clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock', 'airport-lan/Cargo.lock') }}-
+            clashnova-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.lock', 'tun-service/Cargo.lock', 'airport-lan/Cargo.lock') }}
             clashnova-${{ runner.os }}-${{ matrix.target }}-
       - name: Linux dependencies
         if: runner.os == 'Linux'
@@ -83,6 +84,8 @@ jobs:
       - run: python scripts/prepare-sidecars.py --target ${{ matrix.target }}
       - run: python scripts/prepare-sidecars.py --test
       - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path tun-service/Cargo.toml
+      - name: LAN transfer tests
+        run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path airport-lan/Cargo.toml
       - run: python scripts/prepare-tun-service.py
       - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
       - name: Clean cached package outputs
@@ -105,6 +108,7 @@ jobs:
             ~/.cargo/git
             src-tauri/target
             tun-service/target
+            airport-lan/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - uses: actions/upload-artifact@v4
         with:

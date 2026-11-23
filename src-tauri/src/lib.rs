@@ -1,4 +1,5 @@
 mod app_icons;
+mod app_policies;
 mod external_url;
 mod conversion;
 mod subscription_url;
@@ -7,6 +8,7 @@ use startup::check_proxy_egress;
 mod recovery;
 pub mod watchdog;
 mod lan;
+mod lan_transfer;
 mod connection;
 mod connections;
 mod message;
@@ -104,6 +106,9 @@ struct Snapshot {
     logs: Vec<String>,
     /// The tunnel dropped and the kill switch is holding the network closed.
     blocked: bool,
+    /// The kill switch is armed: were the tunnel to drop, the network would be held closed.
+    /// Lets the UI confirm protection is really in effect, not only that the setting is on.
+    guarded: bool,
 }
 
 pub(crate) fn remember(logs: &Mutex<Vec<String>>, line: &str) {
@@ -171,6 +176,7 @@ impl Core {
             message: self.message.clone(),
             logs: self.logs.lock().expect("log buffer").clone(),
             blocked: self.tun_guard && self.child.is_none(),
+            guarded: self.tun_guard,
         }
     }
 
@@ -1356,6 +1362,8 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_notification::init())
@@ -1387,6 +1395,7 @@ pub fn run() {
             connections::list_connections,
             connections::application_icon,
             connections::close_connections,
+            app_policies::set_application_policy,
             sync_tray,
             load_network_settings,
             settings_store::get_client_setting,
@@ -1412,17 +1421,65 @@ pub fn run() {
             set_connection_mode,
             connect,
             disconnect,
-            open_external
+            open_external,
+            lan_transfer::lan_get_local_device,
+            lan_transfer::lan_add_manual_device,
+            lan_transfer::lan_get_settings,
+            lan_transfer::lan_update_settings,
+            lan_transfer::lan_refresh_devices,
+            lan_transfer::lan_list_transfers,
+            lan_transfer::lan_send_files,
+            lan_transfer::lan_send_text,
+            lan_transfer::lan_respond_incoming,
+            lan_transfer::lan_pause_transfer,
+            lan_transfer::lan_resume_transfer,
+            lan_transfer::lan_cancel_transfer,
+            lan_transfer::lan_get_history,
+            lan_transfer::lan_clear_history,
+            lan_transfer::lan_list_trusted,
+            lan_transfer::lan_unpair,
+            lan_transfer::lan_pair,
+            lan_transfer::lan_respond_pair,
+            lan_transfer::lan_get_conversation,
+            lan_transfer::lan_open_path,
+            lan_transfer::lan_reveal_path,
+            lan_transfer::lan_delete_file,
+            lan_transfer::lan_copy_file_to_clipboard,
+            lan_transfer::lan_clipboard_files,
+            lan_transfer::lan_start,
+            lan_transfer::lan_stop,
+            lan_transfer::lan_pick_files,
+            lan_transfer::lan_pick_save_directory
         ])
         .setup(move |app| {
             app.manage(Arc::new(settings_store::SettingsStore::open(app.path().app_data_dir()?.join("airport-settings.json"))));
+            {
+                // 局域网传输服务状态，生命周期独立于代理连接（见 docs/desktop/局域网文件传输设计.md 第 6 节）。
+                let lan_dir = app.path().app_data_dir()?.join("lan");
+                fs::create_dir_all(&lan_dir)?;
+                let save_dir = app.path().download_dir().unwrap_or_else(|_| lan_dir.clone());
+                // 默认别名用机器名，避免多台设备都叫 “ClashNova” 无法区分（取不到则回退）。
+                let alias = {
+                    let host = tauri_plugin_os::hostname();
+                    let host = host.strip_suffix(".local").unwrap_or(&host).trim();
+                    if host.is_empty() { "ClashNova".to_string() } else { host.to_string() }
+                };
+                app.manage(lan_transfer::LanTransferState::new(airport_lan::LanConfig::new(
+                    alias,
+                    lan_dir,
+                    save_dir,
+                )));
+                // 常驻拉起：接收端与组播发现随 App 启动运行，不依赖打开局域网页面。
+                log::info!("[lan] setup: calling autostart");
+                lan_transfer::autostart(app.handle());
+            }
             // Keep the main window hidden at its real size. The webview shows it
             // once, after it knows whether this launch is the login card or the main window.
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.hide();
                 let _ = window.set_resizable(true);
                 let _ = window.set_min_size(Some(tauri::LogicalSize::new(820.0, 650.0)));
-                let _ = window.set_size(tauri::LogicalSize::new(900.0, 670.0));
+                let _ = window.set_size(tauri::LogicalSize::new(960.0, 670.0));
             }
             {
                 let dir = app.path().app_config_dir()?;

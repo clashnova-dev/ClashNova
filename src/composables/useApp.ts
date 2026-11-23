@@ -4,7 +4,7 @@ import { createAuthenticatedApi } from "../lib/authenticated-api";
 import { confirmation } from "../lib/confirmation";
 import { restoreCrashConnection } from "../lib/crash-recovery";
 import { ref, computed, watch, nextTick, type Component } from "vue";
-import { House, Layers, Rss, Network, ScrollText, Settings, Radar, Route } from "@lucide/vue";
+import { House, Layers, Rss, Network, ScrollText, Settings, Radar, Route, Share2 } from "@lucide/vue";
 import { reduce, type Phase } from "../lib/connection";
 import { notifications, loadNotificationPreference, prepareNotifications, dismissNotice } from "../lib/notifications";
 import { ensureTunService, refreshTunService, tunServiceBusy } from "../lib/tun-service";
@@ -15,12 +15,14 @@ import { DEFAULT_PROXY_PORT, DEFAULT_TUN_MTU, defaultTunSettings, parseRouteExcl
 import { preferencesKey, type Preferences } from "../lib/preferences";
 import { loadExternalSubscriptions } from "../lib/subscriptions-store";
 import { appPoliciesStoreKey, loadStoredPreferences, networkSecurityStoreKey, networkSettingsStoreKey, openSettingsStore, rememberStored, saveStoredPreferences, writeStored, readClientSetting, writeClientSetting, readLegacyClientValue, removeLegacyClientValue, type SettingStore, type StoreStatus } from "../lib/settings-store";
+import { MAIN_WINDOW, acceptMainWindow } from "../lib/window-size";
 import { defaultNetworkSecurity, parseNetworkSecurity, type NetworkSecurity } from "../lib/network-security";
-import { appPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
+import { liveAppPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
 import { parseSingBoxProfile } from "../lib/profiles";
 import { sortByLatency } from "../lib/node-order";
 import { regionCode } from "../lib/regions";
 import { encode, msg, translator, type Locale, type MessageKey, type Text } from "../i18n";
+import type { LanLocalDevice, LanDiscoveredDevice, LanTransferTask, LanHistoryEntry, LanSettings, LanIncomingRequest, LanProgress, LanTrustedDevice, LanPairRequest } from "../lib/lan-transfer";
 import { parseDeepLink, redeemedSubscription } from "../lib/deep-link";
 import { builtinRouteRules } from "../lib/routing-rules";
 
@@ -43,7 +45,7 @@ function applyTheme() {
 watch([theme, locale], applyTheme, { immediate: true });
 colorScheme.addEventListener("change", applyTheme);
 
-const tab = ref<"home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "settings" | "help">("home");
+const tab = ref<"home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "lan" | "settings" | "help">("home");
 const mainContent = ref<HTMLElement | null>(null);
 const logViewport = ref<HTMLElement | null>(null);
 const followLogs = ref(true);
@@ -189,6 +191,8 @@ const baseUrl = ref(defaultServer);
 const rememberMe = ref(false);
 // The tunnel dropped and the kill switch is holding the network closed until it is back or released.
 const guardBlocking = ref(false);
+// 断线保护是否真正武装(后端 arm 成功):用于在连接中确认保护已生效,而非仅开关已开。
+const guardArmed = ref(false);
 const email = ref("");
 const password = ref("");
 const access = ref("");
@@ -231,10 +235,11 @@ const routeMode = ref<"rule" | "global">("rule");
 const nodes = ref<{ id: string; name: string; region: string; host: string; port: number; protocol: string; agentOnline: boolean; appliedConfigVersion: number; latestConfigVersion: number }[]>([]);
 const activeSub = ref<{ planName: string; usedChargedBytes: number; limitBytes: number; expiresAt?: string | null; subscriptionUrl?: string } | null>(null);
 const navigation = computed(() => {
-  const items: { key: "home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "settings" | "help"; label: MessageKey; icon: Component }[] = [
+  const items: { key: "home" | "nodes" | "sub" | "connections" | "rules" | "logs" | "network" | "lan" | "settings" | "help"; label: MessageKey; icon: Component }[] = [
     { key: "home", label: "nav.overview", icon: House }, { key: "nodes", label: "nav.nodes", icon: Layers },
     { key: "sub", label: "nav.subscriptions", icon: Rss }, { key: "connections", label: "nav.connections", icon: Network }, { key: "rules", label: "nav.rules", icon: Route }, { key: "logs", label: "nav.logs", icon: ScrollText },
     { key: "network", label: "nav.networkCheck", icon: Radar },
+    { key: "lan", label: "nav.lanTransfer", icon: Share2 },
     { key: "settings", label: "nav.settings", icon: Settings },
   ];
   return items;
@@ -246,7 +251,7 @@ const chainActive = computed(() => chain.value.length >= 2);
 const chainNames = computed(() => chain.value.map((id) => nodes.value.find((n) => n.id === id)?.name || id));
 const chainSummary = computed(() => chainNames.value.join(" → "));
 const connectionNodeNames = computed(() => Object.fromEntries([["select",t("connections.selector")],["direct",t("connections.direct")],[AUTOMATIC_OUTBOUND_TAG,t("nodes.automatic")],...nodes.value.map(node => [profileKind.value === "external" ? node.id : `node-${node.id.replaceAll("-", "").slice(0, 8)}`, node.name])]));
-const title = computed<MessageKey>(() => (({ home: "nav.overview", nodes: "nav.nodes", sub: "nav.subscriptions", connections: "nav.connections", rules: "nav.rules", logs: "nav.logs", network: "nav.networkCheck", settings: "nav.settings", help: "nav.help" } as const)[tab.value]));
+const title = computed<MessageKey>(() => (({ home: "nav.overview", nodes: "nav.nodes", sub: "nav.subscriptions", connections: "nav.connections", rules: "nav.rules", logs: "nav.logs", network: "nav.networkCheck", lan: "nav.lanTransfer", settings: "nav.settings", help: "nav.help" } as const)[tab.value]));
 const label = computed<MessageKey>(() => (({
   IDLE: "status.idle",
   PREPARING: "status.preparing",
@@ -362,13 +367,14 @@ function latencyLabel(id: string) {
   return value === undefined ? "nodes.notTested" : `${value} ms`;
 }
 
-type Snapshot = { phase: Phase; message: string; logs?: string[]; blocked?: boolean };
+type Snapshot = { phase: Phase; message: string; logs?: string[]; blocked?: boolean; guarded?: boolean };
 type Bridge = {
   state(): Promise<Snapshot>;
   logs(): Promise<string[]>;
   proxyDiagnostics(): Promise<string>;
   inspectProxyPort(): Promise<PortConflict | null>;
   releaseProxyPort(token: string): Promise<void>;
+  setApplicationPolicy(app: string, policy: AppPolicy): Promise<{ policies: Record<string, AppPolicy>; applied: boolean; closed: number }>;
   loadNetworkSettings(): Promise<NetworkSettings>;
   saveNetworkSettings(settings: NetworkSettings): Promise<NetworkSettings>;
   saveProfile(config: string): Promise<void>;
@@ -385,6 +391,40 @@ type Bridge = {
   saveSubscriptions(data: string): Promise<void>;
   connect(mode: "system" | "tun" | "manual"): Promise<Snapshot>;
   disconnect(): Promise<Snapshot>;
+  lanGetLocalDevice(): Promise<LanLocalDevice>;
+  lanAddManualDevice(addr: string): Promise<LanDiscoveredDevice>;
+  lanGetSettings(): Promise<LanSettings>;
+  lanUpdateSettings(settings: LanSettings): Promise<LanSettings>;
+  lanRefreshDevices(): Promise<void>;
+  lanListTransfers(): Promise<LanTransferTask[]>;
+  lanSendFiles(fingerprint: string, paths: string[]): Promise<string[]>;
+  lanSendText(fingerprint: string, text: string): Promise<LanHistoryEntry>;
+  lanRespondIncoming(taskId: string, accept: boolean, saveDir: string | null): Promise<void>;
+  lanPair(fingerprint: string): Promise<void>;
+  lanRespondPair(requestId: string, accept: boolean): Promise<void>;
+  lanListTrusted(): Promise<LanTrustedDevice[]>;
+  lanUnpair(fingerprint: string): Promise<void>;
+  lanGetConversation(fingerprint: string): Promise<LanHistoryEntry[]>;
+  lanOpenPath(path: string): Promise<void>;
+  lanRevealPath(path: string): Promise<void>;
+  lanDeleteFile(id: string, path: string | null): Promise<void>;
+  lanCopyFileToClipboard(path: string): Promise<void>;
+  lanClipboardFiles(): Promise<string[]>;
+  lanPauseTransfer(taskId: string): Promise<void>;
+  lanResumeTransfer(taskId: string): Promise<void>;
+  lanCancelTransfer(taskId: string): Promise<void>;
+  lanGetHistory(): Promise<LanHistoryEntry[]>;
+  lanClearHistory(): Promise<void>;
+  lanStart(): Promise<void>;
+  lanStop(): Promise<void>;
+  lanPickFiles(): Promise<string[]>;
+  lanPickSaveDirectory(): Promise<string | null>;
+  onLanText?(cb: (message: LanHistoryEntry) => void): Promise<() => void>;
+  onLanDevices?(cb: (devices: LanDiscoveredDevice[]) => void): Promise<() => void>;
+  onLanIncoming?(cb: (req: LanIncomingRequest) => void): Promise<() => void>;
+  onLanTransfer?(cb: (task: LanTransferTask) => void): Promise<() => void>;
+  onLanProgress?(cb: (p: LanProgress) => void): Promise<() => void>;
+  onLanPair?(cb: (req: LanPairRequest) => void): Promise<() => void>;
   onState?(cb: (s: Snapshot) => void): Promise<() => void>;
   onProgress?(cb: (stage: string) => void): Promise<() => void>;
 };
@@ -400,6 +440,7 @@ async function bridge(): Promise<Bridge> {
       proxyDiagnostics: () => invoke("proxy_diagnostics"),
       inspectProxyPort: () => invoke("inspect_proxy_port"),
       releaseProxyPort: (token) => invoke("release_proxy_port", { token }),
+      setApplicationPolicy: (app, policy) => invoke("set_application_policy", { app, policy }),
       loadNetworkSettings: () => invoke("load_network_settings"),
       saveNetworkSettings: (settings) => invoke("save_network_settings", { settings }),
       saveProfile: (config) => invoke("save_profile", { config }),
@@ -423,6 +464,50 @@ async function bridge(): Promise<Bridge> {
       saveSubscriptions: (data) => invoke("save_subscriptions", { data }),
       connect: (mode) => invoke("connect", { mode }),
       disconnect: () => invoke("disconnect"),
+      lanGetLocalDevice: () => invoke("lan_get_local_device"),
+      lanAddManualDevice: (addr) => invoke("lan_add_manual_device", { addr }),
+      lanGetSettings: () => invoke("lan_get_settings"),
+      lanUpdateSettings: (settings) => invoke("lan_update_settings", { settings }),
+      lanRefreshDevices: () => invoke("lan_refresh_devices"),
+      lanListTransfers: () => invoke("lan_list_transfers"),
+      lanSendFiles: (fingerprint, paths) => invoke("lan_send_files", { fingerprint, paths }),
+      lanSendText: (fingerprint, text) => invoke("lan_send_text", { fingerprint, text }),
+      lanRespondIncoming: (taskId, accept, saveDir) => invoke("lan_respond_incoming", { task: taskId, accept, dir: saveDir }),
+      lanPair: (fingerprint) => invoke("lan_pair", { fingerprint }),
+      lanRespondPair: (requestId, accept) => invoke("lan_respond_pair", { request: requestId, accept }),
+      lanListTrusted: () => invoke("lan_list_trusted"),
+      lanUnpair: (fingerprint) => invoke("lan_unpair", { fingerprint }),
+      lanGetConversation: (fingerprint) => invoke("lan_get_conversation", { fingerprint }),
+      lanOpenPath: (path) => invoke("lan_open_path", { path }),
+      lanRevealPath: (path) => invoke("lan_reveal_path", { path }),
+      lanDeleteFile: (id, path) => invoke("lan_delete_file", { id, path }),
+      lanCopyFileToClipboard: (path) => invoke("lan_copy_file_to_clipboard", { path }),
+      lanClipboardFiles: () => invoke("lan_clipboard_files"),
+      lanPauseTransfer: (taskId) => invoke("lan_pause_transfer", { task: taskId }),
+      lanResumeTransfer: (taskId) => invoke("lan_resume_transfer", { task: taskId }),
+      lanCancelTransfer: (taskId) => invoke("lan_cancel_transfer", { task: taskId }),
+      lanGetHistory: () => invoke("lan_get_history"),
+      lanClearHistory: () => invoke("lan_clear_history"),
+      lanStart: () => invoke("lan_start"),
+      lanStop: () => invoke("lan_stop"),
+      lanPickFiles: () => invoke("lan_pick_files"),
+      lanPickSaveDirectory: () => invoke("lan_pick_save_directory"),
+      async onLanText(cb) { return listen<LanHistoryEntry>("lan://text", e => cb(e.payload)); },
+      async onLanDevices(cb) {
+        return listen<LanDiscoveredDevice[]>("lan://devices", e => cb(e.payload));
+      },
+      async onLanIncoming(cb) {
+        return listen<LanIncomingRequest>("lan://incoming", e => cb(e.payload));
+      },
+      async onLanTransfer(cb) {
+        return listen<LanTransferTask>("lan://transfer", e => cb(e.payload));
+      },
+      async onLanProgress(cb) {
+        return listen<LanProgress>("lan://progress", e => cb(e.payload));
+      },
+      async onLanPair(cb) {
+        return listen<LanPairRequest>("lan://pair", e => cb(e.payload));
+      },
       async onProgress(cb) {
         return listen<{ stage: string }>("connection://progress", event => cb(event.payload.stage));
       },
@@ -443,9 +528,43 @@ function browserBridge(): Bridge {
   let note = "preview.noCore";
   let lines: string[] = [];
   return {
+    async lanGetLocalDevice() { return { alias: "ClashNova", fingerprint: "", deviceType: "desktop", port: 53317 }; },
+    async lanAddManualDevice(addr) { return { alias: addr, fingerprint: addr, address: addr, port: 53317, deviceType: "desktop", trusted: false }; },
+    async lanGetSettings() { return { alias: "ClashNova", discoverable: true, acceptIncoming: true, autoAcceptTrusted: false, defaultSaveDir: "", maxConcurrent: 2 }; },
+    async lanUpdateSettings(settings) { return settings; },
+    async lanRefreshDevices() {},
+    async lanListTransfers() { return []; },
+    async lanSendFiles() { return []; },
+    async lanSendText() { throw new Error("native.lanNotImplemented"); },
+    async lanRespondIncoming() {},
+    async lanPair() {},
+    async lanRespondPair() {},
+    async lanListTrusted() { return []; },
+    async lanUnpair() {},
+    async lanGetConversation() { return []; },
+    async lanOpenPath() {},
+    async lanRevealPath() {},
+    async lanDeleteFile() {},
+    async lanCopyFileToClipboard() {},
+    async lanClipboardFiles() { return []; },
+    async lanPauseTransfer() {},
+    async lanResumeTransfer() {},
+    async lanCancelTransfer() {},
+    async lanGetHistory() { return []; },
+    async lanClearHistory() {},
+    async lanStart() {},
+    async lanStop() {},
+    async lanPickFiles() { return []; },
+    async lanPickSaveDirectory() { return null; },
     async proxyDiagnostics() { return "settings.proxyCheckDesktopOnly"; },
     async inspectProxyPort() { return null; },
     async releaseProxyPort() {},
+    async setApplicationPolicy(app, policy) {
+      const policies = { ...appPolicies.value };
+      if (policy === "inherit") delete policies[app]; else policies[app] = policy;
+      await writeClientSetting("appPolicies", policies);
+      return { policies, applied: false, closed: 0 };
+    },
     async loadNetworkSettings() { return previewSettings; },
     async saveNetworkSettings(settings) { previewSettings = settings; return settings; },
     async state() {
@@ -491,6 +610,7 @@ function browserBridge(): Bridge {
 function applySnapshot(snapshot: Snapshot) {
   phase.value = snapshot.phase;
   guardBlocking.value = snapshot.blocked === true;
+  guardArmed.value = snapshot.guarded === true;
   if (["CONNECTED", "IDLE", "FAILED"].includes(snapshot.phase)) connectionProgress.value = "";
   message.value = snapshot.phase === "CONNECTED" ? "status.ready" : snapshot.message;
   if (snapshot.logs) logs.value = snapshot.logs;
@@ -511,8 +631,9 @@ watch(message, value => {
 }, { flush: "sync" });
 watch(phase, (current, previous) => {
   if (!cacheReady || current === previous) return;
-  const body = current === "CONNECTED" ? "notifications.proxyConnected" : current === "FAILED" ? "notifications.connectionFailed" : current === "IDLE" && previous !== "IDLE" ? "notifications.proxyDisconnected" : "";
-  if (body) void notifications.show({ body: t(body), native: true, toast: false, kind: current === "FAILED" ? "error" : "success", key: `connection:${current}` });
+  // 异常断开(掉线重连)也走系统通知:断网保护正封锁网络时文案更明确;手动断开 → IDLE。
+  const body = current === "CONNECTED" ? "notifications.proxyConnected" : current === "FAILED" ? "notifications.connectionFailed" : current === "RECONNECTING" ? (guardBlocking.value ? "notifications.guardBlocking" : "notifications.connectionDropped") : current === "IDLE" && previous !== "IDLE" ? "notifications.proxyDisconnected" : "";
+  if (body) void notifications.show({ body: t(body), native: true, toast: false, kind: current === "CONNECTED" ? "success" : current === "IDLE" ? "info" : "error", key: `connection:${current}` });
 });
 let selectedNodes: Record<string, string> = {};
 let chains: Record<string, string[]> = {};
@@ -572,7 +693,6 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
 
   // The login screen is a card-sized window; the main UI is larger and keeps the size the user gave it.
   const LOGIN_WINDOW = { width: 360, height: 500 };
-  const MAIN_WINDOW = { width: 900, height: 670, minWidth: 820, minHeight: 650 };
   const mainWindowKey = "airport.window.main";
   let windowMode: "login" | "main" | "" = "";
   let windowBooted = false;
@@ -582,13 +702,7 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
   let windowQueue: Promise<void> = Promise.resolve();
   let stopWindowResize: (() => void) | undefined;
   let windowSaveTimer: ReturnType<typeof setTimeout> | undefined;
-  let rememberedMainWindow = { width: MAIN_WINDOW.width, height: MAIN_WINDOW.height };
-  const acceptMainWindow = (value: unknown) => {
-    const saved = value as { width?: number; height?: number } | null;
-    return Number.isFinite(saved?.width) && Number.isFinite(saved?.height)
-      ? { width: Math.max(MAIN_WINDOW.minWidth, Math.round(saved!.width!)), height: Math.max(MAIN_WINDOW.minHeight, Math.round(saved!.height!)) }
-      : null;
-  };
+  let rememberedMainWindow = { width: MAIN_WINDOW.width, height: MAIN_WINDOW.height, defaultWidth: MAIN_WINDOW.width };
   function savedMainWindow() { return rememberedMainWindow; }
   // Queued so a sign-in that lands while an earlier resize is still running cannot interleave with it.
   function syncWindowMode() {
@@ -629,7 +743,7 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
         try {
           if (windowMode !== "main" || await win.isMaximized() || await win.isFullscreen()) return;
           const size = (await win.innerSize()).toLogical(await win.scaleFactor());
-          const next = { width: Math.round(size.width), height: Math.round(size.height) };
+          const next = { width: Math.round(size.width), height: Math.round(size.height), defaultWidth: MAIN_WINDOW.width };
           await writeClientSetting("mainWindow", next, mainWindowKey);
           rememberedMainWindow = next;
         } catch { /* Remembering the size is best effort. */ }
@@ -649,6 +763,7 @@ function preventContextMenu(event: MouseEvent) { event.preventDefault(); }
     rememberedMainWindow = await readClientSetting("mainWindow", rememberedMainWindow, acceptMainWindow, {
       key: mainWindowKey, parse: raw => { try { return acceptMainWindow(JSON.parse(raw)); } catch { return null; } },
     });
+    await writeClientSetting("mainWindow", rememberedMainWindow, mainWindowKey);
     await loadNotificationPreference();
   } catch (error) { message.value = failure(error, "error.preferencesNotSaved"); }
   if (savedPrefs) {
@@ -1220,6 +1335,109 @@ async function removeExternal(profile: ExternalProfile) {
   }
 }
 
+// 订阅编辑:把编辑后的文本当作新的订阅内容——先规整(sing-box JSON 直通,YAML/分享链接经转换器)
+// 并校验,再更新本地保存的 raw;若正在使用该订阅,则重新激活以刷新节点并重新下发配置。
+async function saveExternalEdit(id: string, edited: string) {
+  if (busy.value) throw new Error("native.connectionBusy");
+  const profile = externalProfiles.value.find(item => item.id === id);
+  if (!profile) throw new Error("error.subscriptionGone");
+  busy.value = true;
+  try {
+    const raw = await normalizeExternalRaw(edited.trim());
+    const updated = { ...profile, raw, updatedAt: new Date().toISOString() };
+    const profiles = externalProfiles.value.map(item => item.id === id ? updated : item);
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
+    if (activeExternalId.value === id) await activateExternal(updated);
+  } finally {
+    busy.value = false;
+  }
+}
+
+// 编辑订阅信息:改名与改源。源地址变更且非空时重新拉取订阅并校验替换节点;仅改名只更新元数据。
+async function saveExternalInfo(id: string, name: string, url: string) {
+  if (busy.value) throw new Error("native.connectionBusy");
+  const profile = externalProfiles.value.find(item => item.id === id);
+  if (!profile) throw new Error("error.subscriptionGone");
+  const nextName = name.trim();
+  const nextUrl = url.trim();
+  if (!nextName) throw new Error("subscriptions.formIncomplete");
+  busy.value = true;
+  try {
+    let { raw, usage, updatedAt } = profile;
+    if (nextUrl && nextUrl !== profile.url) {
+      const downloaded = await (await bridge()).fetchSubscriptionDetails(nextUrl);
+      raw = await normalizeExternalRaw(downloaded.raw);
+      usage = parseSubscriptionUsage(downloaded.userinfo);
+      updatedAt = new Date().toISOString();
+    }
+    const updated = { ...profile, name: nextName, url: nextUrl, raw, usage, updatedAt };
+    const profiles = externalProfiles.value.map(item => item.id === id ? updated : item);
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
+    if (activeExternalId.value === id && raw !== profile.raw) await activateExternal(updated);
+  } finally {
+    busy.value = false;
+  }
+}
+
+// 编辑节点:keptTags = 保留的节点标签(列表里删剩的);add = 粘贴的 URI/Base64 文本(经转换器转成节点追加)。
+// 其余 outbounds(direct/block/selector 等)原样保留;重建后由 normalizeExternalRaw 校验,selector 会按当前节点自动重建。
+async function saveExternalNodes(id: string, keptTags: string[], add: string) {
+  if (busy.value) throw new Error("native.connectionBusy");
+  const profile = externalProfiles.value.find(item => item.id === id);
+  if (!profile) throw new Error("error.subscriptionGone");
+  busy.value = true;
+  try {
+    const isNode = (o: any) => o && typeof o === "object" && typeof o.server === "string" && o.server && Number.isInteger(o.server_port);
+    let added: unknown[] = [];
+    const text = add.trim();
+    if (text) {
+      const converted = JSON.parse(await normalizeExternalRaw(text));
+      added = Array.isArray(converted?.outbounds) ? converted.outbounds.filter(isNode) : [];
+      if (!added.length) throw new Error("error.noNodesAdded");
+    }
+    const config = JSON.parse(profile.raw);
+    const outbounds: any[] = Array.isArray(config.outbounds) ? config.outbounds : [];
+    const kept = outbounds.filter(o => isNode(o) && keptTags.includes(o.tag));
+    const others = outbounds.filter(o => !isNode(o));
+    config.outbounds = [...kept, ...added, ...others];
+    const raw = await normalizeExternalRaw(JSON.stringify(config));
+    const updated = { ...profile, raw, updatedAt: new Date().toISOString() };
+    const profiles = externalProfiles.value.map(item => item.id === id ? updated : item);
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
+    if (activeExternalId.value === id) await activateExternal(updated);
+  } finally {
+    busy.value = false;
+  }
+}
+
+// 编辑规则:text 为该订阅自带 route.rules 的 JSON 数组。仅替换 route.rules,其余配置不动;
+// 重建后由 normalizeExternalRaw 校验(非法规则会被 TUN 服务拒绝 / sing-box 检查拦下)。
+async function saveExternalRules(id: string, text: string) {
+  if (busy.value) throw new Error("native.connectionBusy");
+  const profile = externalProfiles.value.find(item => item.id === id);
+  if (!profile) throw new Error("error.subscriptionGone");
+  let rules: unknown;
+  try { rules = JSON.parse(text); } catch { throw new Error("error.rulesNotJson"); }
+  if (!Array.isArray(rules)) throw new Error("error.rulesNotArray");
+  busy.value = true;
+  try {
+    const config = JSON.parse(profile.raw);
+    config.route = config.route && typeof config.route === "object" ? config.route : {};
+    config.route.rules = rules;
+    const raw = await normalizeExternalRaw(JSON.stringify(config));
+    const updated = { ...profile, raw, updatedAt: new Date().toISOString() };
+    const profiles = externalProfiles.value.map(item => item.id === id ? updated : item);
+    await persistExternal(profiles);
+    externalProfiles.value = profiles;
+    if (activeExternalId.value === id) await activateExternal(updated);
+  } finally {
+    busy.value = false;
+  }
+}
+
 async function refreshLogs() {
   if (logsLoading.value) return;
   logsLoading.value = true;
@@ -1336,7 +1554,7 @@ function buildProfileConfig() {
   // The TUN DNS mirrors these direct domains; unmatched traffic uses the proxy.
   cfg.route.rules = routeMode.value === "rule" ? [...builtinRouteRules(true), ...(profileKind.value === "external" && Array.isArray(cfg.route.rules) ? cfg.route.rules : [])] : [];
   // 进程级策略:按应用注入 process 规则,放在最前,优先于默认与中国直连规则。
-  cfg.route.rules = [...appPolicyRules(appPolicies.value), ...cfg.route.rules];
+  cfg.route.rules = [...liveAppPolicyRules(appPolicies.value), ...cfg.route.rules];
   cfg.inbounds = [{ type: "mixed", tag: "mixed-in", listen: networkSettings.value.allowLan ? "0.0.0.0" : "127.0.0.1", listen_port: networkSettings.value.proxyPort }];
   // Rust owns TUN, DNS and permissions; imported profiles cannot create a tunnel.
   return JSON.stringify(cfg);
@@ -1389,12 +1607,14 @@ async function setNetworkSecurity(patch: Partial<NetworkSecurity>) {
 
 // 进程级网络管理:记录某应用的路由策略。inherit(跟随规则)是默认值,不落库。
 async function setAppPolicy(app: string, policy: AppPolicy) {
-  if (!app) return;
-  const next = { ...appPolicies.value };
-  if (policy === "inherit") delete next[app];
-  else next[app] = policy;
-  await writeStored(settingsStore, appPoliciesStoreKey, next, preferenceStoreStatus);
-  appPolicies.value = next;
+  if (!app || busy.value || tunServiceBusy.value) throw new Error("native.connectionBusy");
+  busy.value = true;
+  try {
+    const result = await (await bridge()).setApplicationPolicy(app, policy);
+    appPolicies.value = result.policies;
+    return result;
+  } catch (error) { await reconcileConnectionError(error); throw error; }
+  finally { busy.value = false; }
 }
 
 // Kill Switch 与 IPv6 的实际生效落在既有 TUN 设置;连接中不可更改(与设置页一致)。
@@ -1545,7 +1765,7 @@ async function toggle() {
     void refreshProxyDiagnostics();
   }
 }
-  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setTunProtection,repairNetwork,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
+  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,guardArmed,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setTunProtection,repairNetwork,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,saveExternalEdit,saveExternalInfo,saveExternalNodes,saveExternalRules,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
 }
 export type AppStore = ReturnType<typeof create>;
 let store: AppStore | null = null;

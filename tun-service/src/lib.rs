@@ -525,6 +525,20 @@ mod tests {
         assert!(safe_config(config()).is_ok());
     }
     #[test]
+    fn accepts_live_app_slots_without_granting_file_or_listener_access() {
+        let mut c = config();
+        c["outbounds"].as_array_mut().unwrap().push(serde_json::json!({"type":"selector","tag":"select","outbounds":["direct"]}));
+        c["route"] = serde_json::json!({"find_process":true,"rules":[
+            {"inbound":["clashnova-app-block"],"process_path_regex":["^$"],"action":"reject"},
+            {"inbound":["clashnova-app-proxy"],"process_path_regex":["^$"],"outbound":"select"},
+            {"inbound":["clashnova-app-direct"],"process_path_regex":["^$"],"outbound":"direct"}
+        ]});
+        let checked = safe_config(c.clone()).unwrap();
+        assert_eq!(checked["route"]["rules"].as_array().unwrap().len(), 3);
+        c["route"]["rules"][0]["path"] = "/etc/shadow".into();
+        assert!(safe_config(c).is_err());
+    }
+    #[test]
     fn untrusted_profile_options_block_local_access_but_keep_uri_paths() {
         for value in [
             serde_json::json!({"tls":{"key_path":"/tmp/private.key"}}),

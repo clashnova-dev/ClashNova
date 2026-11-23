@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import {computed,onUnmounted,ref,watch} from 'vue';
-import {Route,ChevronLeft,ChevronRight,ChevronsLeft,ChevronsRight} from '@lucide/vue';
+import {Route,ChevronLeft,ChevronRight,ChevronsLeft,ChevronsRight,Pencil} from '@lucide/vue';
 import {useApp} from '../composables/useApp';
 import SearchField from '../components/ui/SearchField.vue';
 import SelectMenu from '../components/ui/SelectMenu.vue';
+import ProfileRulesDialog from '../components/ProfileRulesDialog.vue';
 import {connectionSearch,type SearchOptions} from '../lib/connection-search';
-import {appPolicyRules} from '../lib/app-policies';
+import {liveAppPolicyRules} from '../lib/app-policies';
 import {ruleGroups,rulePage,type RuleSource,type RuleRow} from '../lib/rule-viewer';
 import {builtinRouteRules} from '../lib/routing-rules';
-const {t,tx,locale,rawProfile,buildProfileConfig,routeMode,appPolicies,connectionNodeNames,selectedNodeName,tab}=useApp();
+const {t,tx,locale,rawProfile,buildProfileConfig,routeMode,appPolicies,connectionNodeNames,selectedNodeName,tab,profileKind,currentExternal}=useApp();
+const rulesEditor=ref<InstanceType<typeof ProfileRulesDialog>|null>(null);
+function openRulesEditor(){ if(currentExternal.value) rulesEditor.value?.open(currentExternal.value); }
 const query=ref(''),appliedQuery=ref(''),source=ref<RuleSource|'all'>('all'),page=ref(1);
 const options=ref<SearchOptions>({caseSensitive:false,wholeWord:false,regex:false});
 let timer:ReturnType<typeof setTimeout>|undefined;
@@ -19,7 +22,7 @@ const data=computed(()=>{
  if(!rawProfile.value)return {groups:[],error:''};
  try{
   const config=JSON.parse(buildProfileConfig());
-  return {groups:ruleGroups(config.route?.rules,config.route?.final,appPolicyRules(appPolicies.value).length,builtinRouteRules(routeMode.value==='rule').length),error:''};
+  return {groups:ruleGroups(config.route?.rules,config.route?.final,liveAppPolicyRules(appPolicies.value).length,builtinRouteRules(routeMode.value==='rule').length),error:''};
  }catch(error){return {groups:[],error:String(error)};}
 });
 const sourceNames=computed(()=>({
@@ -40,6 +43,7 @@ function rowTitle(row:RuleRow){return t('rules.groupOrder',{order:row.order});}
    <div class="rules-toolbar">
     <SearchField v-model="query" v-model:options="options" :locale="locale" :label="t('rules.search')" :placeholder="t('rules.search')" :invalid="search.error" />
     <SelectMenu v-model="source" class="source-select" :label="t('rules.source')" :options="sourceOptions" />
+    <button v-if="profileKind === 'external' && currentExternal" type="button" class="rules-edit-btn" @click="openRulesEditor"><Pencil :size="15" />{{ t('rules.edit') }}</button>
    </div>
    <p v-if="search.error" class="rules-search-error" role="alert">{{ t('connections.invalidRegex') }}</p>
    <div class="rules-scroll">
@@ -63,6 +67,7 @@ function rowTitle(row:RuleRow){return t('rules.groupOrder',{order:row.order});}
     </nav>
    </footer>
   </div>
+  <ProfileRulesDialog ref="rulesEditor" />
  </section>
 </template>
 <style scoped>
@@ -70,6 +75,7 @@ function rowTitle(row:RuleRow){return t('rules.groupOrder',{order:row.order});}
 .rules-panel{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
 .rules-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px;border-bottom:1px solid var(--line);flex:none}
 .source-select{margin-left:auto;width:160px;min-width:140px}
+.rules-edit-btn{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:32px;padding:0 12px;font-size:13px}
 .source-select :deep(.select-trigger){min-height:32px;height:32px;font-size:12px}
 .rules-search-error{margin:0;padding:8px 12px;color:var(--danger);font-size:12px}
 .rules-scroll{flex:1;min-height:0;min-width:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--scrollbar) transparent}

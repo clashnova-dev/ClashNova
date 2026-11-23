@@ -105,6 +105,10 @@ func create(path string) (*box.Box, context.CancelFunc, error) {
 		options.Log = &option.LogOptions{}
 	}
 	options.Log.DisableColor = true
+	ctx, err = prepareAppPolicies(ctx, &options)
+	if err != nil {
+		return nil, nil, err
+	}
 	ctx, cancel := context.WithCancel(service.ExtendContext(ctx))
 	instance, err := box.New(box.Options{Context: ctx, Options: options})
 	if err != nil {

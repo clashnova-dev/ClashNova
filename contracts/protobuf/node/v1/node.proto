@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package airport.node.v1;
+
+option go_package = "airport.dev/airport-service/contracts/node/v1;nodev1";
+
+// P0 的节点通道使用与这些消息同字段的 JSON over HTTP。
+// 传输换成 gRPC 时保持 message_id、sequence、config_version 和幂等语义不变。
+
+message Envelope {
+  string message_id = 1;
+  uint64 sequence = 2;
+  uint64 config_version = 3;
+  int64 timestamp_unix_ms = 4;
+  uint32 protocol_version = 5;
+  oneof body {
+    Heartbeat heartbeat = 10;
+    TrafficBatch traffic = 11;
+    ConfigAck config_ack = 12;
+    CommandAck command_ack = 13;
+    Command command = 14;
+  }
+}
+
+message Heartbeat {
+  string node_id = 1;
+  string agent_version = 2;
+  uint64 applied_config_version = 3;
+}
+
+message TrafficBatch {
+  string node_id = 1;
+  uint64 collector_epoch = 2;
+  repeated TrafficItem items = 3;
+}
+
+message TrafficItem {
+  uint64 sequence = 1;
+  string credential_id = 2;
+  uint64 bytes_up = 3;
+  uint64 bytes_down = 4;
+  int64 observed_at_unix_ms = 5;
+}
+
+message ConfigAck {
+  string node_id = 1;
+  uint64 config_version = 2;
+  string checksum = 3;
+  bool applied = 4;
+  string error = 5;
+}
+
+message Command {
+  string command_id = 1;
+  string name = 2;
+  bytes payload = 3;
+}
+
+message CommandAck {
+  string command_id = 1;
+  bool ok = 2;
+  string error = 3;
+}

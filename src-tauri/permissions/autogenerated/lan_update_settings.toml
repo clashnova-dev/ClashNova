@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-update-settings"
+description = "Enables the lan_update_settings command without any pre-configured scope."
+commands.allow = ["lan_update_settings"]
+
+[[permission]]
+identifier = "deny-lan-update-settings"
+description = "Denies the lan_update_settings command without any pre-configured scope."
+commands.deny = ["lan_update_settings"]

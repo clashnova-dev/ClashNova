@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-delete-file"
+description = "Enables the lan_delete_file command without any pre-configured scope."
+commands.allow = ["lan_delete_file"]
+
+[[permission]]
+identifier = "deny-lan-delete-file"
+description = "Denies the lan_delete_file command without any pre-configured scope."
+commands.deny = ["lan_delete_file"]

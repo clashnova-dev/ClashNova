@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { CircleCheck, Crosshair, Globe, Network, Power, ExternalLink, ShieldCheck, Wifi, Wrench } from "@lucide/vue";
+import { CircleCheck, Crosshair, Globe, Network, Power, ExternalLink, ShieldAlert, ShieldCheck, Wifi, Wrench } from "@lucide/vue";
 import HelpTip from "../components/ui/HelpTip.vue";
 import UnlockCheck from "../components/UnlockCheck.vue";
 import { useApp } from "../composables/useApp";
@@ -10,7 +10,7 @@ import { collectWebrtc } from "../lib/webrtc-check";
 import { confirmation } from "../lib/confirmation";
 import type { MessageKey, Text } from "../i18n";
 
-const { t, tx, isNative, setTunProtection, repairNetwork, networkError, networkSettings, connected, busy, networkLoaded, connectionMode, setConnectionMode, selectedNode, routeMode, phase, tab, openExternal } = useApp();
+const { t, tx, isNative, setTunProtection, repairNetwork, networkError, networkSettings, connected, guardArmed, busy, networkLoaded, connectionMode, setConnectionMode, selectedNode, routeMode, phase, tab, openExternal } = useApp();
 const modeOptions = computed(() => [
   { value: 'system' as const, label: t('common.systemProxy') },
   { value: 'tun' as const, label: 'TUN' },
@@ -217,6 +217,7 @@ async function run() {
         <span class="sr-label"><Power class="sr-icon" :size="17" />{{ t('secnet.killSwitch') }}<HelpTip :text="t('secnet.killSwitchHint')" /></span>
         <button type="button" role="switch" :aria-checked="networkSettings.tun.killSwitch" :aria-label="t('secnet.killSwitch')" class="toggle-switch" :class="{ enabled: networkSettings.tun.killSwitch }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ killSwitch: !networkSettings.tun.killSwitch })"><span /></button>
       </div>
+      <p v-if="connected && networkSettings.tun.killSwitch" class="secnet-guard" :class="guardArmed ? 'ok' : 'bad'" role="status"><component :is="guardArmed ? ShieldCheck : ShieldAlert" :size="15" :stroke-width="2" />{{ t(guardArmed ? 'secnet.killSwitchActive' : 'secnet.killSwitchInactive') }}</p>
       <p v-if="connected" class="scope-note">{{ t('settings.disconnectToChangeNetworkSettings') }}</p>
       <div class="dns-path">
         <span>{{ t('check.dnsConfiguration') }}</span>
@@ -225,6 +226,7 @@ async function run() {
         <button type="button" @click="tab = 'settings'">{{ t('settings.dnsSettings') }}</button>
       </div>
     </template>
+    <p v-else class="scope-note secnet-guard-na"><ShieldAlert :size="14" :stroke-width="1.9" />{{ t('secnet.killSwitchTunOnly') }}</p>
     <p v-if="networkError" class="form-error" role="alert">{{ tx(networkError) }}</p>
     <div class="setting-row">
       <span class="sr-label"><Wrench class="sr-icon" :size="17" :stroke-width="1.8" />{{ t("secnet.repair") }}<HelpTip :text="t('secnet.repairHint')" /></span>
@@ -326,6 +328,11 @@ async function run() {
 .secnet .seg > button { flex: 1; }
 .secnet :focus-visible, .secnet-dialog :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .secnet-repair { flex: none; min-height: 34px; padding: 0 18px; }
+.secnet-guard { display: flex; align-items: center; gap: 7px; margin: 10px 0 0; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.secnet-guard.ok { color: var(--success); }
+.secnet-guard.bad { color: var(--danger); }
+.secnet-guard svg, .secnet-guard-na svg { flex: none; }
+.secnet-guard-na { display: flex; align-items: center; gap: 7px; }
 .secnet-dialog { width: min(420px, calc(100vw - 48px)); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; background: var(--bg); color: var(--text); box-shadow: var(--shadow-card); }
 .secnet-dialog::backdrop { background: #0b162880; }
 .secnet-dialog h3 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }

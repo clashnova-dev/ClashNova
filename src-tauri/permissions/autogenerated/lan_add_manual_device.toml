@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-add-manual-device"
+description = "Enables the lan_add_manual_device command without any pre-configured scope."
+commands.allow = ["lan_add_manual_device"]
+
+[[permission]]
+identifier = "deny-lan-add-manual-device"
+description = "Denies the lan_add_manual_device command without any pre-configured scope."
+commands.deny = ["lan_add_manual_device"]

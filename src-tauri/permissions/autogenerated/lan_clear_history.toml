@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-clear-history"
+description = "Enables the lan_clear_history command without any pre-configured scope."
+commands.allow = ["lan_clear_history"]
+
+[[permission]]
+identifier = "deny-lan-clear-history"
+description = "Denies the lan_clear_history command without any pre-configured scope."
+commands.deny = ["lan_clear_history"]
