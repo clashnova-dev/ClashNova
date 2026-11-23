@@ -1,19 +1,40 @@
-# ClashNova Desktop
+<div align="center">
 
-<!-- i18n-nav -->
-[English](../../README.md) · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md) · **Français** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md)
+<img src="../../app-icon.png" width="116" alt="ClashNova" />
 
-> Les traductions peuvent être en retard sur le document principal en anglais.
+<h1>ClashNova Desktop</h1>
 
-Un client proxy de bureau fondé sur [sing-box](https://sing-box.sagernet.org/), écrit avec Vue 3 et Tauri 2 pour macOS, Windows et Linux. Importez un abonnement et vous êtes connecté — le cœur est compilé depuis les sources et embarqué dans l'application, si bien que l'analyse, le routage et la connexion sortante se font entièrement sur votre machine.
-
-Comme le cœur sing-box embarqué est compilé depuis les sources (GPL-3.0), le projet dans son ensemble est publié sous **GPL-3.0**.
-
-<p align="center">
-  <img src="../screenshots/overview-light.jpg" width="760" alt="Vue d'ensemble">
+<p>
+  <b>Un client proxy local-first fondé sur <a href="https://sing-box.sagernet.org/">sing-box</a>.</b><br/>
+  Importez un abonnement et vous êtes connecté — analyse, routage et connexion sortante se font sur votre machine.
 </p>
 
-## Fonctionnalités
+<p>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPL--3.0-2f6fed?style=flat-square"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-5b6472?style=flat-square">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
+  <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+</p>
+
+<p>
+  <a href="../../README.md">English</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <b>Français</b> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.ru.md">Русский</a>
+</p>
+
+<img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
+
+<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
+
+</div>
+
+> Les traductions peuvent être en retard sur le document principal en anglais.
+## ✨ Fonctionnalités
 
 - **Vue d'ensemble** — connexion ou déconnexion en un clic, avec l'état de la connexion en direct, le nœud actuel, le débit montant/descendant en temps réel et la consommation de la session. La consommation de l'abonnement et l'IP de sortie avec sa géolocalisation s'affichent sur place (masquables, actualisées manuellement ou par minuterie), à côté du basculement rapide entre vos nœuds habituels.
 - **Nœuds** — recherche par nom, tri par latence, ou *Tout tester* pour mesurer chaque nœud de façon asynchrone ; les résultats arrivent au fil de l'eau et se retrient par latence la plus basse. Choisissez un nœud à la main, ou laissez la sélection automatique (le groupe `urltest` du cœur retient le plus rapide).
@@ -21,7 +42,7 @@ Comme le cœur sing-box embarqué est compilé depuis les sources (GPL-3.0), le 
 - **Connexion et routage** — **proxy système**, **proxy manuel** ou **TUN** (une interface réseau virtuelle, qui nécessite une autorisation système). Basculez entre routage **par règles** et **global**, et configurez le port local, l'accès au réseau local, etc. Une liste des connexions actives, le journal en direct du cœur et des statistiques de trafic sont disponibles.
 - **Intégration système** — barre d'état système, lancement au démarrage, et thèmes clair / sombre / selon le système. L'interface est disponible en chinois simplifié, anglais, 日本語, 한국어, Deutsch, Français et Русский.
 
-## Captures d'écran
+## 📸 Captures d'écran
 
 | Vue d'ensemble | Nœuds | Abonnements |
 | :-: | :-: | :-: |
@@ -37,7 +58,7 @@ La page **Réseau** regroupe les politiques de protection de connexion, les cont
   <img src="../screenshots/network-full.jpg" width="680" alt="Réseau">
 </p>
 
-## Compilation
+## 🛠️ Compilation
 
 Il vous faut Node.js avec pnpm, Rust, Go, Python 3, ainsi que les dépendances système de Tauri pour votre plateforme.
 
@@ -53,7 +74,7 @@ pnpm tauri build                       # produire une version de distribution
 
 Pour prévisualiser l'interface sans installer Rust ni Go, lancez le frontend seul avec `pnpm dev` et ouvrez-le dans un navigateur. `browserBridge()` remplace la partie native par des bouchons, donc tout ce qui dépend du cœur — la connexion, l'IP de sortie, le débit en direct — doit être vérifié dans la vraie application de bureau.
 
-## Exécution sur macOS
+## 🍎 Exécution sur macOS
 
 Les versions de distribution ne sont ni signées ni notarisées (il n'y a pas de certificat de développeur Apple), donc macOS peut refuser d'ouvrir une version téléchargée (« ClashNova est endommagé… » ou un avertissement de développeur non identifié). Supprimez l'indicateur de quarantaine, puis ouvrez l'application normalement — adaptez le chemin si vous l'avez installée ailleurs :
 
@@ -61,7 +82,7 @@ Les versions de distribution ne sont ni signées ni notarisées (il n'y a pas de
 sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 Les options de compilation sont lues par Vite depuis un fichier `.env` (ignoré par `.gitignore`) :
 
@@ -72,7 +93,7 @@ VITE_ENABLE_LOGIN=false  # à false, l'écran de connexion au compte est masqué
 
 Laissée à ses valeurs par défaut, l'application est un client d'abonnement autonome qui n'a besoin d'aucun serveur. Les deux options sont le point d'extension pour la relier à votre propre backend.
 
-## Structure du projet
+## 🗂️ Structure du projet
 
 ```
 src/
@@ -87,6 +108,6 @@ src-tauri/                hôte Tauri (Rust) : fenêtres, barre d'état et cycle
 
 Le trafic sortant réel est acheminé par le cœur sing-box embarqué.
 
-## Licence
+## 📄 Licence
 
 GPL-3.0, voir [LICENSE](../../LICENSE). Le projet lie le cœur sing-box sous GPL-3.0 ; les distributions doivent donc suivre la même licence et fournir le code source correspondant.

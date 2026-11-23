@@ -1,19 +1,40 @@
-# ClashNova Desktop
+<div align="center">
 
-<!-- i18n-nav -->
-[English](../../README.md) · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [日本語](README.ja.md) · **한국어** · [Русский](README.ru.md)
+<img src="../../app-icon.png" width="116" alt="ClashNova" />
 
-> 번역은 영어 기본 문서보다 늦을 수 있습니다.
+<h1>ClashNova Desktop</h1>
 
-[sing-box](https://sing-box.sagernet.org/) 기반의 데스크톱 프록시 클라이언트로, Vue 3와 Tauri 2로 작성되었으며 macOS / Windows / Linux를 지원합니다. 구독을 가져오기만 하면 연결됩니다 — 코어는 소스에서 컴파일되어 앱에 내장되므로 파싱, 라우팅, 아웃바운드 연결이 모두 사용자 기기 안에서 이루어집니다.
-
-내장된 sing-box 코어는 소스에서 컴파일되므로(GPL-3.0), 프로젝트 전체가 **GPL-3.0**으로 배포됩니다.
-
-<p align="center">
-  <img src="../screenshots/overview-light.jpg" width="760" alt="개요">
+<p>
+  <b><a href="https://sing-box.sagernet.org/">sing-box</a> 기반의 로컬 우선 프록시 클라이언트.</b><br/>
+  구독을 가져오기만 하면 연결 —— 파싱, 라우팅, 아웃바운드 연결이 모두 기기에서 이루어집니다.
 </p>
 
-## 기능
+<p>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPL--3.0-2f6fed?style=flat-square"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-5b6472?style=flat-square">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
+  <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+</p>
+
+<p>
+  <a href="../../README.md">English</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <b>한국어</b> ·
+  <a href="README.ru.md">Русский</a>
+</p>
+
+<img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
+
+<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
+
+</div>
+
+> 번역은 영어 기본 문서보다 늦을 수 있습니다.
+## ✨ 기능
 
 - **개요** — 한 번의 클릭으로 연결하거나 끊고, 연결 상태·현재 노드·실시간 업/다운 속도·세션 사용량을 표시합니다. 구독 사용량과 지역 정보가 포함된 출구 IP가 바로 표시되며(숨김 가능, 수동 또는 타이머로 새로고침), 자주 쓰는 노드 사이를 빠르게 전환할 수 있습니다.
 - **노드** — 이름으로 검색하고 지연 시간으로 정렬하거나, *전체 테스트*로 모든 노드를 비동기로 측정합니다. 결과가 순차적으로 들어오며 지연이 낮은 순으로 다시 정렬할 수 있습니다. 직접 노드를 고르거나 자동 선택에 맡길 수 있습니다(코어의 `urltest` 그룹이 가장 빠른 노드를 계속 고릅니다).
@@ -21,7 +42,7 @@
 - **연결과 라우팅** — **시스템 프록시**, **수동 프록시**, **TUN**(가상 네트워크 인터페이스, 시스템 권한 필요) 중에서 선택합니다. **규칙**과 **전역** 라우팅을 전환하고 로컬 포트, LAN 접근 등을 설정할 수 있습니다. 활성 연결 목록, 코어의 실시간 로그, 트래픽 통계를 모두 제공합니다.
 - **시스템 통합** — 시스템 트레이, 로그인 시 자동 시작, 라이트 / 다크 / 시스템 따름 테마. 인터페이스는 간체 중국어, English, 日本語, 한국어, Deutsch, Français, Русский를 지원합니다.
 
-## 스크린샷
+## 📸 스크린샷
 
 | 개요 | 노드 | 구독 |
 | :-: | :-: | :-: |
@@ -37,7 +58,7 @@
   <img src="../screenshots/network-full.jpg" width="680" alt="네트워크">
 </p>
 
-## 빌드
+## 🛠️ 빌드
 
 Node.js와 pnpm, Rust, Go, Python 3, 그리고 플랫폼에 맞는 Tauri 시스템 의존성이 필요합니다.
 
@@ -53,7 +74,7 @@ pnpm tauri build                       # 배포 빌드 패키징
 
 Rust나 Go를 설치하지 않고 UI만 미리 보려면 `pnpm dev`로 프런트엔드만 실행해 브라우저에서 열면 됩니다. `browserBridge()`가 네이티브 쪽을 스텁으로 대체하므로 코어에 의존하는 기능 — 연결, 출구 IP, 실시간 속도 — 은 실제 데스크톱 빌드에서 확인해야 합니다.
 
-## macOS에서 실행
+## 🍎 macOS에서 실행
 
 릴리스 빌드는 코드 서명과 공증(notarization)이 되어 있지 않아(Apple 개발자 인증서가 없음), 내려받은 빌드를 macOS가 실행 거부할 수 있습니다(「ClashNova이(가) 손상되었습니다…」 또는 확인되지 않은 개발자 경고). 격리 플래그를 제거한 뒤 정상적으로 여세요. 다른 위치에 설치했다면 경로를 바꾸세요:
 
@@ -61,7 +82,7 @@ Rust나 Go를 설치하지 않고 UI만 미리 보려면 `pnpm dev`로 프런트
 sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 ```
 
-## 설정
+## ⚙️ 설정
 
 빌드 시 옵션은 Vite가 `.env` 파일(gitignore 처리됨)에서 읽습니다.
 
@@ -72,7 +93,7 @@ VITE_ENABLE_LOGIN=false  # false이면 계정 로그인 화면을 숨김
 
 기본값 그대로면 앱은 서버가 필요 없는 독립 구독 클라이언트입니다. 이 두 플래그가 자체 백엔드에 연결하기 위한 확장 지점입니다.
 
-## 프로젝트 구조
+## 🗂️ 프로젝트 구조
 
 ```
 src/
@@ -87,6 +108,6 @@ src-tauri/                Tauri(Rust) 호스트: 창, 트레이, 코어와 TUN �
 
 실제 아웃바운드 트래픽은 내장된 sing-box 코어가 전달합니다.
 
-## 라이선스
+## 📄 라이선스
 
 GPL-3.0. [LICENSE](../../LICENSE)를 참고하세요. 이 프로젝트는 GPL-3.0인 sing-box 코어를 링크하므로, 배포 시 같은 라이선스를 따르고 해당 소스 코드를 제공해야 합니다.

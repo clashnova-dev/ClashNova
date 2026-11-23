@@ -1,19 +1,40 @@
-# ClashNova Desktop
+<div align="center">
 
-<!-- i18n-nav -->
-[English](../../README.md) · [简体中文](README.zh-CN.md) · **Deutsch** · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md)
+<img src="../../app-icon.png" width="116" alt="ClashNova" />
 
-> Übersetzungen können dem englischen Hauptdokument hinterherhinken.
+<h1>ClashNova Desktop</h1>
 
-Ein Desktop-Proxy-Client auf Basis von [sing-box](https://sing-box.sagernet.org/), geschrieben mit Vue 3 und Tauri 2 für macOS, Windows und Linux. Abonnement importieren und verbunden sein – der Kernel wird aus dem Quellcode kompiliert und in der App mitgeliefert, sodass das Parsen, das Routing und die ausgehende Verbindung vollständig auf dem eigenen Rechner ablaufen.
-
-Da der mitgelieferte sing-box-Kernel aus dem Quellcode kompiliert wird (GPL-3.0), wird das Projekt als Ganzes unter **GPL-3.0** veröffentlicht.
-
-<p align="center">
-  <img src="../screenshots/overview-light.jpg" width="760" alt="Übersicht">
+<p>
+  <b>Ein lokal-first Proxy-Client auf Basis von <a href="https://sing-box.sagernet.org/">sing-box</a>.</b><br/>
+  Abonnement importieren und verbunden sein – Parsen, Routing und ausgehende Verbindung laufen auf deinem Rechner.
 </p>
 
-## Funktionen
+<p>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPL--3.0-2f6fed?style=flat-square"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-5b6472?style=flat-square">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
+  <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+</p>
+
+<p>
+  <a href="../../README.md">English</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <b>Deutsch</b> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.ru.md">Русский</a>
+</p>
+
+<img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
+
+<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
+
+</div>
+
+> Übersetzungen können dem englischen Hauptdokument hinterherhinken.
+## ✨ Funktionen
 
 - **Übersicht** – mit einem Klick verbinden oder trennen, mit Live-Verbindungsstatus, aktuellem Knoten, Up-/Download-Geschwindigkeit in Echtzeit und Sitzungsverbrauch. Abonnementverbrauch und die Ausgangs-IP mit Geo-Zuordnung werden direkt angezeigt (ausblendbar, manuell oder per Timer aktualisiert), daneben der schnelle Wechsel zwischen häufig genutzten Knoten.
 - **Knoten** – nach Name suchen, nach Latenz sortieren oder mit *Alle testen* jeden Knoten asynchron messen; die Ergebnisse treffen nach und nach ein und lassen sich nach niedrigster Latenz neu sortieren. Knoten von Hand wählen oder der automatischen Auswahl überlassen (die `urltest`-Gruppe des Kernels wählt fortlaufend den schnellsten).
@@ -21,7 +42,7 @@ Da der mitgelieferte sing-box-Kernel aus dem Quellcode kompiliert wird (GPL-3.0)
 - **Verbindung und Routing** – **Systemproxy**, **manueller Proxy** oder **TUN** (eine virtuelle Netzwerkschnittstelle, die eine Systemautorisierung erfordert). Zwischen **Regel-** und **Global-**Routing wechseln und lokalen Port, LAN-Zugriff und mehr konfigurieren. Eine Liste aktiver Verbindungen, das Live-Log des Kernels und Verkehrsstatistiken stehen bereit.
 - **Systemintegration** – Infobereich (Tray), Autostart sowie helles / dunkles / systemabhängiges Design. Die Oberfläche ist auf Vereinfachtes Chinesisch, Englisch, 日本語, 한국어, Deutsch, Français und Русский verfügbar.
 
-## Screenshots
+## 📸 Screenshots
 
 | Übersicht | Knoten | Abonnements |
 | :-: | :-: | :-: |
@@ -37,7 +58,7 @@ Die **Netzwerk**-Seite bündelt Verbindungsschutz-Richtlinien, Integritätsprüf
   <img src="../screenshots/network-full.jpg" width="680" alt="Netzwerk">
 </p>
 
-## Erstellen
+## 🛠️ Erstellen
 
 Du brauchst Node.js mit pnpm, Rust, Go, Python 3 sowie die Tauri-Systemabhängigkeiten für deine Plattform.
 
@@ -53,7 +74,7 @@ pnpm tauri build                       # Release-Build paketieren
 
 Um die Oberfläche ohne Rust oder Go anzusehen, läuft das Frontend auch allein mit `pnpm dev` im Browser. `browserBridge()` ersetzt die native Seite durch Stubs, daher muss alles, was vom Kernel abhängt – Verbindung, Ausgangs-IP, Live-Geschwindigkeit – im echten Desktop-Build geprüft werden.
 
-## Unter macOS ausführen
+## 🍎 Unter macOS ausführen
 
 Release-Builds sind nicht signiert oder notariell beglaubigt (es gibt kein Apple-Entwicklerzertifikat), daher kann macOS die heruntergeladene App ablehnen („ClashNova ist beschädigt …" oder eine Entwicklerwarnung). Entferne das Quarantäne-Flag und öffne die App dann normal – passe den Pfad an, falls du sie woanders installiert hast:
 
@@ -61,7 +82,7 @@ Release-Builds sind nicht signiert oder notariell beglaubigt (es gibt kein Apple
 sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 ```
 
-## Konfiguration
+## ⚙️ Konfiguration
 
 Optionen zur Build-Zeit liest Vite aus einer `.env`-Datei (von `.gitignore` ignoriert):
 
@@ -72,7 +93,7 @@ VITE_ENABLE_LOGIN=false  # bei false wird die Kontoanmeldung ausgeblendet
 
 Bei den Standardwerten ist die App ein eigenständiger Abonnement-Client, der keinen Server braucht. Die beiden Schalter sind der Erweiterungspunkt, um sie an ein eigenes Backend anzubinden.
 
-## Projektstruktur
+## 🗂️ Projektstruktur
 
 ```
 src/
@@ -87,6 +108,6 @@ src-tauri/                Tauri-(Rust-)Host: Fenster, Tray und der Lebenszyklus 
 
 Der tatsächliche ausgehende Verkehr wird vom mitgelieferten sing-box-Kernel weitergeleitet.
 
-## Lizenz
+## 📄 Lizenz
 
 GPL-3.0, siehe [LICENSE](../../LICENSE). Das Projekt bindet den GPL-3.0-Kernel sing-box ein, daher müssen Distributionen derselben Lizenz folgen und den entsprechenden Quellcode bereitstellen.

@@ -1,19 +1,40 @@
-# ClashNova Desktop
+<div align="center">
 
-<!-- i18n-nav -->
-[English](../../README.md) · [简体中文](README.zh-CN.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · **日本語** · [한국어](README.ko.md) · [Русский](README.ru.md)
+<img src="../../app-icon.png" width="116" alt="ClashNova" />
 
-> 翻訳は英語の主ドキュメントより古い場合があります。
+<h1>ClashNova Desktop</h1>
 
-[sing-box](https://sing-box.sagernet.org/) をベースにしたデスクトップ向けプロキシクライアントです。Vue 3 と Tauri 2 で作られ、macOS / Windows / Linux に対応します。サブスクリプションを取り込むだけで接続でき、コアはソースからコンパイルしてアプリに同梱されるため、解析・ルーティング・送信接続はすべて自分の端末内で完結します。
-
-同梱の sing-box コアはソースからコンパイルされており(GPL-3.0)、そのため本プロジェクト全体を **GPL-3.0** で公開しています。
-
-<p align="center">
-  <img src="../screenshots/overview-light.jpg" width="760" alt="概要">
+<p>
+  <b><a href="https://sing-box.sagernet.org/">sing-box</a> をベースにしたローカルファーストのプロキシクライアント。</b><br/>
+  サブスクリプションを取り込むだけで接続でき、解析・ルーティング・送信接続はすべて自分の端末で完結します。
 </p>
 
-## 機能
+<p>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPL--3.0-2f6fed?style=flat-square"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-5b6472?style=flat-square">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
+  <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+</p>
+
+<p>
+  <a href="../../README.md">English</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <b>日本語</b> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.ru.md">Русский</a>
+</p>
+
+<img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
+
+<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
+
+</div>
+
+> 翻訳は英語の主ドキュメントより古い場合があります。
+## ✨ 機能
 
 - **概要** — ワンクリックで接続・切断でき、接続状態・現在のノード・リアルタイムの上り下り速度・セッション使用量を表示します。サブスクリプション使用量と出口 IP(ジオ情報付き)はその場に表示され(非表示可、手動または定期更新)、よく使うノードをすばやく切り替えられます。
 - **ノード** — 名前で検索、遅延で並べ替え、または「すべてテスト」で全ノードを非同期に計測します。結果は順次反映され、遅延の低い順に並べ替えられます。手動でノードを選ぶか、自動選択に任せます(コアの `urltest` グループが常に最速を選びます)。
@@ -21,7 +42,7 @@
 - **接続とルーティング** — **システムプロキシ**・**手動プロキシ**・**TUN**(仮想ネットワークインターフェイス。システムの許可が必要)から選べます。**ルール**と**グローバル**のルーティングを切り替え、ローカルポートや LAN アクセスなども設定できます。アクティブな接続の一覧、コアのリアルタイムログ、トラフィック統計もそろっています。
 - **システム連携** — システムトレイ、ログイン時の自動起動、ライト / ダーク / システム追従テーマ。インターフェイスは簡体字中国語・English・日本語・한국어・Deutsch・Français・Русский に対応します。
 
-## スクリーンショット
+## 📸 スクリーンショット
 
 | 概要 | ノード | サブスクリプション |
 | :-: | :-: | :-: |
@@ -37,7 +58,7 @@
   <img src="../screenshots/network-full.jpg" width="680" alt="ネットワーク">
 </p>
 
-## ビルド
+## 🛠️ ビルド
 
 Node.js と pnpm、Rust、Go、Python 3、および各プラットフォーム向けの Tauri システム依存関係が必要です。
 
@@ -53,7 +74,7 @@ pnpm tauri build                       # リリース版をパッケージ化
 
 Rust や Go を入れずに UI だけを確認したい場合は、`pnpm dev` でフロントエンドだけを起動してブラウザで開けます。`browserBridge()` がネイティブ側をスタブ化するため、コアに依存する部分——接続・出口 IP・リアルタイム速度——は実際のデスクトップビルドで検証する必要があります。
 
-## macOS で実行する
+## 🍎 macOS で実行する
 
 リリースビルドはコード署名も公証(notarization)も行われていないため(Apple Developer 証明書がないため)、ダウンロードしたビルドの起動を macOS が拒否することがあります(「ClashNova は壊れています…」や開発元を確認できない旨の警告)。隔離フラグを解除してから通常どおり開いてください。別の場所にインストールした場合はパスを調整してください:
 
@@ -61,7 +82,7 @@ Rust や Go を入れずに UI だけを確認したい場合は、`pnpm dev` �
 sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 ```
 
-## 設定
+## ⚙️ 設定
 
 ビルド時のオプションは Vite が `.env` ファイル(`.gitignore` で無視)から読み込みます。
 
@@ -72,7 +93,7 @@ VITE_ENABLE_LOGIN=false  # false のときはアカウントログイン画面�
 
 デフォルトのままなら、アプリはサーバーを必要としない単体のサブスクリプションクライアントです。この 2 つのフラグが、独自のバックエンドに接続するための拡張ポイントです。
 
-## プロジェクト構成
+## 🗂️ プロジェクト構成
 
 ```
 src/
@@ -87,6 +108,6 @@ src-tauri/                Tauri(Rust)ホスト:ウィンドウ、トレイ、コ
 
 実際の送信トラフィックは同梱の sing-box コアが転送します。
 
-## ライセンス
+## 📄 ライセンス
 
 GPL-3.0。[LICENSE](../../LICENSE) を参照してください。本プロジェクトは GPL-3.0 の sing-box コアをリンクしているため、配布時は同じライセンスに従い、対応するソースコードを提供する必要があります。

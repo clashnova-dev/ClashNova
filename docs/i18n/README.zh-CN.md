@@ -1,19 +1,40 @@
-# ClashNova Desktop
+<div align="center">
 
-<!-- i18n-nav -->
-[English](../../README.md) · **简体中文** · [Deutsch](README.de.md) · [Français](README.fr.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md)
+<img src="../../app-icon.png" width="116" alt="ClashNova" />
 
-> 译文可能滞后于英文主文档。
+<h1>ClashNova Desktop</h1>
 
-基于 [sing-box](https://sing-box.sagernet.org/) 的桌面代理客户端,用 Vue 3 和 Tauri 2 编写,支持 macOS、Windows、Linux。导入订阅即可连接——内核由源码编译、随包内置,订阅解析、路由分流和出站连接都在本机完成。
-
-内置的 sing-box 内核由源码编译(GPL-3.0),因此本项目整体以 **GPL-3.0** 发布。
-
-<p align="center">
-  <img src="../screenshots/overview-light.jpg" width="760" alt="概览">
+<p>
+  <b>基于 <a href="https://sing-box.sagernet.org/">sing-box</a> 的本地优先代理客户端。</b><br/>
+  导入订阅即可连接 —— 解析、分流和出站连接都在本机完成。
 </p>
 
-## 功能
+<p>
+  <a href="../../LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPL--3.0-2f6fed?style=flat-square"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-5b6472?style=flat-square">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
+  <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
+  <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+</p>
+
+<p>
+  <a href="../../README.md">English</a> ·
+  <b>简体中文</b> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.ru.md">Русский</a>
+</p>
+
+<img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
+
+<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
+
+</div>
+
+> 译文可能滞后于英文主文档。
+## ✨ 功能
 
 - **概览** — 一键连接或断开,实时显示连接状态、当前节点、上下行速率和本次会话用量。订阅用量、出口 IP 及其归属地就地展示(可隐藏,支持手动或定时刷新),并可在常用节点间快速切换。
 - **节点** — 按名称搜索、按延迟排序,或用「测速全部」异步测量所有节点;结果陆续返回,可按最低延迟重新排序。可手动选节点,也可交给自动选择(内核的 `urltest` 分组持续挑选最快的)。
@@ -21,7 +42,7 @@
 - **连接与路由** — 可选**系统代理**、**手动代理**或 **TUN**(虚拟网卡,需系统授权)。在**规则**与**全局**路由间切换,并可配置本地端口、局域网访问等。活跃连接列表、内核实时日志和流量统计一应俱全。
 - **系统集成** — 系统托盘、开机自启,以及浅色 / 深色 / 跟随系统主题。界面提供简体中文、English、日本語、한국어、Deutsch、Français、Русский。
 
-## 截图
+## 📸 截图
 
 | 概览 | 节点 | 订阅 |
 | :-: | :-: | :-: |
@@ -37,7 +58,7 @@
   <img src="../screenshots/network-full.jpg" width="680" alt="网络">
 </p>
 
-## 构建
+## 🛠️ 构建
 
 需要 Node.js 与 pnpm、Rust、Go、Python 3,以及对应平台的 Tauri 系统依赖。
 
@@ -53,7 +74,7 @@ pnpm tauri build                       # 打包发布版本
 
 若不想安装 Rust 或 Go,可以只跑前端:`pnpm dev` 后在浏览器打开。`browserBridge()` 会桩掉原生侧,因此依赖内核的功能——连接、出口 IP、实时速率——仍需在真实桌面版本中验证。
 
-## 在 macOS 上运行
+## 🍎 在 macOS 上运行
 
 发布版未做代码签名与公证(没有 Apple 开发者证书),下载后 macOS 可能拒绝打开(提示「ClashNova 已损坏」或开发者无法验证)。先解除隔离标记再正常打开,若安装在其它位置请相应修改路径:
 
@@ -61,7 +82,7 @@ pnpm tauri build                       # 打包发布版本
 sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 ```
 
-## 配置
+## ⚙️ 配置
 
 规则模式仅内置局域网直连和 500 个国内常用服务及必要静态资源/CDN 域名，其余默认走所选代理，订阅规则和应用策略仍可单独指定去向。域名包含子域名，名单为人工维护的精简集合，不是实时流量排名；不再携带全国域名和 IP 段大表。TUN DNS 使用同一份直连域名名单，全局模式不应用这些内置分流。可在**规则**页面查看生成结果。
 
@@ -74,7 +95,7 @@ VITE_ENABLE_LOGIN=false  # 为 false 时隐藏账号登录界面
 
 保持默认时,应用是一个无需服务端的独立订阅客户端。这两个开关是接入自有后端的扩展点。
 
-## 项目结构
+## 🗂️ 项目结构
 
 ```
 src/
@@ -89,6 +110,6 @@ src-tauri/                Tauri(Rust)宿主:窗口、托盘,以及内核与 TUN 
 
 实际出站流量由内置的 sing-box 内核转发。
 
-## 许可证
+## 📄 许可证
 
 GPL-3.0,见 [LICENSE](../../LICENSE)。本项目链接 GPL-3.0 的 sing-box 内核,分发时须遵循同一许可证并提供相应源码。
