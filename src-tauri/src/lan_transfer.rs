@@ -219,6 +219,8 @@ pub async fn lan_get_settings(
     let service = state.service().map_err(map_err)?;
     view.alias = service.alias();
     view.discoverable = service.discoverable();
+    view.accept_incoming = service.accept_incoming();
+    view.auto_accept_trusted = service.auto_accept_trusted();
     view.default_save_dir = service.save_directory().to_string_lossy().into_owned();
     Ok(view)
 }
@@ -241,6 +243,12 @@ pub async fn lan_update_settings(
     service
         .set_discoverable(settings.discoverable)
         .await
+        .map_err(map_err)?;
+    service
+        .set_accept_incoming(settings.accept_incoming)
+        .map_err(map_err)?;
+    service
+        .set_auto_accept(settings.auto_accept_trusted)
         .map_err(map_err)?;
     let view = {
         let mut config = state.config.lock().expect("lan config lock");

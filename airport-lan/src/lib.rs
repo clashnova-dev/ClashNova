@@ -136,7 +136,10 @@ struct InteractiveApprover {
     pending: Mutex<HashMap<String, oneshot::Sender<transport::AcceptDecision>>>,
     /// 待确认的配对请求：request_id → 决定回传通道。
     pending_pairs: Mutex<HashMap<String, oneshot::Sender<bool>>>,
-    accept_incoming: bool,
+    /// 是否接收入站传输（关则一律拒绝）。可运行时切换、持久化。
+    accept_incoming: std::sync::atomic::AtomicBool,
+    /// 已配对设备是否自动接收（关则仍逐次弹窗确认）。可运行时切换、持久化。
+    auto_accept_trusted: std::sync::atomic::AtomicBool,
     /// 自动接收（已配对设备）时使用的默认保存目录。
     default_save_dir: Mutex<PathBuf>,
     storage: Arc<storage::Storage>,
@@ -175,11 +178,13 @@ impl transport::AcceptPolicy for InteractiveApprover {
         sender: &DeviceInfo,
         files: &HashMap<String, FileDto>,
     ) -> transport::AcceptDecision {
-        if !self.accept_incoming {
+        use std::sync::atomic::Ordering;
+        if !self.accept_incoming.load(Ordering::SeqCst) {
             return transport::AcceptDecision::Reject;
         }
-        // 配对即信任：已配对设备直接自动接收，不再逐次弹窗（“配对过就默认信任”）。
-        if !sender.fingerprint.is_empty()
+        // 已配对 + 自动接收开启：直接收，不弹窗。关闭自动接收则仍逐次确认。
+        if self.auto_accept_trusted.load(Ordering::SeqCst)
+            && !sender.fingerprint.is_empty()
             && self
                 .storage
                 .is_trusted(&sender.fingerprint)
@@ -328,13 +333,22 @@ impl LanService {
         if let Some(saved) = storage.setting("discoverable")? {
             config.discoverable = saved != "0";
         }
+        if let Some(saved) = storage.setting("accept_incoming")? {
+            config.accept_incoming = saved != "0";
+        }
+        // 自动接收默认开启（保持“配对即自动接收”），持久化为 "0" 才关闭。
+        config.auto_accept_trusted = match storage.setting("auto_accept")? {
+            Some(v) => v != "0",
+            None => true,
+        };
         let identity = tls::Identity::load_or_create(&config.data_dir)?;
         let (events_tx, _rx) = broadcast::channel(256);
         let approver = Arc::new(InteractiveApprover {
             events_tx: events_tx.clone(),
             pending: Mutex::new(HashMap::new()),
             pending_pairs: Mutex::new(HashMap::new()),
-            accept_incoming: config.accept_incoming,
+            accept_incoming: std::sync::atomic::AtomicBool::new(config.accept_incoming),
+            auto_accept_trusted: std::sync::atomic::AtomicBool::new(config.auto_accept_trusted),
             default_save_dir: Mutex::new(config.default_save_dir.clone()),
             storage: storage.clone(),
         });
@@ -444,6 +458,40 @@ impl LanService {
         self.discoverable
             .store(on, std::sync::atomic::Ordering::SeqCst);
         self.refresh_beacon().await;
+        Ok(())
+    }
+
+    /// 是否接收入站传输。
+    pub fn accept_incoming(&self) -> bool {
+        self.approver
+            .accept_incoming
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// 已配对设备是否自动接收。
+    pub fn auto_accept_trusted(&self) -> bool {
+        self.approver
+            .auto_accept_trusted
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// 切换是否接收入站：持久化并即时作用到审批器。
+    pub fn set_accept_incoming(&self, on: bool) -> Result<()> {
+        self.storage
+            .save_setting("accept_incoming", if on { "1" } else { "0" })?;
+        self.approver
+            .accept_incoming
+            .store(on, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// 切换已配对设备是否自动接收：持久化并即时作用到审批器。
+    pub fn set_auto_accept(&self, on: bool) -> Result<()> {
+        self.storage
+            .save_setting("auto_accept", if on { "1" } else { "0" })?;
+        self.approver
+            .auto_accept_trusted
+            .store(on, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 

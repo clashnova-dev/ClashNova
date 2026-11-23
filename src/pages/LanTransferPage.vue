@@ -3,7 +3,7 @@ import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch } from "vue"
 import {
   Laptop, Smartphone, Server, Globe, RefreshCw, ArrowUp, Check, X, File as FileIcon,
   Radio, Link2, Unlink, Paperclip, FolderOpen, Copy,
-  ClipboardPaste, Trash2, Pause, Play, MessageSquare, Plus, Settings,
+  ClipboardPaste, Trash2, Pause, Play, MessageSquare, Plus, Settings, ShieldCheck,
 } from "@lucide/vue";
 import { useApp } from "../composables/useApp";
 import FileTypeIcon from "../components/FileTypeIcon.vue";
@@ -35,8 +35,11 @@ const manualAddr = ref("");
 const adding = ref(false);
 const addDialog = ref<HTMLDialogElement>();
 const settingsDialog = ref<HTMLDialogElement>();
+const pairedDialog = ref<HTMLDialogElement>();
 const nameInput = ref("");
 const discoverableInput = ref(true);
+const acceptInput = ref(true);
+const autoAcceptInput = ref(true);
 const savingSettings = ref(false);
 const pairRequest = ref<LanPairRequest | null>(null);
 const pairDialog = ref<HTMLDialogElement>();
@@ -234,8 +237,7 @@ async function respondPair(accept: boolean) {
   finally { if (!disposed) responding.value = false; }
 }
 
-async function unpairSelected() {
-  const fp = selected.value;
+async function unpairDevice(fp: string) {
   if (!fp || !window.confirm(t("lan.unpair") + "?")) return;
   try {
     await (await bridge()).lanUnpair(fp);
@@ -245,13 +247,18 @@ async function unpairSelected() {
     showNotice(t("lan.unpaired"));
   } catch (error) { showError(error); }
 }
+function unpairSelected() { void unpairDevice(selected.value); }
 
 function openAdd() { manualAddr.value = ""; addDialog.value?.showModal(); }
+function openPaired() { void reloadTrusted(); pairedDialog.value?.showModal(); }
 function openSettings() {
   if (!settings.value) return;
   nameInput.value = settings.value.alias;
   discoverableInput.value = settings.value.discoverable;
+  acceptInput.value = settings.value.acceptIncoming;
+  autoAcceptInput.value = settings.value.autoAcceptTrusted;
   settingsDialog.value?.showModal();
+  void reloadTrusted();
 }
 async function addManual() {
   const addr = manualAddr.value.trim();
@@ -265,7 +272,7 @@ async function saveSettings() {
   if (!settings.value || savingSettings.value || !nameInput.value.trim()) return;
   savingSettings.value = true;
   try {
-    const updated = await (await bridge()).lanUpdateSettings({ ...settings.value, alias: nameInput.value.trim(), discoverable: discoverableInput.value });
+    const updated = await (await bridge()).lanUpdateSettings({ ...settings.value, alias: nameInput.value.trim(), discoverable: discoverableInput.value, acceptIncoming: acceptInput.value, autoAcceptTrusted: autoAcceptInput.value });
     if (disposed) return;
     settings.value = updated;
     settingsDialog.value?.close();
@@ -407,7 +414,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("click", closeMenu);
   window.removeEventListener("resize", closeMenu);
   window.removeEventListener("blur", closeMenu);
-  pairDialog.value?.close(); incomingDialog.value?.close(); addDialog.value?.close(); settingsDialog.value?.close();
+  pairDialog.value?.close(); incomingDialog.value?.close(); addDialog.value?.close(); settingsDialog.value?.close(); pairedDialog.value?.close();
 });
 </script>
 
@@ -422,6 +429,7 @@ onBeforeUnmount(() => {
           <div class="rail-tools">
           <button type="button" class="icon-btn" :disabled="busy" :title="t('lan.refresh')" :aria-label="t('lan.refresh')" @click="refresh"><RefreshCw :size="16" :class="{ spin: busy }" /></button>
           <button type="button" class="icon-btn add-btn" :title="t('lan.addDevice')" :aria-label="t('lan.addDevice')" @click="openAdd"><Plus :size="17" /></button>
+          <button type="button" class="icon-btn" :title="t('lan.pairedSection')" :aria-label="t('lan.pairedSection')" @click="openPaired"><ShieldCheck :size="16" /></button>
           <button type="button" class="icon-btn" :title="t('lan.settingsTitle')" :aria-label="t('lan.settingsTitle')" @click="openSettings"><Settings :size="16" /></button>
           </div>
         </header>
@@ -544,8 +552,24 @@ onBeforeUnmount(() => {
         <label class="field-label" for="lan-name-input">{{ t("lan.deviceName") }}</label>
         <div class="dialog-field"><input id="lan-name-input" v-model="nameInput" type="text" maxlength="64" :placeholder="t('lan.deviceName')" :disabled="savingSettings" /></div>
         <label class="toggle-row"><span>{{ t("lan.visible") }}</span><input v-model="discoverableInput" type="checkbox" role="switch" :disabled="savingSettings" /><span class="switch" aria-hidden="true" /></label>
+        <label class="toggle-row"><span>{{ t("lan.acceptIncoming") }}</span><input v-model="acceptInput" type="checkbox" role="switch" :disabled="savingSettings" /><span class="switch" aria-hidden="true" /></label>
+        <label class="toggle-row"><span>{{ t("lan.autoAccept") }}</span><input v-model="autoAcceptInput" type="checkbox" role="switch" :disabled="savingSettings || !acceptInput" /><span class="switch" aria-hidden="true" /></label>
         <div class="incoming-actions"><button type="button" :disabled="savingSettings" @click="settingsDialog?.close()">{{ t("common.cancel") }}</button><button type="submit" class="primary" :disabled="savingSettings || !nameInput.trim()"><Check :size="15" />{{ t("lan.save") }}</button></div>
       </form>
+    </dialog>
+
+    <!-- 已配对设备管理 -->
+    <dialog ref="pairedDialog" class="incoming-dialog paired-dialog" aria-labelledby="lan-paired-title">
+      <header class="incoming-heading"><span class="incoming-icon"><ShieldCheck :size="22" /></span><div><h2 id="lan-paired-title">{{ t("lan.pairedSection") }} · {{ trusted.length }}</h2></div></header>
+      <div class="paired-manage">
+        <div v-for="d in trusted" :key="d.fingerprint" class="paired-item">
+          <span class="paired-ico"><ShieldCheck :size="16" /></span>
+          <span class="paired-meta"><strong :title="d.alias">{{ d.alias }}</strong><small :title="d.fingerprint">{{ d.fingerprint.slice(0, 12) }}…</small></span>
+          <button type="button" class="paired-unpair" :title="t('lan.unpair')" :aria-label="`${t('lan.unpair')} · ${d.alias}`" @click="unpairDevice(d.fingerprint)"><Unlink :size="14" /></button>
+        </div>
+        <p v-if="!trusted.length" class="paired-empty">{{ t("lan.noPaired") }}</p>
+      </div>
+      <div class="incoming-actions"><button type="button" @click="pairedDialog?.close()">{{ t("common.close") }}</button></div>
     </dialog>
 
     <!-- 配对请求 -->
@@ -707,6 +731,22 @@ onBeforeUnmount(() => {
 .toggle-row input:checked ~ .switch { background:var(--accent); }
 .toggle-row input:checked ~ .switch::after { transform:translateX(16px); }
 .toggle-row input:focus-visible ~ .switch { outline:2px solid var(--focus); outline-offset:2px; }
+.paired-head { display:flex; align-items:center; gap:7px; margin-top:20px; }
+.paired-head .count { color:var(--muted); font-weight:400; font-variant-numeric:tabular-nums; }
+.paired-manage { margin-top:8px; max-height:172px; overflow:auto; border:1px solid var(--line); border-radius:9px; }
+.paired-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--line); }
+.paired-item:last-child { border-bottom:0; }
+.paired-ico { display:grid; place-items:center; flex:none; width:30px; height:30px; border-radius:8px; background:var(--surface); color:var(--success); }
+.paired-meta { display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+.paired-meta strong { font-size:13px; font-weight:500; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.paired-meta small { color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+.paired-unpair { display:grid; place-items:center; flex:none; width:30px; height:30px; min-height:30px; padding:0; border:0; border-radius:8px; background:transparent; color:var(--muted); }
+.paired-unpair:hover { background:var(--danger-bg); color:var(--danger); }
+.paired-empty { margin:0; padding:16px; text-align:center; color:var(--muted); font-size:12px; }
+.paired-dialog[open] { display:flex; flex-direction:column; height:min(420px,calc(100dvh - 64px)); overflow:hidden; }
+.paired-dialog .incoming-heading { flex:none; }
+.paired-dialog .paired-manage { flex:1; min-height:0; max-height:none; margin-top:16px; }
+.paired-dialog .incoming-actions { flex:none; margin-top:16px; }
 .spin { animation:lan-spin .9s linear infinite; }
 @keyframes lan-spin { to { transform:rotate(360deg); } }
 @media (prefers-reduced-motion:reduce) { .spin { animation:none; } .prog-bar i { transition:none; } }
