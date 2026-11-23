@@ -42,6 +42,34 @@
 - **Network protection** — protection-mode presets, DNS-leak protection, an IPv6 policy, a kill switch and malicious-domain blocking, plus on-demand health checks, DNS / IPv6 / WebRTC leak tests, and streaming / AI unlock detection.
 - **System integration** — system tray, launch at login, and light / dark / follow-system themes. The interface is available in Simplified Chinese, English, 日本語, 한국어, Deutsch, Français, and Русский.
 
+## 🌟 Highlights
+
+A few things that go beyond a plain subscription client.
+
+### Proxy chain
+
+Relay traffic through several nodes in order — an entry, any number of relays, and an exit. Build a chain by hand, measure its end-to-end latency, and save the ones you use as named presets. Latency adds up across the hops and the whole chain is only as good as its weakest link, so the editor keeps the full path in view.
+
+<p align="center"><img src="docs/screenshots/special-chain.jpg" width="760" alt="Proxy chain editor"></p>
+
+### Network protection & checks
+
+The **Network** page gathers everything about how traffic leaves the machine. Choose how proxying is applied — system proxy, TUN, or manual — with a plain-language note on what each mode does and doesn't cover. The **kill switch** (TUN mode) blocks all traffic the moment the tunnel drops, so nothing falls back to your real connection. On demand, run a health check (local network, proxy reachability, DNS, exit IP), DNS / IPv6 / WebRTC leak tests, and streaming / AI-service unlock detection.
+
+<p align="center"><img src="docs/screenshots/special-network.jpg" width="760" alt="Network protection and checks"></p>
+
+### LAN transfer
+
+Send text and files to your own devices on the same network, with no server or cloud in between. It works like a personal file-helper chat: pair a device once, then exchange messages and files in a thread. Pairing establishes trust, so a paired device can receive automatically.
+
+<p align="center"><img src="docs/screenshots/special-lan.jpg" width="760" alt="LAN transfer"></p>
+
+### Routing rules
+
+Inspect the routing table that is actually in effect — each rule's type, what it matches, where it sends traffic (direct / proxy / block), and whether it came from your subscription or the built-in defaults. Search by content, type, or target to see why a given domain goes where it goes.
+
+<p align="center"><img src="docs/screenshots/special-rules.jpg" width="760" alt="Routing rules"></p>
+
 ## 📸 Screenshots
 
 | Overview | Nodes | Subscriptions |
@@ -51,12 +79,6 @@
 | Connections | Logs | Settings |
 | :-: | :-: | :-: |
 | <img src="docs/screenshots/connections.jpg" width="240"> | <img src="docs/screenshots/logs.jpg" width="240"> | <img src="docs/screenshots/settings.jpg" width="240"> |
-
-The **Network** page bundles connection-protection policies, health checks and streaming / AI unlock detection:
-
-<p align="center">
-  <img src="docs/screenshots/network-full.jpg" width="680" alt="Network">
-</p>
 
 ## 🛠️ Building
 

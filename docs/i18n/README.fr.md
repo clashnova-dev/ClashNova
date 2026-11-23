@@ -42,6 +42,34 @@
 - **Connexion et routage** — **proxy système**, **proxy manuel** ou **TUN** (une interface réseau virtuelle, qui nécessite une autorisation système). Basculez entre routage **par règles** et **global**, et configurez le port local, l'accès au réseau local, etc. Une liste des connexions actives, le journal en direct du cœur et des statistiques de trafic sont disponibles.
 - **Intégration système** — barre d'état système, lancement au démarrage, et thèmes clair / sombre / selon le système. L'interface est disponible en chinois simplifié, anglais, 日本語, 한국어, Deutsch, Français et Русский.
 
+## 🌟 Points forts
+
+Quelques possibilités qui vont au-delà d'un simple client d'abonnement.
+
+### Chaîne de proxys
+
+Faites transiter le trafic par plusieurs nœuds dans l'ordre — une entrée, autant de relais que voulu et une sortie. Construisez une chaîne à la main, mesurez sa latence de bout en bout et enregistrez celles que vous utilisez comme préréglages nommés. La latence s'additionne à chaque saut et la chaîne ne vaut que son maillon le plus faible ; l'éditeur garde donc le chemin complet sous les yeux.
+
+<p align="center"><img src="../screenshots/special-chain.jpg" width="760" alt="Éditeur de chaîne de proxys"></p>
+
+### Protection réseau et tests
+
+La page **Réseau** rassemble tout ce qui concerne la façon dont le trafic quitte la machine. Choisissez comment le proxy s'applique — proxy système, TUN ou manuel — avec une note en clair sur ce que chaque mode couvre ou non. Le **kill switch** (mode TUN) bloque tout le trafic dès que le tunnel tombe, pour que rien ne retombe sur votre vraie connexion. À la demande, lancez un bilan de santé (réseau local, accessibilité du proxy, DNS, IP de sortie), des tests de fuite DNS / IPv6 / WebRTC et la détection du déblocage des services de streaming et d'IA.
+
+<p align="center"><img src="../screenshots/special-network.jpg" width="760" alt="Protection réseau et tests"></p>
+
+### Transfert LAN
+
+Envoyez du texte et des fichiers à vos propres appareils sur le même réseau, sans serveur ni cloud entre les deux. Cela fonctionne comme une discussion avec un assistant de fichiers personnel : appairez un appareil une fois, puis échangez messages et fichiers dans un fil. L'appairage établit la confiance, si bien qu'un appareil appairé peut recevoir automatiquement.
+
+<p align="center"><img src="../screenshots/special-lan.jpg" width="760" alt="Transfert LAN"></p>
+
+### Règles de routage
+
+Inspectez la table de routage réellement en vigueur — le type de chaque règle, ce qu'elle met en correspondance, où elle envoie le trafic (direct / proxy / blocage) et si elle vient de votre abonnement ou des valeurs par défaut intégrées. Cherchez par contenu, type ou destination pour comprendre pourquoi un domaine donné prend tel chemin.
+
+<p align="center"><img src="../screenshots/special-rules.jpg" width="760" alt="Règles de routage"></p>
+
 ## 📸 Captures d'écran
 
 | Vue d'ensemble | Nœuds | Abonnements |
@@ -51,12 +79,6 @@
 | Connexions | Journaux | Paramètres |
 | :-: | :-: | :-: |
 | <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
-
-La page **Réseau** regroupe les politiques de protection de connexion, les contrôles d'intégrité et la détection de déblocage streaming / IA :
-
-<p align="center">
-  <img src="../screenshots/network-full.jpg" width="680" alt="Réseau">
-</p>
 
 ## 🛠️ Compilation
 

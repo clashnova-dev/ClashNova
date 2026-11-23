@@ -42,6 +42,34 @@
 - **Verbindung und Routing** – **Systemproxy**, **manueller Proxy** oder **TUN** (eine virtuelle Netzwerkschnittstelle, die eine Systemautorisierung erfordert). Zwischen **Regel-** und **Global-**Routing wechseln und lokalen Port, LAN-Zugriff und mehr konfigurieren. Eine Liste aktiver Verbindungen, das Live-Log des Kernels und Verkehrsstatistiken stehen bereit.
 - **Systemintegration** – Infobereich (Tray), Autostart sowie helles / dunkles / systemabhängiges Design. Die Oberfläche ist auf Vereinfachtes Chinesisch, Englisch, 日本語, 한국어, Deutsch, Français und Русский verfügbar.
 
+## 🌟 Highlights
+
+Ein paar Dinge, die über einen reinen Abo-Client hinausgehen.
+
+### Proxy-Kette
+
+Leite den Verkehr der Reihe nach über mehrere Knoten — einen Eingang, beliebig viele Relais und einen Ausgang. Baue eine Kette von Hand, miss ihre Ende-zu-Ende-Latenz und speichere häufig genutzte Ketten als benannte Vorlagen. Die Latenz summiert sich über die Sprünge, und die Kette ist nur so zuverlässig wie ihr schwächstes Glied — der Editor hält daher den gesamten Pfad im Blick.
+
+<p align="center"><img src="../screenshots/special-chain.jpg" width="760" alt="Proxy-Ketten-Editor"></p>
+
+### Netzwerkschutz & Prüfungen
+
+Die Seite **Netzwerk** bündelt alles dazu, wie der Verkehr das Gerät verlässt. Wähle, wie das Proxying angewendet wird — Systemproxy, TUN oder manuell — mit einem verständlichen Hinweis, was jeder Modus abdeckt und was nicht. Der **Kill Switch** (TUN-Modus) blockiert allen Verkehr in dem Moment, in dem der Tunnel abbricht, sodass nichts auf die echte Verbindung zurückfällt. Auf Abruf laufen ein Zustandscheck (lokales Netzwerk, Erreichbarkeit des Proxys, DNS, Ausgangs-IP), DNS-/IPv6-/WebRTC-Leaktests sowie die Erkennung der Freischaltung von Streaming- und KI-Diensten.
+
+<p align="center"><img src="../screenshots/special-network.jpg" width="760" alt="Netzwerkschutz und Prüfungen"></p>
+
+### LAN-Übertragung
+
+Sende Text und Dateien an deine eigenen Geräte im selben Netzwerk, ohne Server oder Cloud dazwischen. Es funktioniert wie ein persönlicher Datei-Helfer-Chat: Gerät einmal koppeln, danach Nachrichten und Dateien in einem Verlauf austauschen. Das Koppeln schafft Vertrauen, sodass ein gekoppeltes Gerät automatisch empfangen kann.
+
+<p align="center"><img src="../screenshots/special-lan.jpg" width="760" alt="LAN-Übertragung"></p>
+
+### Routing-Regeln
+
+Sieh dir die tatsächlich wirksame Routing-Tabelle an — Typ jeder Regel, was sie trifft, wohin sie den Verkehr leitet (direkt / Proxy / blockiert) und ob sie aus deinem Abo oder den eingebauten Standardwerten stammt. Suche nach Inhalt, Typ oder Ziel, um zu sehen, warum eine bestimmte Domain dorthin geht, wo sie hingeht.
+
+<p align="center"><img src="../screenshots/special-rules.jpg" width="760" alt="Routing-Regeln"></p>
+
 ## 📸 Screenshots
 
 | Übersicht | Knoten | Abonnements |
@@ -51,12 +79,6 @@
 | Verbindungen | Logs | Einstellungen |
 | :-: | :-: | :-: |
 | <img src="../screenshots/connections.jpg" width="240"> | <img src="../screenshots/logs.jpg" width="240"> | <img src="../screenshots/settings.jpg" width="240"> |
-
-Die **Netzwerk**-Seite bündelt Verbindungsschutz-Richtlinien, Integritätsprüfungen und Streaming-/KI-Freischaltprüfungen:
-
-<p align="center">
-  <img src="../screenshots/network-full.jpg" width="680" alt="Netzwerk">
-</p>
 
 ## 🛠️ Erstellen
 
