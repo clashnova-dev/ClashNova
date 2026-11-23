@@ -137,7 +137,7 @@ const en: Record<keyof typeof zhCN, string> = {
   "nav.logs": "Logs",
   "nav.settings": "Settings",
   "nav.help": "Help",
-  "nav.lanTransfer": "LAN Transfer",
+  "nav.lanTransfer": "LAN",
   "lan.acceptIncoming": "Accept incoming",
   "lan.autoAccept": "Auto-accept from paired",
   "lan.noPaired": "No paired devices",

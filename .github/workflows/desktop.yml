@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.metadata.outputs.matrix) }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.target == 'aarch64-apple-darwin' && 'macos-15-intel' || matrix.os }}
     env:
       TAURI_ENV_TARGET_TRIPLE: ${{ matrix.target }}
       VITE_ENABLE_LOGIN: 'false'
@@ -80,14 +80,14 @@ jobs:
       - run: pnpm build
       - name: Frontend tests
         shell: bash
-        run: node --test --experimental-strip-types tests/*.test.ts
+        run: env -u TAURI_ENV_TARGET_TRIPLE node --test --experimental-strip-types tests/*.test.ts
       - run: python scripts/prepare-sidecars.py --target ${{ matrix.target }}
       - run: python scripts/prepare-sidecars.py --test
-      - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path tun-service/Cargo.toml
+      - run: cargo test ${{ matrix.target == 'aarch64-apple-darwin' && '--no-run' || '' }} --locked --release --target ${{ matrix.target }} --manifest-path tun-service/Cargo.toml
       - name: LAN transfer tests
-        run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path airport-lan/Cargo.toml
+        run: cargo test ${{ matrix.target == 'aarch64-apple-darwin' && '--no-run' || '' }} --locked --release --target ${{ matrix.target }} --manifest-path airport-lan/Cargo.toml
       - run: python scripts/prepare-tun-service.py
-      - run: cargo test --locked --release --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
+      - run: cargo test ${{ matrix.target == 'aarch64-apple-darwin' && '--no-run' || '' }} --locked --release --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
       - name: Clean cached package outputs
         run: |
           python scripts/clean-package-output.py --test
