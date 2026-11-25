@@ -622,7 +622,7 @@ onBeforeUnmount(() => {
       <div class="paired-manage">
         <div v-for="d in trusted" :key="d.fingerprint" class="paired-item">
           <span class="paired-ico"><ShieldCheck :size="16" /></span>
-          <span class="paired-meta"><strong :title="d.alias">{{ d.alias }}</strong><small :title="d.fingerprint">{{ d.fingerprint.slice(0, 12) }}…</small></span>
+          <span class="paired-meta"><strong :title="d.alias">{{ d.alias }}</strong><small :title="d.fingerprint">{{ t("lan.trusted") }} · {{ d.fingerprint.slice(0, 12) }}…</small></span>
           <button type="button" class="paired-unpair" :title="t('lan.unpair')" :aria-label="`${t('lan.unpair')} · ${d.alias}`" @click="unpairDevice(d.fingerprint)"><Unlink :size="14" /></button>
         </div>
         <p v-if="!trusted.length" class="paired-empty">{{ t("lan.noPaired") }}</p>

@@ -111,6 +111,7 @@ defineExpose({ open });
 <template>
   <BaseDialog ref="base" size="lg" :title="t('rules.edit')" @close="error = ''">
     <div class="re-body">
+      <p class="re-hint">{{ t('rules.editHint') }}</p>
       <form class="re-form" @submit.prevent="submitRule">
         <label class="re-field"><span>{{ t('rules.fieldType') }}</span><SelectMenu v-model="draftType" :label="t('rules.fieldType')" :options="typeOptions" /></label>
         <label class="re-field"><span>{{ t('rules.fieldContent') }}</span><input v-model="draftValue" class="re-input" :class="{ invalid: contentInvalid }" placeholder="example.com" @input="contentInvalid = false" /></label>
@@ -144,6 +145,7 @@ defineExpose({ open });
 
 <style scoped>
 .re-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.re-hint { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .re-form { display: flex; flex-direction: column; gap: 14px; }
 .re-field { display: grid; gap: 7px; font-size: 13px; font-weight: 550; }
 .re-field > span { color: var(--strong); }

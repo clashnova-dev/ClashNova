@@ -12,6 +12,8 @@ const { t, tx, saveExternalEdit } = useApp();
 const base = ref<InstanceType<typeof BaseDialog> | null>(null);
 const editor = ref<InstanceType<typeof CodeEditor> | null>(null);
 const id = ref("");
+const name = ref("");
+const remote = ref(false);
 const draft = ref("");
 const error = ref("");
 const busy = ref(false);
@@ -19,6 +21,8 @@ const expanded = ref(false);
 
 function open(profile: { id: string; name: string; url: string; raw: string }) {
   id.value = profile.id;
+  name.value = profile.name;
+  remote.value = profile.url.trim().length > 0;
   draft.value = prettyJson(profile.raw);
   error.value = "";
   expanded.value = false;
@@ -55,7 +59,8 @@ defineExpose({ open });
 </script>
 
 <template>
-  <BaseDialog ref="base" size="md" :expanded="expanded" :title="t('subscriptions.editTitle')" @close="error = ''">
+  <BaseDialog ref="base" size="md" :expanded="expanded" :title="t('subscriptions.editNamed', { name })" @close="error = ''">
+    <p class="editor-hint">{{ remote ? t('subscriptions.editRemoteHint', { name }) : t('subscriptions.editHint', { name }) }}</p>
     <CodeEditor ref="editor" v-model="draft" class="editor-body" />
     <p v-if="error" class="form-error editor-error" role="alert">{{ tx(error) }}</p>
     <template #footer>
@@ -71,6 +76,7 @@ defineExpose({ open });
 </template>
 
 <style scoped>
+.editor-hint { flex: none; margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .editor-body { flex: 1; min-height: 0; }
 .editor-error { flex: none; margin: 12px 0 0; }
 .editor-tools { display: flex; gap: 6px; margin-right: auto; }
