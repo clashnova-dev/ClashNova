@@ -95,7 +95,7 @@ onUnmounted(() => observer?.disconnect());
       <div class="log-filters"><SelectMenu v-model="level" :label="t('logs.level')" :options="levelOptions" /><SelectMenu v-model="source" :label="t('logs.source')" :options="sourceOptions" /></div>
       <div class="log-actions">
         <button type="button" :class="{ selected: paused }" :aria-label="t(paused ? 'logs.resume' : 'logs.pause')" :title="t(paused ? 'logs.resume' : 'logs.pause')" :aria-pressed="paused" @click="pause"><component :is="paused ? Play : Pause" :size="16" /></button>
-        <button type="button" :disabled="logsLoading" :aria-label="t('logs.refresh')" :title="t('logs.refresh')" @click="refresh"><RefreshCw :size="16" :class="{ spinning: logsLoading }" /></button>
+        <button type="button" :disabled="logsLoading" :aria-label="t('logs.refresh')" :title="t('logs.refresh')" @click="refresh"><RefreshCw :size="16" :class="{ spin: logsLoading }" /></button>
         <span class="log-divider" />
         <button type="button" :disabled="!filtered.length || sharing" :aria-label="t('logs.copy')" :title="t('logs.copy')" @click="copy()"><Copy :size="16" /></button>
         <button type="button" :disabled="!filtered.length" :aria-label="t('logs.export')" :title="t('logs.export')" @click="download"><Download :size="16" /></button>
@@ -180,8 +180,5 @@ onUnmounted(() => observer?.disconnect());
 .log-detail-foot{padding-top:12px;border-top:1px solid var(--line)}
 .log-detail-foot small{color:var(--muted);font-size:12px}
 .log-detail-foot button{height:32px;min-height:32px;padding:0 10px;font-size:12px;gap:6px;flex:none}
-.spinning{animation:log-spin 1s linear infinite}
-@keyframes log-spin{to{transform:rotate(360deg)}}
 @media(max-width:950px){.log-search{max-width:none;flex-basis:260px}.log-filters{margin-inline-start:auto}.log-toolbar{gap:8px}.log-filters :deep(.select-menu){min-width:100px}}
-@media(prefers-reduced-motion:reduce){.spinning{animation:none}}
 </style>

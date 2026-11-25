@@ -16,6 +16,9 @@ use airport_lan::protocol::DeviceType;
 use airport_lan::transfer::TransferTask;
 use airport_lan::{IncomingDecision, LanConfig, LanError, LanEvent, LanService};
 
+/// 会话历史单次拉取上限。
+const HISTORY_LIMIT: u32 = 200;
+
 /// Managed state：持有配置与惰性创建的服务（创建会打开本地 SQLite）。
 pub struct LanTransferState {
     config: Mutex<LanConfig>,
@@ -141,6 +144,8 @@ pub struct LocalDeviceView {
     pub fingerprint: String,
     pub device_type: DeviceType,
     pub port: u16,
+    /// 本机物理网卡私网 IPv4（供二维码直连）；无合适网卡时为 None。
+    pub ip: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -176,11 +181,16 @@ pub async fn lan_get_local_device(
         let config = state.config.lock().expect("lan config lock");
         (config.alias.clone(), config.listen_port)
     };
+    let ip = airport_lan::discovery::usable_interfaces()
+        .ok()
+        .and_then(|ifaces| ifaces.into_iter().next())
+        .map(|iface| iface.ipv4.to_string());
     Ok(LocalDeviceView {
         alias,
         fingerprint: service.fingerprint().to_string(),
         device_type: DeviceType::Desktop,
         port,
+        ip,
     })
 }
 
@@ -196,7 +206,7 @@ pub async fn lan_add_manual_device(
         .or_else(|_| {
             addr.trim()
                 .parse::<std::net::IpAddr>()
-                .map(|ip| std::net::SocketAddr::new(ip, 53317))
+                .map(|ip| std::net::SocketAddr::new(ip, airport_lan::protocol::DEFAULT_PORT))
         })
         .map_err(|_| "native.lanInvalidAddress".to_string())?;
     state
@@ -257,6 +267,7 @@ pub async fn lan_update_settings(
         config.accept_incoming = settings.accept_incoming;
         config.auto_accept_trusted = settings.auto_accept_trusted;
         config.default_save_dir = directory;
+        // 注意：核心层暂无运行时 setter，并发数仅对下次新建服务生效（UI 当前未暴露该项）。
         config.max_concurrent = settings.max_concurrent.max(1) as usize;
         settings_view(&config)
     };
@@ -432,26 +443,35 @@ pub async fn lan_delete_file(
     id: String,
     path: Option<String>,
 ) -> Result<(), String> {
-    if let Some(p) = path.as_ref() {
+    let service = state.service().map_err(map_err)?;
+    if let Some(raw) = path.as_ref() {
+        // 仅允许删除传输历史登记过的绝对路径（纵深防御，与 open/reveal 一致）。
+        let file = recorded_file_path(service.storage(), raw)?;
         // 文件已不在不算失败（可能被手动删过）。
-        if std::path::Path::new(p).exists() {
-            std::fs::remove_file(p).map_err(|e| e.to_string())?;
+        if file.exists() {
+            std::fs::remove_file(&file).map_err(|e| e.to_string())?;
         }
     }
-    state
-        .service()
-        .map_err(map_err)?
-        .remove_history(&id)
-        .map_err(map_err)
+    service.remove_history(&id).map_err(map_err)
 }
 
 /// 把文件放入系统剪贴板（右键“复制”）：可在访达/资源管理器直接粘贴该文件。
+/// 仅允许复制传输历史登记过的绝对路径（纵深防御，与 open/reveal 一致）。
 #[tauri::command]
-pub async fn lan_copy_file_to_clipboard(path: String) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || copy_file_clipboard(&path))
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())
+pub async fn lan_copy_file_to_clipboard(
+    state: State<'_, LanTransferState>,
+    path: String,
+) -> Result<(), String> {
+    let storage = state.service().map_err(map_err)?.storage().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = recorded_file_path(&storage, &path)?;
+        if !file.is_file() {
+            return Err("native.lanFileUnavailable".to_string());
+        }
+        copy_file_clipboard(&file.to_string_lossy()).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// 读取系统剪贴板中的文件路径（右键“粘贴”即把这些文件发给对方）。
@@ -616,7 +636,7 @@ pub async fn lan_get_history(
         .service()
         .map_err(map_err)?
         .storage()
-        .list_history(200)
+        .list_history(HISTORY_LIMIT)
         .map_err(map_err)
 }
 

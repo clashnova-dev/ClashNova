@@ -463,6 +463,20 @@ async fn probe_delay(session: String, tag: String) -> Result<probe::DelayResult,
         .map_err(|e| e.to_string())?
 }
 #[tauri::command]
+async fn probe_speed(
+    app: AppHandle,
+    session: String,
+    tag: String,
+) -> Result<probe::SpeedResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        probe::speed(session, tag, move |mbps, bytes| {
+            let _ = app.emit("probe://speed", serde_json::json!({"mbps": mbps, "bytes": bytes}));
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
 async fn end_probe(session: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || probe::end(&session))
         .await
@@ -746,7 +760,13 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
         .clone()
         .ok_or("native.importSubscriptionFirst")?;
     let port = core.network.proxy_port;
-    if let Some(detail) = proxy_conflict::detail(port) {
+    // 冲突检测会起 scutil/注册表子进程，放进线程里与下面「只读」的读盘 + 配置解析重叠；
+    // 端口回收、写盘等副作用仍在冲突判定之后执行，行为与串行版一致。
+    let conflict = thread::spawn(move || proxy_conflict::detail(port));
+    let config = fs::read_to_string(&path).map_err(|error| error.to_string())?;
+    let mut config: serde_json::Value =
+        serde_json::from_str(&core.network.apply_to_config(&config)?).map_err(|e| e.to_string())?;
+    if let Some(detail) = conflict.join().unwrap_or(None) {
         core.apply(ConnEvent::Fail)?;
         core.message = msg("native.otherProxyInUse", &[("detail", text(detail))]);
         core.push_log(core.message.clone());
@@ -761,9 +781,6 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
     };
     let listen = core.network.listen_address().to_owned();
     let reclaiming = thread::spawn(move || port_reclaim::reclaim(port, &listen));
-    let config = fs::read_to_string(&path).map_err(|error| error.to_string())?;
-    let mut config: serde_json::Value =
-        serde_json::from_str(&core.network.apply_to_config(&config)?).map_err(|e| e.to_string())?;
     tun::configure(&mut config, core.mode == "tun", &core.network.tun)?;
     config["log"] = serde_json::json!({"level":"info", "timestamp":false});
     let endpoint = tray_speed::Endpoint::new()?;
@@ -1410,6 +1427,7 @@ pub fn run() {
             probe_node,
             begin_probe,
             probe_delay,
+            probe_speed,
             end_probe,
             fetch_subscription,
             fetch_subscription_details,

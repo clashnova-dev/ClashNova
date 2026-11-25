@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { CircleCheck, Crosshair, Globe, Network, Power, ExternalLink, ShieldAlert, ShieldCheck, Wifi, Wrench } from "@lucide/vue";
+import { CircleCheck, Crosshair, Gauge, Globe, Network, Power, ExternalLink, ShieldAlert, ShieldCheck, Wifi, Wrench } from "@lucide/vue";
 import HelpTip from "../components/ui/HelpTip.vue";
+import ToggleSwitch from "../components/ui/ToggleSwitch.vue";
 import UnlockCheck from "../components/UnlockCheck.vue";
+import SpeedTestDialog from "../components/SpeedTestDialog.vue";
 import { useApp } from "../composables/useApp";
 import { ipv6Assessment, webrtcAssessment, type PrivacyTone, type RtcObservation } from '../lib/privacy-check';
 import { collectWebrtc } from "../lib/webrtc-check";
@@ -11,6 +13,7 @@ import { confirmation } from "../lib/confirmation";
 import type { MessageKey, Text } from "../i18n";
 
 const { t, tx, isNative, setTunProtection, repairNetwork, networkError, networkSettings, connected, guardArmed, busy, networkLoaded, connectionMode, setConnectionMode, selectedNode, routeMode, phase, tab, openExternal } = useApp();
+const speedDialog = ref<InstanceType<typeof SpeedTestDialog>>();
 const modeOptions = computed(() => [
   { value: 'system' as const, label: t('common.systemProxy') },
   { value: 'tun' as const, label: 'TUN' },
@@ -211,11 +214,11 @@ async function run() {
     <template v-if="connectionMode === 'tun'">
       <div class="setting-row">
         <span class="sr-label"><Network class="sr-icon" :size="17" />{{ t('settings.tunIpv6') }}<HelpTip :text="t('settings.tunIpv6Help')" /></span>
-        <button type="button" role="switch" :aria-checked="networkSettings.tun.ipv6" :aria-label="t('settings.tunIpv6')" class="toggle-switch" :class="{ enabled: networkSettings.tun.ipv6 }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ ipv6: !networkSettings.tun.ipv6 })"><span /></button>
+        <ToggleSwitch :model-value="networkSettings.tun.ipv6" :label="t('settings.tunIpv6')" :disabled="busy || connected || !networkLoaded" @update:model-value="setTunProtection({ ipv6: $event })" />
       </div>
       <div class="setting-row">
         <span class="sr-label"><Power class="sr-icon" :size="17" />{{ t('secnet.killSwitch') }}<HelpTip :text="t('secnet.killSwitchHint')" /></span>
-        <button type="button" role="switch" :aria-checked="networkSettings.tun.killSwitch" :aria-label="t('secnet.killSwitch')" class="toggle-switch" :class="{ enabled: networkSettings.tun.killSwitch }" :disabled="busy || connected || !networkLoaded" @click="setTunProtection({ killSwitch: !networkSettings.tun.killSwitch })"><span /></button>
+        <ToggleSwitch :model-value="networkSettings.tun.killSwitch" :label="t('secnet.killSwitch')" :disabled="busy || connected || !networkLoaded" @update:model-value="setTunProtection({ killSwitch: $event })" />
       </div>
       <p v-if="connected && networkSettings.tun.killSwitch" class="secnet-guard" :class="guardArmed ? 'ok' : 'bad'" role="status"><component :is="guardArmed ? ShieldCheck : ShieldAlert" :size="15" :stroke-width="2" />{{ t(guardArmed ? 'secnet.killSwitchActive' : 'secnet.killSwitchInactive') }}</p>
       <p v-if="connected" class="scope-note">{{ t('settings.disconnectToChangeNetworkSettings') }}</p>
@@ -256,7 +259,10 @@ async function run() {
   <section class="card check-page" :aria-label="t('nav.networkCheck')">
     <div class="check-health">
       <h3>{{ t("check.health") }}<HelpTip :text="t('check.healthHint')" /></h3>
-      <button class="primary" :disabled="status === 'running' || busy" @click="run"><Crosshair :size="16" :stroke-width="2" />{{ status === "running" ? t("check.running") : ran ? t("check.again") : t("check.start") }}</button>
+      <div class="check-health-actions">
+        <button type="button" class="check-speed-btn" @click="speedDialog?.open()"><Gauge :size="16" :stroke-width="2" />{{ t("check.speedTest") }}</button>
+        <button class="primary" :disabled="status === 'running' || busy" @click="run"><Crosshair :size="16" :stroke-width="2" />{{ status === "running" ? t("check.running") : ran ? t("check.again") : t("check.start") }}</button>
+      </div>
     </div>
     <div class="check-grid">
       <div class="check-item"><span><Wifi :size="16" :stroke-width="1.8" />{{ t("check.local") }}</span><strong :class="localTone">{{ tx(localText) }}</strong></div>
@@ -279,6 +285,7 @@ async function run() {
     <p v-if="error" class="form-error" role="alert">{{ tx(error) }}</p>
   </section>
   <UnlockCheck />
+  <SpeedTestDialog ref="speedDialog" />
   </div>
 </template>
 
@@ -299,6 +306,8 @@ async function run() {
 .check-label { font-size: 15px; font-weight: 400; }
 .check-health, .check-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .check-health button { flex: none; min-height: 40px; padding: 0 16px; }
+.check-health-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.check-speed-btn { gap: 6px; }
 .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin-top: 14px; }
 .check-item span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
 .check-item strong { display: block; margin-top: 4px; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }

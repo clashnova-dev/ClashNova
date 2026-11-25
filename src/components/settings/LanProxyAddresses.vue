@@ -40,7 +40,7 @@ onUnmounted(() => { alive = false; window.removeEventListener('focus', refresh);
         <div><code>{{ endpoint(address.ip) }}</code><small>{{ address.interface }}</small></div>
         <button type="button" :disabled="loading || !port" :aria-label="t('settings.copyLanAddress', { address: endpoint(address.ip) })" :title="t('settings.copyLanAddress', { address: endpoint(address.ip) })" @click="copy(address.ip)"><Copy :size="14" /></button>
       </div>
-      <button type="button" class="lan-refresh" :disabled="loading" :aria-label="t('settings.refreshLan')" :title="t('settings.refreshLan')" @click="refresh"><RefreshCw :size="14" :class="{ spinning: loading }" /></button>
+      <button type="button" class="lan-refresh" :disabled="loading" :aria-label="t('settings.refreshLan')" :title="t('settings.refreshLan')" @click="refresh"><RefreshCw :size="14" :class="{ spin: loading }" /></button>
       <div v-if="loading || notice || feedback" class="lan-address-status"><small v-if="loading" role="status">{{ t('settings.lanLoading') }}</small><small v-else-if="notice" role="status">{{ tx(notice) }}</small><small v-else-if="feedback" role="status">{{ tx(feedback) }}</small></div>
     </div>
   </div>
@@ -60,7 +60,4 @@ onUnmounted(() => { alive = false; window.removeEventListener('focus', refresh);
 .lan-address-status{grid-column:1 / -1;display:flex;align-items:center;justify-content:flex-end;gap:8px;color:var(--muted)}
 .lan-addresses.empty .lan-address-status{grid-column:1;grid-row:1;align-self:center}
 .lan-address-status small{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
-.spinning{animation:lan-spin 1s linear infinite}
-@keyframes lan-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.spinning{animation:none}}
 </style>

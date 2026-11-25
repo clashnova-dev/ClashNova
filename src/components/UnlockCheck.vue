@@ -128,7 +128,7 @@ onUnmounted(() => {
       <article v-for="service in visible" :key="service.id" class="unlock-card">
         <div class="unlock-card-top">
           <img class="unlock-logo" :src="logo(service.id)" alt="" width="28" height="28" />
-          <button type="button" class="unlock-retry" :class="{ spin: busy.includes(service.id) }" :disabled="running" :aria-label="t('unlock.retry', { name: t(service.name) })" @click="run([service.id], true)"><RefreshCw :size="15" :stroke-width="1.8" /></button>
+          <button type="button" class="unlock-retry" :disabled="running" :aria-label="t('unlock.retry', { name: t(service.name) })" @click="run([service.id], true)"><RefreshCw :class="{ spin: busy.includes(service.id) }" :size="15" :stroke-width="1.8" /></button>
         </div>
         <strong>{{ t(service.name) }}</strong>
         <span class="unlock-status" :class="results[service.id]?.status || 'pending'">{{ t(statusKey(service.id)) }}<template v-if="results[service.id]?.region"> · {{ results[service.id].region }}</template></span>
@@ -152,14 +152,12 @@ onUnmounted(() => {
 .unlock-card-top { color: var(--muted); }
 .unlock-logo { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
 .unlock-retry { width: 28px; height: 28px; min-height: 0; padding: 0; border: 0; background: transparent; color: var(--muted); }
-.unlock-retry.spin :deep(svg) { animation: unlock-spin 0.8s linear infinite; }
 .unlock-card strong { display: block; margin-top: 14px; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .unlock-status { display: inline-block; max-width: 100%; margin-top: 8px; padding: 2px 8px; border-radius: 8px; background: var(--pill-bg); color: var(--pill-text); font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .unlock-status.available { background: var(--success-bg); color: var(--success); }
 .unlock-status.partial { background: var(--warn-bg); color: var(--warn); }
 .unlock-status.region_blocked, .unlock-status.unreachable { background: var(--danger-bg); color: var(--danger); }
 .unlock .form-error { margin-top: 12px; }
-@keyframes unlock-spin { to { transform: rotate(360deg); } }
 @media (max-width: 980px) {
   .unlock-tools { align-items: flex-start; flex-direction: column; }
   .unlock-node { white-space: normal; }

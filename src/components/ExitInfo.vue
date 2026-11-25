@@ -1,16 +1,17 @@
 <template>
   <section class="ip-card" :aria-label="t('exit.exitInfo')">
-    <header><h2>{{ t('exit.exitInfo') }}</h2><span class="ip-route">{{ t(connected ? 'exit.proxyExit' : 'exit.directExit') }}</span><button class="icon-button" :disabled="!data?.ip || !preferencesReady" :aria-label="t(visible ? 'exit.hideIp' : 'exit.showIp')" :title="t(visible ? 'exit.hideIp' : 'exit.showIp')" @click="visible = !visible"><EyeOff v-if="visible" :size="15" /><Eye v-else :size="15" /></button><button class="icon-button" :aria-label="t('exit.refreshExitIp')" :title="t('exit.refreshExitIp')" :disabled="loading" @click="refresh"><RefreshCw :size="15" :class="{ spinning:loading }" /></button></header>
+    <header><h2>{{ t('exit.exitInfo') }}</h2><span class="ip-route">{{ t(connected ? 'exit.proxyExit' : 'exit.directExit') }}</span><button class="icon-button" :disabled="!data?.ip || !preferencesReady" :aria-label="t(visible ? 'exit.hideIp' : 'exit.showIp')" :title="t(visible ? 'exit.hideIp' : 'exit.showIp')" @click="visible = !visible"><EyeOff v-if="visible" :size="15" /><Eye v-else :size="15" /></button><button class="icon-button" :aria-label="t('exit.refreshExitIp')" :title="t('exit.refreshExitIp')" :disabled="loading" @click="refresh"><RefreshCw :size="15" :class="{ spin:loading }" /></button></header>
     <strong class="ip-address" :title="data ? `${visible && data.ip ? data.ip + ' · ' : ''}${data.source} · ${new Date(data.checkedAt).toLocaleString(locale)}` : undefined">{{ data?.ip ? visible ? data.ip : '••••••••' : '—' }}</strong>
     <dl class="ip-details"><template v-for="[label,value] in details" :key="label"><dt>{{ tx(label) }}</dt><dd :title="value || t('common.unknown')">{{ value || t('common.unknown') }}</dd></template></dl>
     <p v-if="preferenceError" class="ip-message error" role="status">{{ tx(preferenceError) }}</p><p v-if="error" class="ip-message error" role="status">{{ tx(error) }}</p><p v-else-if="data && !data.geo" class="ip-message">{{ t('exit.exitIpIsAvailableLocation') }}</p>
-    <footer><label class="ip-auto"><button class="toggle-switch" :class="{ enabled:autoRefresh }" role="switch" :disabled="!preferencesReady" :aria-checked="autoRefresh" :aria-label="t('exit.autoRefreshIp')" @click="autoRefresh = !autoRefresh"><span /></button><span>{{ t('exit.autoRefresh') }}</span></label><small>300s</small></footer>
+    <footer><label class="ip-auto"><ToggleSwitch v-model="autoRefresh" :label="t('exit.autoRefreshIp')" :disabled="!preferencesReady" /><span>{{ t('exit.autoRefresh') }}</span></label><small>300s</small></footer>
   </section>
 </template>
 <script setup lang="ts">
 import { computed,nextTick,onMounted,onUnmounted,ref,watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { RefreshCw,Eye,EyeOff } from '@lucide/vue';
+import ToggleSwitch from './ui/ToggleSwitch.vue';
 import { readClientSetting, writeClientSetting, acceptBoolean, legacyBoolean } from '../lib/settings-store';
 import { translator, type Locale } from '../i18n';
 const props=defineProps<{locale:Locale;connected:boolean;networkKey:string}>();
@@ -71,7 +72,4 @@ onMounted(async()=>{
 .ip-auto .toggle-switch { transform:scale(.7); transform-origin:left center; margin-right:-10px; }
 .ip-message { margin:0; color:var(--muted); font-size:13px; }
 .ip-message.error { color:var(--danger); }
-.spinning { animation:rotate 1s linear infinite; }
-@keyframes rotate { to { transform:rotate(360deg); } }
-@media(prefers-reduced-motion:reduce) { .spinning { animation:none; } }
 </style>

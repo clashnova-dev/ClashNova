@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch } from "vue";
+import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch, type Component } from "vue";
 import {
   Laptop, Smartphone, Server, Globe, RefreshCw, ArrowUp, Check, X, File as FileIcon,
   Radio, Link2, Unlink, Paperclip, FolderOpen, Copy,
-  ClipboardPaste, Trash2, Pause, Play, MessageSquare, Plus, Settings, ShieldCheck,
+  ClipboardPaste, Trash2, Pause, Play, MessageSquare, Plus, Settings, ShieldCheck, QrCode,
 } from "@lucide/vue";
+import { renderSVG } from "uqr";
 import { useApp } from "../composables/useApp";
 import FileTypeIcon from "../components/FileTypeIcon.vue";
 import { notifications } from "../lib/notifications";
@@ -14,6 +15,7 @@ import type {
   LanLocalDevice, LanDiscoveredDevice, LanTransferTask, LanHistoryEntry, LanSettings,
   LanDeviceType, LanTransferStateName, LanTrustedDevice, LanPairRequest, LanIncomingRequest, LanProgress,
 } from "../lib/lan-transfer";
+import { MAX_TEXT_BYTES } from "../lib/lan-transfer";
 
 type ChatItem = LanHistoryEntry & { live?: boolean };
 
@@ -36,15 +38,18 @@ const adding = ref(false);
 const addDialog = ref<HTMLDialogElement>();
 const settingsDialog = ref<HTMLDialogElement>();
 const pairedDialog = ref<HTMLDialogElement>();
+const qrDialog = ref<HTMLDialogElement>();
 const nameInput = ref("");
 const discoverableInput = ref(true);
 const acceptInput = ref(true);
 const autoAcceptInput = ref(true);
 const savingSettings = ref(false);
 const pairRequest = ref<LanPairRequest | null>(null);
+const pairQueue = ref<LanPairRequest[]>([]);
 const pairDialog = ref<HTMLDialogElement>();
 const responding = ref(false);
 const incoming = ref<LanIncomingRequest | null>(null);
+const incomingQueue = ref<LanIncomingRequest[]>([]);
 const incomingDialog = ref<HTMLDialogElement>();
 const timelineEl = ref<HTMLElement>();
 const menu = ref<{ x: number; y: number; item: ChatItem } | null>(null);
@@ -61,8 +66,15 @@ const states: Record<LanTransferStateName, MessageKey> = {
 };
 const stateLabel = (s: LanTransferStateName) => Object.hasOwn(states, s) ? t(states[s]) : s;
 
-function deviceIcon(type: LanDeviceType | null) {
-  return type === "mobile" ? Smartphone : type === "server" || type === "headless" ? Server : type === "web" ? Globe : Laptop;
+// 传输终态：到达后从活动列表移除并清理进度缓存。
+const TERMINAL_STATES = new Set<LanTransferStateName>(["COMPLETED", "FAILED", "CANCELED"]);
+const isTerminal = (s: LanTransferStateName) => TERMINAL_STATES.has(s);
+
+const DEVICE_ICONS: Partial<Record<LanDeviceType, Component>> = {
+  mobile: Smartphone, server: Server, headless: Server, web: Globe,
+};
+function deviceIcon(type: LanDeviceType | null): Component {
+  return (type && DEVICE_ICONS[type]) || Laptop;
 }
 function fmtSize(bytes: number): string {
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -93,7 +105,13 @@ function showError(error: unknown) { showNotice(tx(error instanceof Error ? erro
 const pairedList = computed(() =>
   trusted.value.map(tr => {
     const dev = devices.value.find(d => d.fingerprint === tr.fingerprint);
-    return { fingerprint: tr.fingerprint, alias: dev?.alias || tr.alias, deviceType: dev?.deviceType ?? null, online: !!dev, address: dev?.address };
+    return {
+      fingerprint: tr.fingerprint,
+      alias: dev?.alias || tr.alias,
+      deviceType: dev?.deviceType ?? null,
+      online: !!dev,
+      address: dev?.address,
+    };
   }));
 // 发现到、但尚未配对的设备。
 const discoveredUnpaired = computed(() =>
@@ -103,7 +121,13 @@ const selectedPeer = computed(() => {
   const dev = devices.value.find(d => d.fingerprint === selected.value);
   const tr = trusted.value.find(x => x.fingerprint === selected.value);
   if (!dev && !tr) return null;
-  return { fingerprint: selected.value, alias: dev?.alias || tr?.alias || selected.value, deviceType: dev?.deviceType ?? null, online: !!dev, address: dev?.address };
+  return {
+    fingerprint: selected.value,
+    alias: dev?.alias || tr?.alias || selected.value,
+    deviceType: dev?.deviceType ?? null,
+    online: !!dev,
+    address: dev?.address,
+  };
 });
 const timeline = computed<ChatItem[]>(() => {
   const live: ChatItem[] = liveTasks.value
@@ -117,9 +141,11 @@ const timeline = computed<ChatItem[]>(() => {
 });
 function transferProgress(item: ChatItem) {
   const sample = progress.value[item.id];
+  const completed = item.state === 'COMPLETED';
   const total = Math.max(0, sample?.bytesTotal ?? item.size);
-  const done = item.state === 'COMPLETED' ? total : Math.min(total, Math.max(0, sample?.bytesDone ?? 0));
-  return { total, done, percent: total ? Math.min(100, Math.floor(done / total * 100)) : item.state === 'COMPLETED' ? 100 : 0 };
+  const done = completed ? total : Math.min(total, Math.max(0, sample?.bytesDone ?? 0));
+  const percent = total ? Math.min(100, Math.floor((done / total) * 100)) : completed ? 100 : 0;
+  return { total, done, percent };
 }
 // 微信式时间分隔：首条有时间的消息，或与上一条间隔≥5 分钟时，在其上方居中显示时间。
 function showTimeDivider(index: number): boolean {
@@ -130,7 +156,7 @@ function showTimeDivider(index: number): boolean {
   return cur.finishedAt - prev.finishedAt >= 300;
 }
 const canSend = computed(() => !!selectedPeer.value?.online && ready.value);
-const draftValid = computed(() => !!draft.value.trim() && new TextEncoder().encode(draft.value).length <= 65536);
+const draftValid = computed(() => !!draft.value.trim() && new TextEncoder().encode(draft.value).length <= MAX_TEXT_BYTES);
 
 async function keepListener(listener?: Promise<() => void>) {
   if (!listener) return;
@@ -162,21 +188,28 @@ async function load() {
     if (disposed) return;
     const [device, config, tasks] = await Promise.all([b.lanGetLocalDevice(), b.lanGetSettings(), b.lanListTransfers()]);
     if (disposed) return;
-    localDevice.value = device; settings.value = config; liveTasks.value = tasks.filter(x => !["COMPLETED", "FAILED", "CANCELED"].includes(x.state));
+    localDevice.value = device; settings.value = config; liveTasks.value = tasks.filter(x => !isTerminal(x.state));
     await reloadTrusted();
     unlisten.forEach(stop => stop()); unlisten = [];
     await keepListener(b.onLanDevices?.(d => { if (!disposed) devices.value = d; }));
     await keepListener(b.onLanPair?.(req => {
-      if (disposed || pairRequest.value?.requestId === req.requestId) return;
-      pairRequest.value = req;
+      if (disposed) return;
+      // 同一请求（展示中或已排队）不重复入列；有正在处理的请求则排队，避免覆盖丢失。
+      if (pairRequest.value?.requestId === req.requestId || pairQueue.value.some(p => p.requestId === req.requestId)) return;
+      if (pairRequest.value) pairQueue.value.push(req); else pairRequest.value = req;
     }));
-    await keepListener(b.onLanIncoming?.(r => { if (!disposed && !incoming.value) incoming.value = r; }));
+    await keepListener(b.onLanIncoming?.(r => {
+      if (disposed) return;
+      // 同一请求不重复入列；已有待确认请求则排队，避免并发接收请求被静默丢弃。
+      if (incoming.value?.taskId === r.taskId || incomingQueue.value.some(x => x.taskId === r.taskId)) return;
+      if (incoming.value) incomingQueue.value.push(r); else incoming.value = r;
+    }));
     await keepListener(b.onLanTransfer?.(task => {
       if (disposed) return;
-      const terminal = ["COMPLETED", "FAILED", "CANCELED"].includes(task.state);
-      if (terminal) {
+      if (isTerminal(task.state)) {
         liveTasks.value = liveTasks.value.filter(x => x.id !== task.id);
-        if (task.state === 'COMPLETED') { const { [task.id]: _drop, ...rest } = progress.value; progress.value = rest; }
+        // 终态一律清理进度缓存，避免失败/取消的条目长期残留。
+        const { [task.id]: _drop, ...rest } = progress.value; progress.value = rest;
         if (task.peerFingerprint === selected.value) void reloadConversation();
       } else {
         const i = liveTasks.value.findIndex(x => x.id === task.id);
@@ -231,7 +264,7 @@ async function respondPair(accept: boolean) {
   try {
     await (await bridge()).lanRespondPair(req.requestId, accept);
     if (disposed) return;
-    pairRequest.value = null;
+    pairRequest.value = pairQueue.value.shift() ?? null;
     if (accept) { await reloadTrusted(); showNotice(t("lan.paired")); }
   } catch (error) { showError(error); }
   finally { if (!disposed) responding.value = false; }
@@ -251,6 +284,17 @@ function unpairSelected() { void unpairDevice(selected.value); }
 
 function openAdd() { manualAddr.value = ""; addDialog.value?.showModal(); }
 function openPaired() { void reloadTrusted(); pairedDialog.value?.showModal(); }
+
+// 扫码直连：本机二维码载荷（clashnova://lan?…）。手机端扫此码即可单播直连，
+// 无需组播（iOS 未获组播权限时也能连）。alias 用 encodeURIComponent，手机端
+// Uri.queryParameters 可正确解码。
+const qrPayload = computed(() => {
+  const d = localDevice.value;
+  if (!d || !d.ip || !d.fingerprint) return "";
+  return `clashnova://lan?v=1&ip=${d.ip}&port=${d.port}&fp=${d.fingerprint}&alias=${encodeURIComponent(d.alias)}`;
+});
+const qrSvg = computed(() => (qrPayload.value ? renderSVG(qrPayload.value, { border: 2 }) : ""));
+function openQr() { qrDialog.value?.showModal(); }
 function openSettings() {
   if (!settings.value) return;
   nameInput.value = settings.value.alias;
@@ -397,7 +441,7 @@ async function respondIncoming(accept: boolean) {
   if (responding.value || !incoming.value) return;
   const req = incoming.value;
   responding.value = true;
-  try { await (await bridge()).lanRespondIncoming(req.taskId, accept, null); if (!disposed) incoming.value = null; }
+  try { await (await bridge()).lanRespondIncoming(req.taskId, accept, null); if (!disposed) incoming.value = incomingQueue.value.shift() ?? null; }
   catch (error) { showError(error); }
   finally { if (!disposed) responding.value = false; }
 }
@@ -414,7 +458,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("click", closeMenu);
   window.removeEventListener("resize", closeMenu);
   window.removeEventListener("blur", closeMenu);
-  pairDialog.value?.close(); incomingDialog.value?.close(); addDialog.value?.close(); settingsDialog.value?.close(); pairedDialog.value?.close();
+  pairDialog.value?.close(); incomingDialog.value?.close(); addDialog.value?.close(); settingsDialog.value?.close(); pairedDialog.value?.close(); qrDialog.value?.close();
 });
 </script>
 
@@ -429,6 +473,7 @@ onBeforeUnmount(() => {
           <div class="rail-tools">
           <button type="button" class="icon-btn" :disabled="busy" :title="t('lan.refresh')" :aria-label="t('lan.refresh')" @click="refresh"><RefreshCw :size="16" :class="{ spin: busy }" /></button>
           <button type="button" class="icon-btn add-btn" :title="t('lan.addDevice')" :aria-label="t('lan.addDevice')" @click="openAdd"><Plus :size="17" /></button>
+          <button type="button" class="icon-btn" :title="t('lan.myQr')" :aria-label="t('lan.myQr')" @click="openQr"><QrCode :size="16" /></button>
           <button type="button" class="icon-btn" :title="t('lan.pairedSection')" :aria-label="t('lan.pairedSection')" @click="openPaired"><ShieldCheck :size="16" /></button>
           <button type="button" class="icon-btn" :title="t('lan.settingsTitle')" :aria-label="t('lan.settingsTitle')" @click="openSettings"><Settings :size="16" /></button>
           </div>
@@ -504,7 +549,7 @@ onBeforeUnmount(() => {
           <footer class="composer">
             <button type="button" class="icon-btn" :disabled="!canSend" :title="t('lan.send')" :aria-label="t('lan.send')" @click="pickAndSend"><Paperclip :size="18" /></button>
             <div class="composer-input">
-            <textarea v-model="draft" :aria-label="t('lan.msgPlaceholder')" :placeholder="canSend ? t('lan.msgPlaceholder') : t('lan.pairToStart')" :disabled="!canSend" rows="1" maxlength="65536" @paste="onComposerPaste" @keydown.enter.exact="onComposerEnter" />
+            <textarea v-model="draft" :aria-label="t('lan.msgPlaceholder')" :placeholder="canSend ? t('lan.msgPlaceholder') : t('lan.pairToStart')" :disabled="!canSend" rows="1" :maxlength="MAX_TEXT_BYTES" @paste="onComposerPaste" @keydown.enter.exact="onComposerEnter" />
             <button type="button" class="send-btn" :disabled="!canSend || !draftValid || sending" :title="t('lan.sendMessage')" :aria-label="t('lan.sendMessage')" @click="sendText"><ArrowUp :size="16" /></button></div>
           </footer>
         </template>
@@ -543,6 +588,19 @@ onBeforeUnmount(() => {
         <div class="dialog-field"><Link2 class="field-icon" :size="15" /><input id="lan-add-input" v-model="manualAddr" type="text" inputmode="url" :placeholder="t('lan.manualPlaceholder')" :disabled="adding" /></div>
         <div class="incoming-actions"><button type="button" :disabled="adding" @click="addDialog?.close()">{{ t("common.cancel") }}</button><button type="submit" class="primary" :disabled="adding || !manualAddr.trim()"><Plus :size="15" />{{ t("lan.addDevice") }}</button></div>
       </form>
+    </dialog>
+
+    <!-- 我的二维码：供手机端扫码直连 -->
+    <dialog ref="qrDialog" class="incoming-dialog qr-dialog" aria-labelledby="lan-qr-title">
+      <header class="incoming-heading"><span class="incoming-icon"><QrCode :size="22" /></span><div><h2 id="lan-qr-title">{{ t("lan.myQr") }}</h2></div></header>
+      <div v-if="qrPayload" class="qr-box">
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="qr-svg" v-html="qrSvg" />
+        <div class="qr-meta"><strong>{{ localDevice?.alias }}</strong><span>{{ localDevice?.ip }}:{{ localDevice?.port }}</span></div>
+        <p class="qr-hint">{{ t("lan.myQrHint") }}</p>
+      </div>
+      <p v-else class="qr-hint qr-noip">{{ t("lan.qrNoIp") }}</p>
+      <div class="incoming-actions"><button type="button" class="primary" @click="qrDialog?.close()">{{ t("common.done") }}</button></div>
     </dialog>
 
     <!-- 设置 -->
@@ -718,6 +776,15 @@ onBeforeUnmount(() => {
 .incoming-actions button:disabled { opacity:.5; }
 .add-device-dialog .incoming-heading { align-items:center; }
 .add-device-dialog .incoming-actions { margin-top:20px; }
+.qr-dialog { width:320px; }
+.qr-box { display:flex; flex-direction:column; align-items:center; gap:12px; margin:10px 0 18px; }
+.qr-svg { width:220px; height:220px; padding:10px; background:#fff; border-radius:12px; box-sizing:content-box; }
+.qr-svg :deep(svg) { width:100%; height:100%; display:block; }
+.qr-meta { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.qr-meta strong { font-size:14px; }
+.qr-meta span { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.qr-hint { color:var(--muted); font-size:12px; text-align:center; margin:0; line-height:1.5; }
+.qr-noip { margin:20px 0; }
 .field-label { display:block; margin:16px 0 7px; color:var(--muted); font-size:12px; }
 .dialog-field { display:flex; align-items:center; gap:8px; padding:0 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg); }
 .dialog-field:focus-within { outline:2px solid var(--focus); outline-offset:1px; border-color:var(--selected-border); }
@@ -747,9 +814,7 @@ onBeforeUnmount(() => {
 .paired-dialog .incoming-heading { flex:none; }
 .paired-dialog .paired-manage { flex:1; min-height:0; max-height:none; margin-top:16px; }
 .paired-dialog .incoming-actions { flex:none; margin-top:16px; }
-.spin { animation:lan-spin .9s linear infinite; }
-@keyframes lan-spin { to { transform:rotate(360deg); } }
-@media (prefers-reduced-motion:reduce) { .spin { animation:none; } .prog-bar i { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .prog-bar i { transition:none; } }
 
 @container lan-chat (max-width:540px) {
   .chat-shell { flex-direction:column; }

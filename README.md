@@ -15,6 +15,7 @@
   <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
   <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
   <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+  <a href="https://x.com/ClashNova2048"><img alt="Follow on X" src="https://img.shields.io/badge/Follow-%40ClashNova2048-000000?style=flat-square&logo=x&logoColor=white"></a>
 </p>
 
 <p>
@@ -28,8 +29,6 @@
 </p>
 
 <img src="docs/screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop — Overview" />
-
-<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
 
 </div>
 
@@ -82,12 +81,9 @@ Inspect the routing table that is actually in effect — each rule's type, what 
 
 ## 🛠️ Building
 
-Packages can be built from [Actions → Desktop packages](https://github.com/clashnova-dev/ClashNova/actions/workflows/desktop.yml). The default `all` option builds Windows x64, Linux x64 and separate Apple Silicon / Intel macOS versions. Artifacts include the Windows installer, Linux DEB/AppImage, macOS DMGs, version metadata and SHA-256 checksums. The application name is **ClashNova**; `src-tauri/tauri.conf.json`, `package.json` and Cargo use the same version. CI checks the packaged launcher/executable name, icon and version. Updater signatures are generated only when the repository's `TAURI_SIGNING_PRIVATE_KEY` secret is configured; standard installers do not require that key.
-
 You'll need Node.js with pnpm, Rust, Go, Python 3, and the Tauri system dependencies for your platform.
 
 ```sh
-cp .env.example .env
 pnpm install --frozen-lockfile
 python3 scripts/prepare-sidecars.py   # compile the sing-box sidecar from source
 pnpm tauri dev                         # development
@@ -108,14 +104,11 @@ sudo xattr -rd com.apple.quarantine "/Applications/ClashNova.app"
 
 ## ⚙️ Configuration
 
-Rule mode keeps LAN traffic and a compact list of 500 domestic service/resource domains direct; other destinations use the selected proxy unless a provider or application rule overrides them. The curated list includes subdomains and essential static/CDN hosts, and is not a live traffic ranking. It replaces the former full China domain and IP datasets. TUN DNS uses the same direct-domain list. Global mode skips these built-in rules. Inspect the resulting configuration on the **Rules** page.
-
 Build-time options are read by Vite from a `.env` file (ignored by `.gitignore`):
 
 ```
 VITE_DEFAULT_SERVER=     # optional backend URL; leave empty to run as a standalone subscription client
 VITE_ENABLE_LOGIN=false  # when false, the account login screen is hidden
-VITE_GITHUB_URL=         # About page: project repository link; empty hides the row
 ```
 
 Left at their defaults, the app is a self-contained subscription client that needs no server. The two flags are the extension point for wiring it to your own backend.
@@ -126,7 +119,7 @@ Left at their defaults, the app is a self-contained subscription client that nee
 src/
   App.vue                 shell: side navigation plus the individual pages
   composables/useApp.ts   state hub (session / subscriptions / nodes / connection / settings)
-  pages/                  Overview / Nodes / Subscriptions / Connections / Rules / Logs / Network / LAN / Settings / Help
+  pages/                  Overview / Nodes / Subscriptions / Connections / Logs / Network / Settings / Help
   i18n/                   message catalogs
   lib/                    connection state machine, subscription parsing, preferences, TUN service
   styles/app.css          light and dark design tokens
@@ -138,33 +131,3 @@ The actual outbound traffic is forwarded by the bundled sing-box core.
 ## 📄 License
 
 GPL-3.0 — see [LICENSE](LICENSE). The bundled sing-box core is compiled from source (GPL-3.0), so the project as a whole is released under GPL-3.0; distributions must follow the same license and make the corresponding source available.
-## GitHub updates
-
-The desktop updater reads signed updates from [GitHub Releases](https://github.com/clashnova-dev/ClashNova/releases), using the release's `latest.json` manifest. Update payloads are verified with the embedded public key before installation. This update signature is independent of Windows Authenticode and Apple notarization.
-
-Version 0.1.1 establishes the public release signing key. Install it manually once when moving from the initial 0.1.0 packages; subsequent compatible releases use the built-in updater. Private release keys are kept outside the repository and supplied to GitHub Actions through encrypted secrets.
-
-## Privacy checks and routing coverage
-
-The Network page shows the actual proxy mode and saved TUN options. IPv6 and kill-switch changes require confirmation and a disconnected TUN session; the displayed switches update only after the native host accepts the settings. Reapply/reconnect also requires confirmation.
-
-System/manual proxy covers proxy-aware applications. It does not capture all system DNS, IPv6 or WebRTC UDP traffic. TUN config captures DNS and IPv6 and routes STUN through the selected proxy; configured direct rules and route exclusions remain effective. The domestic TUN resolver uses pinned AliDNS/DNSPod DoH; the automatic choice is AliDNS DoH. These settings alone do not verify absence of leaks.
-
-Checks are user initiated. HTTP exit probes use Cloudflare trace, and WebRTC candidate gathering uses Cloudflare STUN. The built-in WebRTC result applies only to the app webview. Use the BrowserLeaks DNS, WebRTC and IP links from the browser you actually use to validate its behavior. A timeout, unavailable IPv6, or absent ICE candidates stays unconfirmed. Matching IPs describe the observed probes, not a guarantee for all traffic. Probe observations are discarded when the connection, node, routing mode or network settings change.
-
-Regression coverage includes mapped IPv4/IPv6 candidates, dual-stack exits, ICE cancellation and timeouts, invalid successful HTTP responses, native TUN DNS/STUN configuration, and settings confirmation. Browser interaction checks use mocked native calls; they do not replace a live OS-level TUN routing test.
-
-## Local configuration and rules
-
-On Windows, client files live under `%APPDATA%\dev.airport.client\`:
-
-- `config.json`: the generated core configuration.
-- `network-settings.json`: native proxy/DNS/TUN options.
-- `subscriptions.json`: locally saved subscriptions.
-- `airport-settings.json`: preferences, application policies, window/IP/notification options and an opt-in remembered session.
-
-The desktop app uses private native files, not browser storage. Older webview preferences are read only for migration and removed after the native write is verified. Native read/write failures are reported rather than silently falling back to localStorage. A browser-only development preview keeps settings in memory.
-
-The Rules navigation page shows routing generated from the selected subscription and application policies. It preserves ordering and compound conditions, supports source filtering and case/word/regex search, and renders at most 100 entries per page. TUN-specific DNS/UDP capture rules are appended separately by the native core.
-
-Version 0.1.3 fixed rule-mode startup rejecting the client's own pretty-printed config. The former full domain/IP dataset could occupy about 1.72 MiB compactly and 2.98 MiB with indentation; current built-in routing uses the compact 500-domain list described above. Saved runtime JSON is compact. Generated configurations have a bounded 8 MiB budget; subscription imports remain limited to 2 MiB and the authenticated TUN frame budget remains 4 MiB. Regression tests cover cached legacy files, repeated system/TUN configuration and encrypted IPC framing. Existing subscriptions do not need to be deleted or reimported.

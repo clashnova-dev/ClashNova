@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::{
     collections::{HashMap, HashSet},
     error::Error as StdError,
-    io::Write,
+    io::{Read, Write},
     net::{TcpListener, TcpStream},
     process::{Child, Command, Stdio},
     sync::{
@@ -17,6 +17,9 @@ static SESSION: Mutex<Option<Arc<Session>>> = Mutex::new(None);
 static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
 static STOPPING: AtomicBool = AtomicBool::new(false);
+/// 并发探测上限，与 UI「测速并发」上限一致（见 src/lib/preferences.ts 的 1–64 clamp）。
+/// 作为后端兜底：前端 worker 数已 clamp 到同值，二者对齐可避免高并发时节点被误判为失败。
+const MAX_ACTIVE_PROBES: usize = 64;
 struct Slot;
 impl Drop for Slot {
     fn drop(&mut self) {
@@ -306,7 +309,7 @@ pub fn delay(id: String, tag: String) -> Result<DelayResult, String> {
     if session.cancelled.load(Ordering::SeqCst) {
         return Err("native.probeStopped".into());
     }
-    if ACTIVE.fetch_add(1, Ordering::SeqCst) >= 12 {
+    if ACTIVE.fetch_add(1, Ordering::SeqCst) >= MAX_ACTIVE_PROBES {
         ACTIVE.fetch_sub(1, Ordering::SeqCst);
         return Err("native.probeSlotsBusy".into());
     }
@@ -325,6 +328,100 @@ pub fn delay(id: String, tag: String) -> Result<DelayResult, String> {
         warm,
     )
 }
+
+#[derive(serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeedResult {
+    /// 实测平均下载速率（Mbps）。
+    mbps: f64,
+    /// 测速窗口内的峰值瞬时速率（Mbps）。
+    peak_mbps: f64,
+    /// 累计下载字节数。
+    bytes: u64,
+    /// 实际计时时长（毫秒）。
+    millis: u64,
+}
+
+/// 单节点下载测速。复用隔离测试核中该节点的本地端口，经代理流式拉取一段数据并计时，
+/// 期间按固定间隔通过 `on_progress(瞬时Mbps, 累计字节)` 回报进度以驱动前端仪表盘。
+///
+/// 下载源为 Cloudflare 免鉴权测速端点（与延迟探测同域，无需任何凭证）。为同时兼顾
+/// 测量精度与用户流量，窗口上限 10s、数据上限 100MB，任一先到即停：慢速节点按 10s 计，
+/// 高速节点下满 100MB 即止，单次最多消耗约 100MB。
+pub fn speed<F: Fn(f64, u64)>(id: String, tag: String, on_progress: F) -> Result<SpeedResult, String> {
+    const MAX_BYTES: u64 = 100 * 1024 * 1024;
+    const WINDOW: Duration = Duration::from_secs(10);
+    const EMIT_EVERY: Duration = Duration::from_millis(250);
+
+    let session = SESSION
+        .lock()
+        .unwrap()
+        .as_ref()
+        .filter(|s| s.id == id)
+        .cloned()
+        .ok_or("native.probeEnded")?;
+    if session.cancelled.load(Ordering::SeqCst) {
+        return Err("native.probeStopped".into());
+    }
+    let port = session.ports.get(&tag).ok_or("native.probeNodeNotFound")?;
+    let client = reqwest::blocking::Client::builder()
+        .proxy(reqwest::Proxy::all(format!("http://127.0.0.1:{port}")).map_err(|e| e.to_string())?)
+        .redirect(reqwest::redirect::Policy::none())
+        // 兜底：单次读取空闲超过该时长即判定失败；正常窗口由下方 10s 控制。
+        .timeout(Duration::from_secs(20))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let url = format!("https://speed.cloudflare.com/__down?bytes={MAX_BYTES}");
+    let mut response = client
+        .get(&url)
+        .send()
+        .map_err(|error| describe_request_error(&error))?;
+    if !response.status().is_success() {
+        return Err(msg(
+            "native.probeHttpStatus",
+            &[("status", text(response.status()))],
+        ));
+    }
+
+    let started = Instant::now();
+    let mut total: u64 = 0;
+    let mut peak: f64 = 0.0;
+    let mut window_start = Instant::now();
+    let mut window_bytes: u64 = 0;
+    let mut buf = [0u8; 65536];
+    loop {
+        // 用户关闭弹窗会 end 掉测试核，此处提前感知以尽快退出下载循环。
+        if session.cancelled.load(Ordering::SeqCst) {
+            return Err("native.probeStopped".into());
+        }
+        let read = response.read(&mut buf).map_err(|e| e.to_string())?;
+        if read == 0 {
+            break;
+        }
+        total += read as u64;
+        window_bytes += read as u64;
+        let elapsed = window_start.elapsed();
+        if elapsed >= EMIT_EVERY {
+            let mbps = window_bytes as f64 * 8.0 / 1_000_000.0 / elapsed.as_secs_f64();
+            peak = peak.max(mbps);
+            on_progress(mbps, total);
+            window_start = Instant::now();
+            window_bytes = 0;
+        }
+        if total >= MAX_BYTES || started.elapsed() >= WINDOW {
+            break;
+        }
+    }
+    let secs = started.elapsed().as_secs_f64().max(0.001);
+    let mbps = total as f64 * 8.0 / 1_000_000.0 / secs;
+    Ok(SpeedResult {
+        mbps,
+        peak_mbps: peak.max(mbps),
+        bytes: total,
+        millis: started.elapsed().as_millis() as u64,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

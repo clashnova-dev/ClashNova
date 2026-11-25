@@ -15,6 +15,7 @@
   <img alt="Vue 3" src="https://img.shields.io/badge/Vue_3-42b883?style=flat-square&logo=vuedotjs&logoColor=white">
   <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri_2-24c8db?style=flat-square&logo=tauri&logoColor=white">
   <img alt="sing-box core" src="https://img.shields.io/badge/core-sing--box-7d56f4?style=flat-square">
+  <a href="https://x.com/ClashNova2048"><img alt="Follow on X" src="https://img.shields.io/badge/Follow-%40ClashNova2048-000000?style=flat-square&logo=x&logoColor=white"></a>
 </p>
 
 <p>
@@ -28,8 +29,6 @@
 </p>
 
 <img src="../screenshots/overview-light.jpg" width="840" alt="ClashNova Desktop" />
-
-<p><a href="https://github.com/clashnova-dev">clashnova-dev</a></p>
 
 </div>
 

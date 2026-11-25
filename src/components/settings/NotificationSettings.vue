@@ -1,6 +1,7 @@
-<template><div class="setting-row"><span>{{ t('notifications.systemNotifications') }}<HelpTip :text="t('notifications.connectionAndServiceUpdatesIn')" /><small v-if="hint" class="setting-description" role="status">{{ hint }}</small></span><div class="notice-settings-actions"><button :disabled="busy" @click="test">{{ t('notifications.testNotification') }}</button><button role="switch" class="toggle-switch" :class="{enabled:notificationsEnabled}" :aria-label="t('notifications.systemNotifications')" :aria-checked="notificationsEnabled" :disabled="busy" @click="toggle"><span /></button></div></div></template>
+<template><div class="setting-row"><span>{{ t('notifications.systemNotifications') }}<HelpTip :text="t('notifications.connectionAndServiceUpdatesIn')" /><small v-if="hint" class="setting-description" role="status">{{ hint }}</small></span><div class="notice-settings-actions"><button :disabled="busy" @click="test">{{ t('notifications.testNotification') }}</button><ToggleSwitch :model-value="notificationsEnabled" :label="t('notifications.systemNotifications')" :disabled="busy" @update:model-value="toggle" /></div></div></template>
 <script setup lang="ts">
 import HelpTip from '../ui/HelpTip.vue';
+import ToggleSwitch from '../ui/ToggleSwitch.vue';
 import {ref} from 'vue';import {notifications,notificationsEnabled,enableNotifications} from '../../lib/notifications';import {translator, type Locale} from '../../i18n';
 const props=defineProps<{locale:Locale}>();const { t, tx } = translator(() => props.locale);const busy=ref(false),hint=ref('');
 async function toggle(){busy.value=true;try{const ok=await enableNotifications(!notificationsEnabled.value);hint.value=ok?'':t('notifications.allowAirportNotificationsInSystem');}finally{busy.value=false;}}

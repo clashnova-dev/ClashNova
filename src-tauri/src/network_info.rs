@@ -181,6 +181,22 @@ pub struct AutoSelection {
     tag: String,
     delay: Option<u64>,
 }
+/// 惰性缓存的 no-proxy client：`get_auto_selection` 每 5s 轮询一次，复用可免去每次重建
+/// client（含 TLS/连接池初始化），并对本地 Clash API 保持 keep-alive。
+fn auto_selection_client() -> Result<&'static reqwest::Client, &'static str> {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    if let Some(client) = CLIENT.get() {
+        return Ok(client);
+    }
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(Duration::from_secs(3))
+        .build()
+        .map_err(|_| "native.autoNodeClientFailed")?;
+    Ok(CLIENT.get_or_init(|| client))
+}
+
 #[tauri::command]
 pub async fn get_auto_selection(
     state: State<'_, Arc<Mutex<Core>>>,
@@ -189,14 +205,9 @@ pub async fn get_auto_selection(
     let Some(ref endpoint) = endpoint else {
         return Ok(None);
     };
-    let client = reqwest::Client::builder()
-        .no_proxy()
-        .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(3))
-        .build()
-        .map_err(|_| "native.autoNodeClientFailed")?;
+    let client = auto_selection_client()?;
     let response = endpoint
-        .request(&client, reqwest::Method::GET, "/proxies/__airport_auto__")
+        .request(client, reqwest::Method::GET, "/proxies/__airport_auto__")
         .send()
         .await
         .map_err(|_| "native.autoNodeUnavailable")?;

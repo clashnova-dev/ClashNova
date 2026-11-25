@@ -58,6 +58,7 @@
     "allow-probe-node",
     "allow-begin-probe",
     "allow-probe-delay",
+    "allow-probe-speed",
     "allow-end-probe",
     "allow-fetch-subscription",
     "allow-fetch-subscription-details",

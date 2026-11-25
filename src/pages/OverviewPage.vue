@@ -97,7 +97,7 @@ const chart = computed(() => {
   <div class="ov">
     <section class="card ov-hero" :aria-label="t('common.connectionStatus')">
       <div class="ov-hero-main">
-        <button class="ov-power" :class="{ active: connected && !pending, pending }" :disabled="busy || ['PREPARING', 'CONNECTING', 'DISCONNECTING'].includes(phase) || !rawProfile || !selectedNode" :aria-busy="pending" :aria-label="connectionAction ? connectionHeading : connected ? t('overview.disconnect') : t('overview.connect')" @click="toggle"><LoaderCircle v-if="pending" class="connection-spinner" :size="30" :stroke-width="2" /><Power v-else :size="32" :stroke-width="2.2" /></button>
+        <button class="ov-power" :class="{ active: connected && !pending, pending }" :disabled="busy || ['PREPARING', 'CONNECTING', 'DISCONNECTING'].includes(phase) || !rawProfile || !selectedNode" :aria-busy="pending" :aria-label="connectionAction ? connectionHeading : connected ? t('overview.disconnect') : t('overview.connect')" @click="toggle"><LoaderCircle v-if="pending" class="spin" :size="30" :stroke-width="2" /><Power v-else :size="32" :stroke-width="2.2" /></button>
         <div class="ov-state">
           <span v-if="connected && !pending" class="pill" :class="phaseTone">{{ t("overview.proxyRunning") }}<template v-if="connectionDuration"> · {{ connectionDuration }}</template></span>
           <strong>{{ connectionHeading }}</strong>
@@ -164,8 +164,5 @@ const chart = computed(() => {
 </template>
 
 <style scoped>
-.connection-spinner{animation:connection-spin .9s linear infinite}
 .ov-power.pending{opacity:1;cursor:progress}
-@keyframes connection-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.connection-spinner{animation:none}}
 </style>

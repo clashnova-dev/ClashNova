@@ -144,6 +144,10 @@ input { caret-color:var(--accent-text); }
 .status-chip { flex:0 1 auto; align-self:center; min-width:0; max-width:340px; padding:5px 12px; font-size:14px; }
 .status-chip > span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .status-dot { flex:none; width:8px; height:8px; border-radius:50%; background:currentColor; }
+/* 统一旋转动画（RefreshCw / LoaderCircle 等 busy 指示），替代各组件各自的 @keyframes 副本。 */
+.spin { animation:app-spin .9s linear infinite; }
+@keyframes app-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .spin { animation:none; } }
 /* ---- Overview ---- */
 .ov { flex:1; min-height:0; display:flex; flex-direction:column; gap:7px; }
 .ov-row { flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }

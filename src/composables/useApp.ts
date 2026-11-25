@@ -23,6 +23,7 @@ import { sortByLatency } from "../lib/node-order";
 import { regionCode } from "../lib/regions";
 import { encode, msg, translator, type Locale, type MessageKey, type Text } from "../i18n";
 import type { LanLocalDevice, LanDiscoveredDevice, LanTransferTask, LanHistoryEntry, LanSettings, LanIncomingRequest, LanProgress, LanTrustedDevice, LanPairRequest } from "../lib/lan-transfer";
+import { DEFAULT_LAN_PORT } from "../lib/lan-transfer";
 import { parseDeepLink, redeemedSubscription } from "../lib/deep-link";
 import { builtinRouteRules } from "../lib/routing-rules";
 
@@ -212,6 +213,13 @@ const chainGroups = ref<ChainGroup[]>([]);
 const chainTesting = ref(false);
 const chainDelay = ref<number | null>(null);
 const chainError = ref<Text>("");
+// 单节点下载测速（网速测试弹窗）：复用隔离测试核，与批量延迟测试互斥。
+const speedTesting = ref(false);
+const speedProgressMbps = ref(0);
+const speedPing = ref<number | null>(null);
+const speedResult = ref<{ mbps: number; peakMbps: number; bytes: number; millis: number } | null>(null);
+const speedError = ref<Text>("");
+let speedRun = 0;
 let chainRun = 0;
 const latencies = ref<Record<string, number>>({});
 // Rows keep their place while a test runs: the order uses the delays from before the run
@@ -383,6 +391,8 @@ type Bridge = {
   probeNode(host: string, port: number): Promise<number>;
   beginProbe(config: string, tags: string[]): Promise<string>;
   probeDelay(session: string, tag: string): Promise<{ delay: number; coldDelay: number; warmed: boolean }>;
+  probeSpeed(session: string, tag: string): Promise<{ mbps: number; peakMbps: number; bytes: number; millis: number }>;
+  onSpeedProgress(cb: (p: { mbps: number; bytes: number }) => void): Promise<() => void>;
   endProbe(session: string): Promise<void>;
   fetchSubscription(url: string): Promise<string>;
   fetchSubscriptionDetails(url: string): Promise<SubscriptionDownload>;
@@ -449,6 +459,8 @@ async function bridge(): Promise<Bridge> {
       probeNode: (host, port) => invoke("probe_node", { host, port }),
       beginProbe: (config, tags) => invoke("begin_probe", { config, tags }),
       probeDelay: (session, tag) => invoke("probe_delay", { session, tag }),
+      probeSpeed: (session, tag) => invoke("probe_speed", { session, tag }),
+      async onSpeedProgress(cb) { return listen<{ mbps: number; bytes: number }>("probe://speed", e => cb(e.payload)); },
       endProbe: (session) => invoke("end_probe", { session }),
       fetchSubscription: (url) => invoke("fetch_subscription", { url }),
       async fetchSubscriptionDetails(url) {
@@ -528,8 +540,8 @@ function browserBridge(): Bridge {
   let note = "preview.noCore";
   let lines: string[] = [];
   return {
-    async lanGetLocalDevice() { return { alias: "ClashNova", fingerprint: "", deviceType: "desktop", port: 53317 }; },
-    async lanAddManualDevice(addr) { return { alias: addr, fingerprint: addr, address: addr, port: 53317, deviceType: "desktop", trusted: false }; },
+    async lanGetLocalDevice() { return { alias: "ClashNova", fingerprint: "", deviceType: "desktop", port: DEFAULT_LAN_PORT, ip: null }; },
+    async lanAddManualDevice(addr) { return { alias: addr, fingerprint: addr, address: addr, port: DEFAULT_LAN_PORT, deviceType: "desktop", trusted: false }; },
     async lanGetSettings() { return { alias: "ClashNova", discoverable: true, acceptIncoming: true, autoAcceptTrusted: false, defaultSaveDir: "", maxConcurrent: 2 }; },
     async lanUpdateSettings(settings) { return settings; },
     async lanRefreshDevices() {},
@@ -582,6 +594,8 @@ function browserBridge(): Bridge {
     async probeNode() { throw new Error("preview.latencyNeedsDesktop"); },
     async beginProbe() { throw new Error("preview.probeNeedsDesktop"); },
     async probeDelay() { throw new Error("preview.probeNeedsDesktop"); },
+    async probeSpeed() { throw new Error("preview.probeNeedsDesktop"); },
+    async onSpeedProgress() { return () => {}; },
     async endProbe() {},
     async fetchSubscription(url) { const response = await fetch(url); if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.text(); },
     async fetchSubscriptionDetails(url) { const response = await fetch(url); if (!response.ok) throw new Error(`HTTP ${response.status}`); return { raw: await response.text(), userinfo: response.headers.get("subscription-userinfo") }; },
@@ -1087,6 +1101,55 @@ async function testChain(ids: string[]) {
 }
 // A past end-to-end result no longer describes an edited chain; drop it when the draft changes.
 function clearChainTest() { chainDelay.value = null; chainError.value = ""; }
+
+// 网速测试：对指定（默认当前选中）节点先测一次延迟作 Ping，再经隔离测试核实测下载速率。
+// 下载进度由后端 `probe://speed` 事件驱动仪表盘；与批量延迟测试共用 activeProbeSession，互斥运行。
+async function testSpeed(nodeId?: string) {
+  if (speedTesting.value) return;
+  const external = profileKind.value === "external";
+  const id = nodeId || (selectedNode.value === AUTOMATIC_NODE_ID
+    ? nodes.value.find(node => outboundTag(node.id, external) === automaticSelection.value?.tag)?.id
+    : selectedNode.value);
+  if (testing.value) { speedError.value = "nodes.testBusy"; return; }
+  if (!isNative || !rawProfile.value || !id) { speedError.value = "nodes.testNeedsDesktop"; return; }
+  const tag = outboundTag(id, external);
+  const run = ++speedRun;
+  speedTesting.value = true;
+  speedResult.value = null; speedError.value = ""; speedProgressMbps.value = 0; speedPing.value = null;
+  let session: string | null = null;
+  let client: Bridge | null = null;
+  let stop: (() => void) | undefined;
+  try {
+    const config = external ? JSON.stringify(parseSingBoxProfile(rawProfile.value).config) : rawProfile.value;
+    client = await bridge();
+    stop = await client.onSpeedProgress(p => { if (run === speedRun && speedTesting.value) speedProgressMbps.value = p.mbps; });
+    session = await client.beginProbe(config, [tag]);
+    activeProbeSession = session;
+    if (run !== speedRun) return;
+    // 先测延迟当 Ping；失败不致命（最终以下载结果为准），下载会给出真实错误。
+    try { speedPing.value = (await client.probeDelay(session, tag)).delay; } catch { speedPing.value = null; }
+    if (run !== speedRun) return;
+    const result = await client.probeSpeed(session, tag);
+    if (run !== speedRun) return;
+    speedResult.value = result;
+    speedProgressMbps.value = result.mbps;
+  } catch (error) {
+    if (run === speedRun) speedError.value = String(error);
+  } finally {
+    stop?.();
+    if (session && client) await client.endProbe(session).catch(() => {});
+    if (activeProbeSession === session) activeProbeSession = null;
+    if (run === speedRun) speedTesting.value = false;
+  }
+}
+// 关闭弹窗/取消：作废当前轮并 end 掉测试核，后端下载循环感知 cancelled 后尽快退出。
+function cancelSpeedTest() {
+  speedRun++;
+  const session = activeProbeSession;
+  if (session) void bridge().then(client => client.endProbe(session)).catch(() => {});
+  speedTesting.value = false;
+  speedProgressMbps.value = 0;
+}
 
 async function windowAction(action: "minimize" | "toggleMaximize" | "close") {
   if (!("__TAURI_INTERNALS__" in window)) { message.value = "error.windowControlsDesktopOnly"; return; }
@@ -1765,7 +1828,7 @@ async function toggle() {
     void refreshProxyDiagnostics();
   }
 }
-  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,guardArmed,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setTunProtection,repairNetwork,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,saveExternalEdit,saveExternalInfo,saveExternalNodes,saveExternalRules,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
+  return { connectionAction,connectionProgress,logsLoading,logsError,renderLogLine,enableLogin,githubUrl,openExternal,locale,regionCode,latencyTone,phaseTone,statusChipText,selectedRegionLabel,selectedLatencyText,connectionDuration,rememberMe,guardBlocking,guardArmed,releaseGuard,access,accountMenu,activateExternal,activeExternalId,activeProbeSession,activeSub,activityLogs,addActivity,addExternal,airportUsage,allLogs,api,applySelectedNode,applySnapshot,applyTheme,automaticGeneration,automaticNodeName,automaticSelection,automaticTimer,autostartBusy,autostartEnabled,autostartError,autostartReady,updateOffer,updateStatus,installingUpdate,installUpdate,baseUrl,bridge,browserBridge,buildProfileConfig,busy,cacheReady,cachedNode,chain,chainActive,chainNames,chainSummary,chainGroups,commitChain,saveChainGroup,deleteChainGroup,testChain,clearChainTest,chainTesting,chainDelay,chainError,testSpeed,cancelSpeedTest,speedTesting,speedProgressMbps,speedPing,speedResult,speedError,cancelProbes,checkUpdates,checkingUpdates,chooseFile,closeProfileDialog,importDialog,importError,importTarget,confirmImport,dismissImport,coldLatencies,colorScheme,connected,connectionMode,connectionNodeNames,copySubscription,currentExternal,currentPlatform,diagnosticBusy,draftAllowLan,draftProxyPort,draftTun,draftTunMtu,draftTunExclude,email,enterLocal,externalProfiles,fmt,followLogs,importSub,installedVersion,isLinux,isMac,isNative,label,latencies,latencyLabel,localMode,localProxyAddress,logLine,logViewport,login,loginError,logout,logs,logsGeneration,logsText,logsTimer,mainContent,message,navigation,networkDirty,networkError,networkLoaded,networkSettings,networkSecurity,setNetworkSecurity,setTunProtection,repairNetwork,appPolicies,setAppPolicy,reapplyProfile,newProfileName,newProfileUrl,nodeSort,nodes,normalizeExternalRaw,onLogScroll,openProfileDialog,password,persistExternal,persistPreferences,phase,pollLogs,preventContextMenu,previewBridge,probeCancelling,probeErrors,probeProgress,probeConcurrency,probeRun,probeStates,probeSummary,probeTotal,profileCacheKey,profileDialog,profileError,profileKind,profileLabel,profileNameInput,proxyDiagnostic,rawProfile,reconcileConnectionError,refreshAutomaticSelection,refreshData,refreshExternal,refreshLogs,refreshProxyDiagnostics,refreshToken,remainingTraffic,removeExternal,saveExternalEdit,saveExternalInfo,saveExternalNodes,saveExternalRules,resetProfileDialog,routeMode,saveNetworkSettings,scrollLogs,selectNode,selectProfile,selectedFile,selectedNode,selectedNodeName,selectedNodes,setConnectionMode,setRouteMode,showTraySpeed,sortedNodes,stopListen,stopTrayListen,subUrl,syncTray,t,tx,tab,testLatencies,testing,theme,title,toggle,toggleAutostart,trafficLabel,trayAction,updateMode,usagePercent,warmedLatencies,windowAction,bootstrap,teardown,AUTOMATIC_NODE_ID,subscriptionHost };
 }
 export type AppStore = ReturnType<typeof create>;
 let store: AppStore | null = null;

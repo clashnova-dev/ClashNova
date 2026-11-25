@@ -2493,6 +2493,12 @@
           "markdownDescription": "Enables the probe_node command without any pre-configured scope."
         },
         {
+          "description": "Enables the probe_speed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-probe-speed",
+          "markdownDescription": "Enables the probe_speed command without any pre-configured scope."
+        },
+        {
           "description": "Enables the proxy_diagnostics command without any pre-configured scope.",
           "type": "string",
           "const": "allow-proxy-diagnostics",
@@ -2923,6 +2929,12 @@
           "type": "string",
           "const": "deny-probe-node",
           "markdownDescription": "Denies the probe_node command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the probe_speed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-probe-speed",
+          "markdownDescription": "Denies the probe_speed command without any pre-configured scope."
         },
         {
           "description": "Denies the proxy_diagnostics command without any pre-configured scope.",

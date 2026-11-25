@@ -1,7 +1,7 @@
 <template>
   <section class="shortcut-settings">
     <h2>{{ t('common.keyboardShortcuts') }}</h2>
-    <div class="setting-row"><span>{{ t('shortcuts.enableGlobalShortcuts') }}<HelpTip :text="t('shortcuts.worksWhenTheWindowIs')" /></span><button class="toggle-switch" :class="{ enabled:draft.enabled }" role="switch" :aria-checked="draft.enabled" :aria-label="t('shortcuts.enableGlobalShortcuts')" :disabled="!ready || saving" @click="draft.enabled = !draft.enabled"><span /></button></div>
+    <div class="setting-row"><span>{{ t('shortcuts.enableGlobalShortcuts') }}<HelpTip :text="t('shortcuts.worksWhenTheWindowIs')" /></span><ToggleSwitch v-model="draft.enabled" :label="t('shortcuts.enableGlobalShortcuts')" :disabled="!ready || saving" /></div>
     <div v-for="item in fields" :key="item.key" class="setting-row"><label :for="`shortcut-${item.key}`">{{ tx(item.label) }}</label><div class="shortcut-input"><input :id="`shortcut-${item.key}`" readonly :value="recording === item.key ? t('shortcuts.pressAKeyCombination') : formatShortcut(draft[item.key],isMac)" :placeholder="t('shortcuts.notSet')" :aria-label="tx(item.label)" :disabled="!ready || saving" @focus="recording=item.key" @blur="recording=null" @keydown.stop="record($event,item.key)" /><button class="icon-button" :disabled="!ready || saving || !draft[item.key]" :aria-label="t('shortcuts.clearShortcut') + ' ' + tx(item.label)" @click="draft[item.key]=''"><X :size="15" /></button></div></div>
     <p v-if="error" class="shortcut-error" role="alert">{{ tx(error) }}</p>
     <div class="shortcut-actions"><small role="status">{{ tx(status) }}</small><button :disabled="!ready || saving || !dirty" @click="save">{{ t(saving ? 'shortcuts.saving' : 'shortcuts.saveShortcuts') }}</button></div>
@@ -9,6 +9,7 @@
 </template>
 <script setup lang="ts">
 import HelpTip from '../ui/HelpTip.vue';
+import ToggleSwitch from '../ui/ToggleSwitch.vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { X } from '@lucide/vue';
