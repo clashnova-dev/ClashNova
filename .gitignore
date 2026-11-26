@@ -22,3 +22,7 @@ release-artifacts/
 
 # Claude Code local config (preview launch.json, etc.)
 .claude/
+
+# macOS archive metadata
+._*
+.DS_Store
