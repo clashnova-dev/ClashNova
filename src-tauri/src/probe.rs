@@ -7,7 +7,7 @@ use std::{
     net::{TcpListener, TcpStream},
     process::{Child, Command, Stdio},
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex,
     },
     time::{Duration, Instant},
@@ -20,6 +20,12 @@ static STOPPING: AtomicBool = AtomicBool::new(false);
 /// 并发探测上限，与 UI「测速并发」上限一致（见 src/lib/preferences.ts 的 1–64 clamp）。
 /// 作为后端兜底：前端 worker 数已 clamp 到同值，二者对齐可避免高并发时节点被误判为失败。
 const MAX_ACTIVE_PROBES: usize = 64;
+/// 测速计时窗口 10s(下载/上传共用):消耗随实测网速放大 ≈ 网速 × 10s(如 100Mbps≈125MB、
+/// 1Gbps≈1.25GB),据此在测速弹窗向用户提示流量。MAX_BYTES 仅作安全上限,防计时异常时跑飞
+/// (约 1.7Gbps 以内均由窗口主导)。进度回报间隔 250ms。供下载 `speed()` 与上传流式 body 共享。
+const MAX_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+const WINDOW: Duration = Duration::from_secs(10);
+const EMIT_EVERY: Duration = Duration::from_millis(250);
 struct Slot;
 impl Drop for Slot {
     fn drop(&mut self) {
@@ -345,13 +351,21 @@ pub struct SpeedResult {
 /// 单节点下载测速。复用隔离测试核中该节点的本地端口，经代理流式拉取一段数据并计时，
 /// 期间按固定间隔通过 `on_progress(瞬时Mbps, 累计字节)` 回报进度以驱动前端仪表盘。
 ///
-/// 下载源为 Cloudflare 免鉴权测速端点（与延迟探测同域，无需任何凭证）。为同时兼顾
-/// 测量精度与用户流量，窗口上限 10s、数据上限 100MB，任一先到即停：慢速节点按 10s 计，
-/// 高速节点下满 100MB 即止，单次最多消耗约 100MB。
+/// 下载源为一组免鉴权的公开大文件,按序回退。计时窗口 10s,消耗随实测网速放大 ≈ 网速 × 10s
+/// (见测速弹窗的消耗表);MAX_BYTES(2GiB)仅作安全上限,约 1.7Gbps 以内均由窗口主导。
 pub fn speed<F: Fn(f64, u64)>(id: String, tag: String, on_progress: F) -> Result<SpeedResult, String> {
-    const MAX_BYTES: u64 = 100 * 1024 * 1024;
-    const WINDOW: Duration = Duration::from_secs(10);
-    const EMIT_EVERY: Duration = Duration::from_millis(250);
+    // 多源回退。Cloudflare(全球 anycast)最准,通时首选;被机场/CDN 封则毫秒级落下一个。次选
+    // dl.google.com——同为全球边缘(就近接入故测量准),且为非「测速」域名、机场基本不封,是被封
+    // 时的主力;单区的 OVH/Hetzner 大文件仅作最后兜底(跨洲链路会低估真实速度,排在全球边缘源之后)。
+    // 首项 Cloudflare bytes 取 2GiB 以够高速节点跑满 10s 窗口;其余读满窗口或文件 EOF 即断开。
+    const SOURCES: &[&str] = &[
+        "https://speed.cloudflare.com/__down?bytes=2147483648",
+        "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
+        "https://proof.ovh.net/files/1Gb.dat",
+        "https://ash-speed.hetzner.com/1GB.bin",
+    ];
+    // 常见浏览器 UA,降低被 CDN 以「疑似脚本」为由直接拒绝(403)的概率。
+    const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
     let session = SESSION
         .lock()
@@ -366,22 +380,42 @@ pub fn speed<F: Fn(f64, u64)>(id: String, tag: String, on_progress: F) -> Result
     let port = session.ports.get(&tag).ok_or("native.probeNodeNotFound")?;
     let client = reqwest::blocking::Client::builder()
         .proxy(reqwest::Proxy::all(format!("http://127.0.0.1:{port}")).map_err(|e| e.to_string())?)
-        .redirect(reqwest::redirect::Policy::none())
-        // 兜底：单次读取空闲超过该时长即判定失败；正常窗口由下方 10s 控制。
-        .timeout(Duration::from_secs(20))
+        // 通用大文件镜像常带跨区/HTTPS 跳转,允许有限次重定向;上限防重定向环。
+        .redirect(reqwest::redirect::Policy::limited(3))
+        .user_agent(UA)
+        // 兜底:单次请求(含流式读取)空闲超过该时长即判定失败;正常窗口由下方 10s 控制。
+        .timeout(Duration::from_secs(25))
+        // 连接(含代理 CONNECT)阶段单独限时,让失效源快速失败、尽快回退到下一个。
+        .connect_timeout(Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
-    let url = format!("https://speed.cloudflare.com/__down?bytes={MAX_BYTES}");
-    let mut response = client
-        .get(&url)
-        .send()
-        .map_err(|error| describe_request_error(&error))?;
-    if !response.status().is_success() {
-        return Err(msg(
-            "native.probeHttpStatus",
-            &[("status", text(response.status()))],
-        ));
+    // 依次尝试各源,记录最后一次失败原因;首个返回 2xx 的即用于测速,全部失败才整体报错。
+    let mut response: Option<reqwest::blocking::Response> = None;
+    let mut last_error: Option<String> = None;
+    for url in SOURCES {
+        // 用户关闭弹窗会 end 掉测试核,逐源重试前先感知,避免无谓拉起下一个源。
+        if session.cancelled.load(Ordering::SeqCst) {
+            return Err("native.probeStopped".into());
+        }
+        match client.get(*url).send() {
+            Ok(resp) if resp.status().is_success() => {
+                response = Some(resp);
+                break;
+            }
+            Ok(resp) => {
+                last_error = Some(msg(
+                    "native.probeHttpStatus",
+                    &[("status", text(resp.status()))],
+                ));
+            }
+            Err(error) => last_error = Some(describe_request_error(&error)),
+        }
     }
+    // SOURCES 非空,循环至少跑一轮,未命中时 last_error 必有值;兜底键仅为类型完整,不会触达。
+    let mut response = match response {
+        Some(resp) => resp,
+        None => return Err(last_error.unwrap_or_else(|| "native.probeTimedOut".into())),
+    };
 
     let started = Instant::now();
     let mut total: u64 = 0;
@@ -419,6 +453,172 @@ pub fn speed<F: Fn(f64, u64)>(id: String, tag: String, on_progress: F) -> Result
         peak_mbps: peak.max(mbps),
         bytes: total,
         millis: started.elapsed().as_millis() as u64,
+    })
+}
+
+/// 上传测速用的流式请求体:按 10s 窗口与安全上限产生数据(全 0;TLS 下不可压缩,测的是真实
+/// 吞吐),按 250ms 间隔经 `cb` 回报瞬时速率;读到窗口/上限或被取消即结束。统计量写入共享
+/// [`UploadStats`],body 被 reqwest 取走后仍可读回最终字节/峰值/时长。
+#[derive(Default)]
+struct UploadStats {
+    bytes: AtomicU64,
+    /// 峰值瞬时速率(Mbps)的 f64 位型;单线程写,无需 CAS。
+    peak_bits: AtomicU64,
+    /// 实际传输时长(ms),自首字节起计。
+    millis: AtomicU64,
+}
+
+struct UploadBody {
+    session: Arc<Session>,
+    stats: Arc<UploadStats>,
+    cb: Arc<dyn Fn(f64, u64) + Send + Sync>,
+    /// 首次被读取(真正开始上传)时才起计,排除连接/握手耗时。
+    start: Option<Instant>,
+    window_start: Instant,
+    window_bytes: u64,
+    total: u64,
+    cap: u64,
+}
+
+impl Read for UploadBody {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        // 弹窗关闭会 end 测试核;以错误中断上传,send() 随之失败并由上层归为取消。
+        if self.session.cancelled.load(Ordering::SeqCst) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "native.probeStopped",
+            ));
+        }
+        let start = match self.start {
+            Some(s) => s,
+            None => {
+                let now = Instant::now();
+                self.start = Some(now);
+                self.window_start = now;
+                now
+            }
+        };
+        let elapsed = start.elapsed();
+        if self.total >= self.cap || elapsed >= WINDOW {
+            self.stats
+                .millis
+                .store(elapsed.as_millis() as u64, Ordering::SeqCst);
+            return Ok(0);
+        }
+        let n = buf.len().min((self.cap - self.total) as usize);
+        // memset(编译器优化为块填充),避免把 reqwest 缓冲区残留内存发到网络;测的是纯吞吐。
+        buf[..n].fill(0);
+        self.total += n as u64;
+        self.window_bytes += n as u64;
+        self.stats.bytes.store(self.total, Ordering::SeqCst);
+        let win = self.window_start.elapsed();
+        if win >= EMIT_EVERY {
+            let mbps = self.window_bytes as f64 * 8.0 / 1_000_000.0 / win.as_secs_f64();
+            if mbps > f64::from_bits(self.stats.peak_bits.load(Ordering::SeqCst)) {
+                self.stats.peak_bits.store(mbps.to_bits(), Ordering::SeqCst);
+            }
+            (*self.cb)(mbps, self.total);
+            self.window_start = Instant::now();
+            self.window_bytes = 0;
+        }
+        self.stats
+            .millis
+            .store(elapsed.as_millis() as u64, Ordering::SeqCst);
+        Ok(n)
+    }
+}
+
+/// 单节点上传测速。与下载对称:复用隔离测试核中该节点端口,经代理向免鉴权 sink 流式 POST 一段
+/// 数据并计时。源回退:Cloudflare 专用 `__up`(无上限,通时首选)→ 门户 `generate_204`(读大
+/// POST 返 204,机场封测速域名时仍可达,延迟探测即走此域)。两者均接受 chunked body。
+pub fn speed_up<F: Fn(f64, u64) + Send + Sync + 'static>(
+    id: String,
+    tag: String,
+    on_progress: F,
+) -> Result<SpeedResult, String> {
+    const SOURCES: &[&str] = &[
+        "https://speed.cloudflare.com/__up",
+        "https://cp.cloudflare.com/generate_204",
+    ];
+    const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+
+    let session = SESSION
+        .lock()
+        .unwrap()
+        .as_ref()
+        .filter(|s| s.id == id)
+        .cloned()
+        .ok_or("native.probeEnded")?;
+    if session.cancelled.load(Ordering::SeqCst) {
+        return Err("native.probeStopped".into());
+    }
+    let port = session.ports.get(&tag).ok_or("native.probeNodeNotFound")?;
+    let client = reqwest::blocking::Client::builder()
+        .proxy(reqwest::Proxy::all(format!("http://127.0.0.1:{port}")).map_err(|e| e.to_string())?)
+        .redirect(reqwest::redirect::Policy::limited(3))
+        .user_agent(UA)
+        .timeout(Duration::from_secs(25))
+        .connect_timeout(Duration::from_secs(8))
+        .build()
+        .map_err(|e| e.to_string())?;
+    // on_progress 需跨多次源尝试复用,包进 Arc 以便每次新建 body 时克隆。
+    let cb: Arc<dyn Fn(f64, u64) + Send + Sync> = Arc::new(on_progress);
+
+    let mut last_error: Option<String> = None;
+    let mut measured: Option<Arc<UploadStats>> = None;
+    for url in SOURCES {
+        if session.cancelled.load(Ordering::SeqCst) {
+            return Err("native.probeStopped".into());
+        }
+        let stats = Arc::new(UploadStats::default());
+        let body = UploadBody {
+            session: session.clone(),
+            stats: stats.clone(),
+            cb: cb.clone(),
+            start: None,
+            window_start: Instant::now(),
+            window_bytes: 0,
+            total: 0,
+            cap: MAX_BYTES,
+        };
+        match client
+            .post(*url)
+            .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+            .body(reqwest::blocking::Body::new(body))
+            .send()
+        {
+            Ok(resp) if resp.status().is_success() => {
+                measured = Some(stats);
+                break;
+            }
+            Ok(resp) => {
+                last_error = Some(msg(
+                    "native.probeHttpStatus",
+                    &[("status", text(resp.status()))],
+                ));
+            }
+            Err(error) => {
+                // 取消引发的 body 中断会以请求错误冒出,优先按取消处理。
+                if session.cancelled.load(Ordering::SeqCst) {
+                    return Err("native.probeStopped".into());
+                }
+                last_error = Some(describe_request_error(&error));
+            }
+        }
+    }
+    let stats = match measured {
+        Some(stats) => stats,
+        None => return Err(last_error.unwrap_or_else(|| "native.probeTimedOut".into())),
+    };
+    let bytes = stats.bytes.load(Ordering::SeqCst);
+    let millis = stats.millis.load(Ordering::SeqCst).max(1);
+    let mbps = bytes as f64 * 8.0 / 1_000_000.0 / (millis as f64 / 1000.0);
+    let peak = f64::from_bits(stats.peak_bits.load(Ordering::SeqCst)).max(mbps);
+    Ok(SpeedResult {
+        mbps,
+        peak_mbps: peak,
+        bytes,
+        millis,
     })
 }
 

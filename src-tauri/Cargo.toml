@@ -14,7 +14,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 airport-tun-service = { path = "../tun-service" }
-airport-lan = { path = "../airport-lan" }
+lan-service = { path = "../lan-service" }
 sha2 = "0.10"
 tauri-plugin-notification = "2"
 getrandom = "0.3"

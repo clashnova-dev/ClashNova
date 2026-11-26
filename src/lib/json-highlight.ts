@@ -1,14 +1,14 @@
-// 轻量 JSON 语法高亮:把 JSON 文本转成带 token span 的 HTML,供编辑器的只读高亮层渲染。
-// 不依赖第三方库;无法解析的片段按纯文本转义输出,编辑器照常可用(高亮降级而非出错)。
+// Lightweight JSON syntax highlighting: turns JSON text into HTML with token spans for the editor's read-only highlight layer.
+// No third-party dependency; unparseable fragments are escaped as plain text so the editor keeps working (highlighting degrades rather than fails).
 
 function escapeHtml(text: string): string {
   return text.replace(/[&<>]/g, ch => (ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : "&gt;"));
 }
 
-// 依次匹配:字符串(含转义)、字面量关键字、数字。其余字符(标点、空白)原样转义输出。
+// Matches, in order: strings (including escapes), literal keywords, numbers. Other characters (punctuation, whitespace) are escaped as-is.
 const TOKEN = /"(?:\\.|[^"\\])*"|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
 
-/** JSON 文本 → 高亮 HTML。调用方负责把结果放进 `white-space: pre` 的只读层。 */
+/** JSON text → highlighted HTML. The caller is responsible for placing the result into a `white-space: pre` read-only layer. */
 export function highlightJson(source: string): string {
   let html = "";
   let last = 0;
@@ -19,7 +19,7 @@ export function highlightJson(source: string): string {
     const token = match[0];
     let cls: string;
     if (token[0] === '"') {
-      // 字符串后紧跟冒号(允许空白)视为对象键名,配色区别于普通字符串值。
+      // A string immediately followed by a colon (whitespace allowed) is treated as an object key, colored differently from a plain string value.
       cls = /^\s*:/.test(source.slice(match.index + token.length)) ? "tok-key" : "tok-str";
     } else if (token === "true" || token === "false") cls = "tok-bool";
     else if (token === "null") cls = "tok-null";
@@ -31,7 +31,7 @@ export function highlightJson(source: string): string {
   return html;
 }
 
-/** 可解析时按两空格缩进美化,否则原样返回(例如用户粘贴了 YAML / 分享链接)。 */
+/** Pretty-prints with two-space indentation when parseable, otherwise returns the input as-is (e.g. the user pasted YAML / a share link). */
 export function prettyJson(source: string): string {
   try {
     return JSON.stringify(JSON.parse(source), null, 2);

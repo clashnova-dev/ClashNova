@@ -2,12 +2,14 @@ import type zhCN from "./zh-CN.ts";
 
 const en: Record<keyof typeof zhCN, string> = {
   "confirmation.portTitle": "Port in use",
-  "confirmation.portBody": "Port {port} is used by the processes below. Stopping them may interrupt their applications and connections. Free the port and continue?",
+  "confirmation.portBody":
+    "Port {port} is used by the processes below. Stopping them may interrupt their applications and connections. Free the port and continue?",
   "confirmation.portRelease": "Stop and connect",
   "native.portOwnerUnknown": "Cannot identify the process using port {port}. Close it manually or choose another port.",
   "native.portOwnerProtected": "Port {port} belongs to a system or protected process. Choose another port.",
   "native.portConflictChanged": "The port owner changed or confirmation expired. Connect again to review.",
-  "native.portReleaseFailed": "Cannot free port {port}, possibly due to insufficient permissions. Close the process manually or choose another port.",
+  "native.portReleaseFailed":
+    "Cannot free port {port}, possibly due to insufficient permissions. Close the process manually or choose another port.",
 
   "nav.rules": "Rules",
   "common.clearSearch": "Clear search",
@@ -19,6 +21,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "rules.search": "Search content, type or target",
   "rules.source": "Source",
   "rules.edit": "Edit rules",
+  "rules.chinaGeosite": "China sites direct (geosite)",
+  "rules.adBlock": "Block ads (geosite)",
   "rules.fieldType": "Rule type",
   "rules.fieldContent": "Rule content",
   "rules.fieldPolicy": "Proxy policy",
@@ -41,7 +45,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "rules.policyProxy": "Proxy",
   "rules.policyReject": "Reject",
   "common.edit": "Edit",
-  "rules.editHint": "Edit this subscription's own routing rules (a sing-box rule array). Built-in China/LAN-direct and app policies are not shown here.",
+  "rules.editHint":
+    "Edit this subscription's own routing rules (a sing-box rule array). Built-in China/LAN-direct and app policies are not shown here.",
   "rules.type": "Type",
   "rules.content": "Content",
   "rules.target": "Target",
@@ -58,46 +63,61 @@ const en: Record<keyof typeof zhCN, string> = {
   "rules.pageOf": "Page {page} / {pages}",
 
   "check.webrtcTimeout": "Probe timed out; unconfirmed",
-  "check.reconnectConfirm": "Reapply the current configuration. An active connection will briefly disconnect and reconnect. System DNS and other proxy apps are not reset.",
-  "check.proxyScope": "System/manual proxy covers proxy-aware apps. System DNS, IPv6 and WebRTC UDP may connect directly. Use TUN and retest for broader routing coverage.",
-  "check.tunScope": "TUN config captures DNS and IPv6 and routes STUN through the proxy. Direct rules and route exclusions still apply. Configuration alone does not prove absence of leaks.",
+  "check.reconnectConfirm":
+    "Reapply the current configuration. An active connection will briefly disconnect and reconnect. System DNS and other proxy apps are not reset.",
+  "check.proxyScope":
+    "System/manual proxy covers proxy-aware apps. System DNS, IPv6 and WebRTC UDP may connect directly. Use TUN and retest for broader routing coverage.",
+  "check.tunScope":
+    "TUN config captures DNS and IPv6 and routes STUN through the proxy. Direct rules and route exclusions still apply. Configuration alone does not prove absence of leaks.",
   "check.dnsConfiguration": "DNS configuration",
   "check.routeExceptions": "Route exclusions: {count}",
-  "check.webviewScope": "WebRTC results apply only to this app’s webview. Check DNS and WebRTC in the browser you use. A timeout or no candidates does not prove absence of leaks.",
+  "check.webviewScope":
+    "WebRTC results apply only to this app’s webview. Check DNS and WebRTC in the browser you use. A timeout or no candidates does not prove absence of leaks.",
   "check.browserChecks": "Check in browser",
   "check.checkedAt": "Checked: {time}",
   "recovery.intentWriteFailed": "Could not save connection recovery state: {error}",
   "recovery.coreScheduled": "Core exited. Recovery attempt {attempt} starts in {seconds}s: {error}",
-  "recovery.coreExhausted": "Core recovery failed repeatedly; automatic retries stopped. Check the logs and connect manually: {error}",
+  "recovery.coreExhausted":
+    "Core recovery failed repeatedly; automatic retries stopped. Check the logs and connect manually: {error}",
   "recovery.cleanupBlocked": "Could not confirm the old core stopped. Recovery paused to avoid a conflict: {error}",
   "recovery.supervisorFailed": "Could not start the client supervisor: {error}",
   "recovery.restoring": "Client recovered from an unexpected exit. Reconnecting…",
-  "recovery.profileUnavailable": "Client reopened, but no subscription or node is available to restore. Connect manually.",
+  "recovery.profileUnavailable":
+    "Client reopened, but no subscription or node is available to restore. Connect manually.",
   "recovery.tunUnavailable": "Client reopened, but the TUN service is not ready. Check Settings and connect manually.",
 
   "confirmation.continue": "Continue",
   "confirmation.removeTitle": "Remove subscription?",
-  "confirmation.removeBody": "Remove the locally saved subscription “{name}” and its configuration. You will need to import it again to use it.",
-  "confirmation.activeSubscription": "This subscription is in use. Removing it disconnects the proxy and clears the current nodes.",
+  "confirmation.removeBody":
+    "Remove the locally saved subscription “{name}” and its configuration. You will need to import it again to use it.",
+  "confirmation.activeSubscription":
+    "This subscription is in use. Removing it disconnects the proxy and clears the current nodes.",
   "confirmation.exposeTitle": "Share subscription credentials?",
-  "confirmation.exposeBody": "Subscription links and QR codes contain connection credentials. Anyone holding them may use your traffic allowance. Share only with trusted devices.",
+  "confirmation.exposeBody":
+    "Subscription links and QR codes contain connection credentials. Anyone holding them may use your traffic allowance. Share only with trusted devices.",
   "confirmation.switchTitle": "Switch subscription?",
   "confirmation.switchBody": "Switching to “{name}” disconnects the current connection.",
   "confirmation.refreshTitle": "Update current subscription?",
   "confirmation.refreshBody": "Updating replaces the current configuration and may interrupt existing connections.",
   "confirmation.networkTitle": "Save network settings?",
-  "confirmation.networkBody": "Proxy port, LAN, DNS and TUN changes take effect on the next connection. Review the changes before saving.",
+  "confirmation.networkBody":
+    "Proxy port, LAN, DNS and TUN changes take effect on the next connection. Review the changes before saving.",
   "confirmation.lanWarning": "Devices on your LAN will be able to access this proxy. Enable only on trusted networks.",
   "confirmation.guardWarning": "The kill switch will be disabled. Traffic may connect directly if the tunnel drops.",
   "confirmation.routeWarning": "Review the routing exclusions. Excluded traffic will connect directly.",
   "confirmation.proxyTitle": "Change proxy handling?",
-  "confirmation.proxyBody": "This changes the system proxy or virtual adapter and may briefly interrupt networking. If TUN is not installed, system authorization will be requested.",
+  "confirmation.proxyBody":
+    "This changes the system proxy or virtual adapter and may briefly interrupt networking. If TUN is not installed, system authorization will be requested.",
   "confirmation.routingTitle": "Change routing mode?",
-  "confirmation.routingBody": "Changing routing mode reloads the configuration and may briefly interrupt existing connections.",
-  "confirmation.installBody": "Install a background network service requiring administrator authorization to create and manage the TUN virtual adapter.",
-  "confirmation.repairBody": "Update the background network service and proxy core. Administrator authorization is required.",
+  "confirmation.routingBody":
+    "Changing routing mode reloads the configuration and may briefly interrupt existing connections.",
+  "confirmation.installBody":
+    "Install a background network service requiring administrator authorization to create and manage the TUN virtual adapter.",
+  "confirmation.repairBody":
+    "Update the background network service and proxy core. Administrator authorization is required.",
   "confirmation.updateTitle": "Install and restart the client?",
-  "confirmation.updateBody": "Install {version} and restart the client. The current proxy connection will be interrupted.",
+  "confirmation.updateBody":
+    "Install {version} and restart the client. The current proxy connection will be interrupted.",
   "confirmation.startupTitle": "Change launch at login?",
   "confirmation.startupEnable": "The client will start automatically when you log in.",
   "confirmation.startupDisable": "The client will no longer start automatically when you log in.",
@@ -231,7 +251,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "app.importing": "Importing…",
   "app.importUse": "Import & use",
   "deepLink.importTitle": "Confirm subscription import",
-  "deepLink.importBody": "A web page asked to import a subscription. The one-time code is used only after you confirm, and it is discarded if you cancel.",
+  "deepLink.importBody":
+    "A web page asked to import a subscription. The one-time code is used only after you confirm, and it is discarded if you cancel.",
   "deepLink.importUrlBody": "A link asked to import this subscription. Import only from sources you trust.",
   "deepLink.confirmImport": "Import",
   "deepLink.rejected": "This link can't be used",
@@ -289,7 +310,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "nodes.checksEvery3MinutesAnd": "Checks every 3 minutes and selects a low-latency node",
   "nodes.autoSwitch": "Auto switch",
   "nodes.testedAfterConnect": "Checks after connecting",
-  "nodes.requestTimeAfterConnectionSetup": "Request time after connection setup; first connection {delay} ms. Not download bandwidth.",
+  "nodes.requestTimeAfterConnectionSetup":
+    "Request time after connection setup; first connection {delay} ms. Not download bandwidth.",
   "nodes.firstConnectionMsSecondTest": "First connection {delay} ms; second test incomplete. Not download bandwidth.",
   "nodes.notSelected": "Not selected",
   "nodes.test": "Test",
@@ -307,7 +329,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "nodes.testing": "Testing…",
   "nodes.timedOut": "Timeout / failed",
   "nodes.notTested": "Not tested",
-  "nodes.requestLatencyThroughTheNode": "Request latency through the node. Lower is faster; this is not download bandwidth.",
+  "nodes.requestLatencyThroughTheNode":
+    "Request latency through the node. Lower is faster; this is not download bandwidth.",
   "nodes.thisSubscriptionHasNoAvailable": "This subscription has no available nodes.",
   "nodes.manageSubscriptions": "Manage subscriptions",
   "nodes.searchNodes": "Search nodes",
@@ -347,18 +370,21 @@ const en: Record<keyof typeof zhCN, string> = {
   "subscriptions.removeSubscription": "Remove subscription",
   "subscriptions.editTitle": "Edit file",
   "subscriptions.editHint": "Edit the configuration for “{name}”. Changes take effect on save.",
-  "subscriptions.editRemoteHint": "Edit the configuration for “{name}”. This subscription has an update source — refreshing overwrites local edits.",
+  "subscriptions.editRemoteHint":
+    "Edit the configuration for “{name}”. This subscription has an update source — refreshing overwrites local edits.",
   "subscriptions.editNamed": "Edit {name}",
   "subscriptions.editPaste": "Paste from clipboard",
   "subscriptions.editFormat": "Format",
   "subscriptions.editExpand": "Fullscreen",
   "subscriptions.editCollapse": "Exit fullscreen",
   "subscriptions.editInfoTitle": "Edit info",
-  "subscriptions.editInfoHint": "Renaming applies immediately. Changing the source URL re-fetches the subscription and replaces its nodes.",
+  "subscriptions.editInfoHint":
+    "Renaming applies immediately. Changing the source URL re-fetches the subscription and replaces its nodes.",
   "subscriptions.editNodesTitle": "Edit nodes",
   "subscriptions.editNodesAdvanced": "Advanced",
   "subscriptions.editNodesPaste": "One URI per line (Base64 supported)",
-  "subscriptions.editNodesAddHint": "Paste share links or a Base64 subscription; they're converted and appended as nodes on save.",
+  "subscriptions.editNodesAddHint":
+    "Paste share links or a Base64 subscription; they're converted and appended as nodes on save.",
   "subscriptions.editNodesFilter": "Filter",
   "subscriptions.deleteNode": "Delete node",
   "subscriptions.editNodesEmpty": "No nodes",
@@ -369,7 +395,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "subscriptions.shareQrHint": "Scan this code with a phone to import the subscription.",
   "subscriptions.count": "{count} subscription(s)",
   "subscriptions.usedTraffic": "Used traffic",
-  "subscriptions.restored": "Restored your subscription and selected node. Click Connect to start or update it in Subscriptions.",
+  "subscriptions.restored":
+    "Restored your subscription and selected node. Click Connect to start or update it in Subscriptions.",
   "subscriptions.nonePurchase": "No active subscription. Purchase a plan first.",
   "subscriptions.urlCopied": "Subscription URL copied. Keep it private.",
   "subscriptions.addPrompt": "Add a subscription URL or import a local file",
@@ -379,7 +406,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "subscriptions.imported": "Subscription imported",
   "subscriptions.importFirst": "Import a subscription and choose a node first",
   "subscriptions.selectedNodeMissing": "The selected node is missing. Refresh the subscription.",
-  "subscriptions.noReadyNodes": "No ready nodes are available. Ask your administrator to check node health and configuration.",
+  "subscriptions.noReadyNodes":
+    "No ready nodes are available. Ask your administrator to check node health and configuration.",
 
   "connections.unknownPolicyHint": "Process not identified. App policies are unavailable.",
   "connections.caseSensitive": "Match case",
@@ -434,7 +462,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "connections.noActiveConnections": "No active connections",
   "connections.connectToSeeNetworkRequests": "Connect to see network requests",
   "connections.closeAllConnections": "Close all connections",
-  "connections.activeDownloadsAndRequestsWill": "Active downloads and requests will be interrupted. Applications may reconnect automatically.",
+  "connections.activeDownloadsAndRequestsWill":
+    "Active downloads and requests will be interrupted. Applications may reconnect automatically.",
   "connections.unableToLoadConnectionsMake": "Unable to load connections. Make sure you restarted the updated app.",
   "connections.connectionMonitoringIsAvailableIn": "Connection monitoring is available in the desktop app only",
 
@@ -462,7 +491,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "logs.paused": "Paused",
   "logs.live": "Live",
   "logs.shown": "{count} / {total} entries",
-  "logs.windowHint": "Recent session logs only; this view is not the complete file history. Pausing freezes the display, not file recording.",
+  "logs.windowHint":
+    "Recent session logs only; this view is not the complete file history. Pausing freezes the display, not file recording.",
   "logs.followLatest": "Follow latest",
   "logs.scrollBottom": "Scroll to bottom",
   "logs.detail": "Log details",
@@ -475,8 +505,10 @@ const en: Record<keyof typeof zhCN, string> = {
 
   "settings.showLiveSpeed": "Show live speed",
   "settings.testConcurrency": "Test concurrency",
-  "settings.testConcurrencyHelp": "How many nodes are latency-tested at once; raise it to test large node lists faster (1-64).",
-  "settings.showUploadAndDownloadSpeed": "Show upload and download speed beside the tray icon; on Windows, in its tooltip and menu.",
+  "settings.testConcurrencyHelp":
+    "How many nodes are latency-tested at once; raise it to test large node lists faster (1-64).",
+  "settings.showUploadAndDownloadSpeed":
+    "Show upload and download speed beside the tray icon; on Windows, in its tooltip and menu.",
   "settings.systemProxyCheck": "System proxy check",
   "settings.checkAgain": "Check again",
   "settings.checkingSystemProxy": "Checking system proxy…",
@@ -492,7 +524,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "settings.copyLanAddress": "Copy LAN address {address}",
   "settings.lanCopied": "Address copied",
   "settings.lanLoading": "Reading LAN addresses…",
-  "settings.allowOtherDevicesOnYour": "Allow other devices on your local network to use this proxy. Enable only on trusted networks.",
+  "settings.allowOtherDevicesOnYour":
+    "Allow other devices on your local network to use this proxy. Enable only on trusted networks.",
   "settings.proxyPort": "Proxy port",
   "settings.sharedHttpAndSocksPort": "Shared HTTP and SOCKS port, from 1024 to 65535.",
   "settings.disconnectToChangeNetworkSettings": "Disconnect to change network settings",
@@ -506,31 +539,39 @@ const en: Record<keyof typeof zhCN, string> = {
   "settings.networkSaved": "Network settings saved. They apply to the next connection.",
   "settings.portInvalid": "Proxy port must be an integer from 1024 to 65535",
   "settings.tunStack": "TUN stack",
-  "settings.tunStackHelp": "Mixed uses the system TCP stack with a userspace UDP stack and suits nearly everyone. Switch to System or gVisor only if a firewall or driver keeps TUN from working.",
+  "settings.tunStackHelp":
+    "Mixed uses the system TCP stack with a userspace UDP stack and suits nearly everyone. Switch to System or gVisor only if a firewall or driver keeps TUN from working.",
   "settings.tunStackMixed": "Mixed",
   "settings.tunStackSystem": "System",
   "settings.tunMtu": "TUN MTU",
-  "settings.tunMtuHelp": "Maximum transmission unit of the virtual adapter, from 1280 to 9000; 1500 by default. A larger value raises throughput but some UDP applications may become unstable.",
+  "settings.tunMtuHelp":
+    "Maximum transmission unit of the virtual adapter, from 1280 to 9000; 1500 by default. A larger value raises throughput but some UDP applications may become unstable.",
   "settings.tunStrictRoute": "Strict route",
-  "settings.tunStrictRouteHelp": "Keeps traffic and DNS from leaving beside the tunnel; best left on. A few virtual machine and container networks on Windows only work with it off.",
+  "settings.tunStrictRouteHelp":
+    "Keeps traffic and DNS from leaving beside the tunnel; best left on. A few virtual machine and container networks on Windows only work with it off.",
   "settings.tunIpv6": "Resolve IPv6 addresses",
-  "settings.tunIpv6Help": "Enable IPv6 resolution and connections when the node supports IPv6. When off, TUN resolves IPv4 and rejects captured IPv6 traffic. Review direct rules and route exclusions separately.",
+  "settings.tunIpv6Help":
+    "Enable IPv6 resolution and connections when the node supports IPv6. When off, TUN resolves IPv4 and rejects captured IPv6 traffic. Review direct rules and route exclusions separately.",
   "settings.tunAutoRedirect": "nftables redirect",
-  "settings.tunAutoRedirectHelp": "Redirects with nftables instead of routing alone: faster, and it does not conflict with Docker bridges. Requires nftables on this system.",
+  "settings.tunAutoRedirectHelp":
+    "Redirects with nftables instead of routing alone: faster, and it does not conflict with Docker bridges. Requires nftables on this system.",
   "settings.tunExclude": "Bypass addresses",
   "settings.dnsMode": "DNS mode",
-  "settings.dnsModeHelp": "Fake-IP lets the exit resolve foreign names (more robust); real resolution resolves them through the node's DoH.",
+  "settings.dnsModeHelp":
+    "Fake-IP lets the exit resolve foreign names (more robust); real resolution resolves them through the node's DoH.",
   "settings.dnsFakeip": "Fake-IP",
   "settings.dnsReal": "Real",
   "settings.dnsDomestic": "Domestic DNS",
   "settings.dnsRemote": "Remote DNS",
   "settings.dnsLocal": "Automatic (AliDNS DoH)",
-  "settings.tunExcludeHelp": "These networks stay off the virtual adapter, one per line, 64 at most. Traffic and DNS sent to them no longer go through the tunnel.",
+  "settings.tunExcludeHelp":
+    "These networks stay off the virtual adapter, one per line, 64 at most. Traffic and DNS sent to them no longer go through the tunnel.",
   "settings.tunStackInvalid": "Invalid TUN stack",
   "settings.tunMtuInvalid": "TUN MTU must be an integer from 1280 to 9000",
   "settings.tunExcludeInvalid": "Bypass addresses must be IP networks such as 192.168.0.0/16, 64 at most",
   "settings.tunKillSwitch": "Kill switch",
-  "settings.tunKillSwitchHelp": "When the tunnel drops unexpectedly, blocks all network access until it is back or you release it, so traffic cannot go out directly. Bypass addresses are not affected. Experimental and off by default.",
+  "settings.tunKillSwitchHelp":
+    "When the tunnel drops unexpectedly, blocks all network access until it is back or you release it, so traffic cannot go out directly. Bypass addresses are not affected. Experimental and off by default.",
   "settings.manualProxy": "Manual proxy",
   "settings.appearanceLanguage": "Appearance & language",
   "settings.localAccess": "Local access",
@@ -558,12 +599,14 @@ const en: Record<keyof typeof zhCN, string> = {
   "settings.updateDesktopOnly": "Check for updates in the desktop app",
   "settings.viewHelp": "View help",
   "settings.about": "About",
-  "settings.systemProxyCannotCaptureWebrtc": "System proxy cannot capture WebRTC UDP. Use TUN mode to protect the browser UDP egress.",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "System proxy cannot capture WebRTC UDP. Use TUN mode to protect the browser UDP egress.",
 
   "tun.tunService": "TUN service",
   "tun.tunServiceHasNotBeen": "TUN service has not been checked",
   "tun.tunServiceIsAvailableIn": "TUN service is available in the desktop app only",
-  "tun.administratorAuthorizationIsRequiredOnce": "Administrator authorization is required once. The virtual adapter is created when you connect.",
+  "tun.administratorAuthorizationIsRequiredOnce":
+    "Administrator authorization is required once. The virtual adapter is created when you connect.",
   "tun.waitingForSystemAuthorization": "Waiting for system authorization…",
   "tun.repairService": "Repair service",
   "tun.authorizeInstallation": "Authorize installation",
@@ -575,8 +618,10 @@ const en: Record<keyof typeof zhCN, string> = {
   "tun.tunServiceInstallationDidNot": "TUN service installation did not complete. Open settings for details.",
   "tun.tunServiceRemovalDidNot": "TUN service removal did not complete. Open settings for details.",
   "tun.busy": "A service operation is already running",
-  "tun.serviceOutdatedNotice": "The TUN service is not the current version. Use Repair service in Settings to update it.",
-  "tun.guardBlocking": "The tunnel dropped and the kill switch is blocking network access. Reconnect, or release it to go back to a direct connection.",
+  "tun.serviceOutdatedNotice":
+    "The TUN service is not the current version. Use Repair service in Settings to update it.",
+  "tun.guardBlocking":
+    "The tunnel dropped and the kill switch is blocking network access. Reconnect, or release it to go back to a direct connection.",
   "tun.guardRelease": "Release and restore network",
 
   "shortcuts.enableGlobalShortcuts": "Enable global shortcuts",
@@ -594,14 +639,18 @@ const en: Record<keyof typeof zhCN, string> = {
   "shortcuts.shortcutsAreDisabled": "Shortcuts are disabled",
   "shortcuts.globalShortcutsAreAvailableIn": "Global shortcuts are available in the desktop app only",
 
-  "notifications.systemNotificationFailedCheckSystem": "System notification failed. Check system notification settings.",
-  "notifications.notificationSentIfItIs": "Notification sent. If it is not visible, check notification settings and Do Not Disturb.",
+  "notifications.systemNotificationFailedCheckSystem":
+    "System notification failed. Check system notification settings.",
+  "notifications.notificationSentIfItIs":
+    "Notification sent. If it is not visible, check notification settings and Do Not Disturb.",
   "notifications.dismissNotification": "Dismiss notification",
   "notifications.systemNotifications": "System notifications",
-  "notifications.connectionAndServiceUpdatesIn": "Connection and service updates. In-app messages remain available when disabled.",
+  "notifications.connectionAndServiceUpdatesIn":
+    "Connection and service updates. In-app messages remain available when disabled.",
   "notifications.testNotification": "Test notification",
   "notifications.allowAirportNotificationsInSystem": "Allow ClashNova notifications in system settings.",
-  "notifications.systemNotificationsAreDisabledOnly": "System notifications are disabled; only an in-app message is shown.",
+  "notifications.systemNotificationsAreDisabledOnly":
+    "System notifications are disabled; only an in-app message is shown.",
   "notifications.thisIsATestNotification": "This is a test notification.",
   "notifications.proxyConnected": "Proxy connected",
   "notifications.proxyDisconnected": "Proxy disconnected",
@@ -644,12 +693,13 @@ const en: Record<keyof typeof zhCN, string> = {
   "error.windowActionFailed": "Window action failed: {error}",
   "error.network": "Could not reach the server. Check your network and try again.",
   "error.subscriptionTooLarge": "The subscription is larger than 2 MiB",
-  "error.subscriptionNotSingBox": "Only sing-box JSON subscriptions are supported. Convert Clash YAML to sing-box first.",
+  "error.subscriptionNotSingBox":
+    "Only sing-box JSON subscriptions are supported. Convert Clash YAML to sing-box first.",
   "error.subscriptionNoOutbounds": "The subscription has no sing-box outbounds",
   "error.subscriptionBadTags": "Outbound tags in the subscription are invalid or duplicated",
   "error.subscriptionNoNodes": "The subscription has no usable nodes. Check its format or server addresses.",
-  "error.subscriptionTagDirect": "The subscription uses the \"direct\" tag, so the direct rule cannot be created",
-  "error.subscriptionTagSelect": "The subscription uses the \"select\" tag, so the node selector cannot be created",
+  "error.subscriptionTagDirect": 'The subscription uses the "direct" tag, so the direct rule cannot be created',
+  "error.subscriptionTagSelect": 'The subscription uses the "select" tag, so the node selector cannot be created',
   "error.subscriptionTagAuto": "The subscription uses the automatic-selection tag. Edit the subscription.",
 
   "tray.open": "Show window",
@@ -713,11 +763,13 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.subscriptionUrlInvalid": "Invalid subscription URL",
   "native.subscriptionUrlNeedsHttps": "Use an HTTPS subscription URL. HTTP is allowed for localhost.",
   "native.subscriptionFetchFailed": "Could not fetch the subscription: {error}",
-  "native.subscriptionForbidden": "The subscription server returned 403 and refused the download. Check that the link works in a browser, or ask the provider to lift the restriction.",
+  "native.subscriptionForbidden":
+    "The subscription server returned 403 and refused the download. Check that the link works in a browser, or ask the provider to lift the restriction.",
   "native.subscriptionHttpStatus": "Subscription HTTP status {status}",
   "native.subscriptionRedirectInsecure": "The subscription redirected to an insecure address",
   "native.subscriptionNotUtf8": "The subscription is not UTF-8 text",
-  "native.subscriptionConvertFailed": "Could not convert the subscription. Check the Clash YAML or share-link format and the node protocols.",
+  "native.subscriptionConvertFailed":
+    "Could not convert the subscription. Check the Clash YAML or share-link format and the node protocols.",
   "native.subscriptionNoNodes": "The subscription has no usable nodes",
   "native.subscriptionListInvalid": "Invalid subscription list format",
   "native.converterRunFailed": "Could not run the subscription converter: {error}",
@@ -749,7 +801,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.coreSpawnFailed": "Could not find or start sing-box: {error}",
   "native.coreStartFailed": "sing-box failed to start: {status}",
   "native.coreListenTimeout": "sing-box did not start listening on the local port within 5 seconds",
-  "native.egressCheckFailed": "The node connectivity check failed: {error}. The system proxy was not changed. Check the node's server protocol and key.",
+  "native.egressCheckFailed":
+    "The node connectivity check failed: {error}. The system proxy was not changed. Check the node's server protocol and key.",
   "native.coreExitedReconnecting": "The core exited. Reconnecting…",
   "native.reconnectFailed": "Reconnecting failed: {status}",
   "native.coreCrashed": "The core exited unexpectedly: {status}",
@@ -759,7 +812,8 @@ const en: Record<keyof typeof zhCN, string> = {
   // System proxy
   "native.systemProxyEnabled": "System proxy is enabled",
   "native.systemProxyDisabled": "System proxy is available and currently disabled",
-  "native.otherProxyInUse": "A system proxy or TUN is already on ({detail}). Turn it off, then connect. The system proxy was not changed.",
+  "native.otherProxyInUse":
+    "A system proxy or TUN is already on ({detail}). Turn it off, then connect. The system proxy was not changed.",
   "native.systemProxyMismatch": "The system proxy read back does not match the intended settings",
   "native.systemProxyApplyFailed": "Could not set or verify the system proxy: {error}",
   "native.systemProxyEnableFailed": "Could not enable the system proxy: {error}",
@@ -767,9 +821,11 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.proxyBackupReadFailed": "Could not read the proxy recovery file: {error}",
   "native.proxyBackupInvalid": "The proxy recovery file is invalid",
   "native.proxyBackupPathUnknown": "Could not determine where to keep the system proxy recovery file",
-  "native.authenticatedProxyInUse": "{service} uses an authenticated proxy. Use manual proxy mode to keep its settings.",
+  "native.authenticatedProxyInUse":
+    "{service} uses an authenticated proxy. Use manual proxy mode to keep its settings.",
   "native.noNetworkServices": "No configurable network service found",
-  "native.desktopNeedsManualProxy": "Use manual proxy mode on this desktop. Automatic system proxy setup supports GNOME.",
+  "native.desktopNeedsManualProxy":
+    "Use manual proxy mode on this desktop. Automatic system proxy setup supports GNOME.",
   // Node tests
   "native.nodeAddressInvalid": "Invalid node address",
   "native.nodeResolveFailed": "Could not resolve the node: {error}",
@@ -825,7 +881,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.shortcutInvalid": "Invalid shortcut combination",
   "native.shortcutNeedsModifier": "Include Ctrl, Alt or Command/Win in the shortcut",
   "native.shortcutDuplicate": "Shortcut bindings must be unique",
-  "native.shortcutUnavailable": "Shortcut {shortcut} is in use or not supported by the system. Choose another combination.",
+  "native.shortcutUnavailable":
+    "Shortcut {shortcut} is in use or not supported by the system. Choose another combination.",
   "native.shortcutReleaseFailed": "Could not release the previous shortcut",
   "native.shortcutsBusy": "Shortcut settings are busy",
   "native.shortcutsUnreadable": "Could not read the shortcuts",
@@ -843,27 +900,34 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.tunInstallInProgress": "Service installation is in progress",
   "native.disconnectToInstallTun": "Disconnect before installing or repairing the TUN service",
   "native.disconnectToUninstallTun": "Disconnect before uninstalling the service",
-  "native.tunServiceInstalledNotStarted": "The service was installed but did not start. Check whether service port 47653 is in use, then repair the service.",
-  "native.tunServiceOperationIncomplete": "The TUN service operation did not finish: authorization may have been cancelled, or installing the system service failed. Try again and confirm in the system authorization prompt.",
+  "native.tunServiceInstalledNotStarted":
+    "The service was installed but did not start. Check whether service port 47653 is in use, then repair the service.",
+  "native.tunServiceOperationIncomplete":
+    "The TUN service operation did not finish: authorization may have been cancelled, or installing the system service failed. Try again and confirm in the system authorization prompt.",
   "native.elevationFailed": "Could not request administrator privileges: {error}",
   "native.installPathControlChars": "The installation path contains control characters",
   "native.installPathInvalid": "Invalid installation path",
   "native.windowsDirNotFound": "Could not locate the Windows system directory",
   "native.tunNoFinalOutbound": "TUN has no default outbound",
-  "native.tunCoreStartFailed": "The TUN core failed to start. This account may not be allowed to create a virtual network adapter. Check system authorization or switch to system proxy mode.",
+  "native.tunCoreStartFailed":
+    "The TUN core failed to start. This account may not be allowed to create a virtual network adapter. Check system authorization or switch to system proxy mode.",
   "native.tunCoreNotStarted": "The TUN core did not start",
   "native.tunCoreStopped": "The TUN core has stopped",
-  "native.tunStopUnconfirmed": "The TUN stop request was not confirmed. The service will stop after its heartbeat times out; check your network shortly: {error}",
+  "native.tunStopUnconfirmed":
+    "The TUN stop request was not confirmed. The service will stop after its heartbeat times out; check your network shortly: {error}",
   // TUN service, reported by the service itself
   "native.tunServiceNotRunning": "The TUN service is not running. Install or repair it.",
-  "native.tunDnsOverrideFailed": "The system DNS could not be pointed at the tunnel ({error}); the previous settings were restored.",
+  "native.tunDnsOverrideFailed":
+    "The system DNS could not be pointed at the tunnel ({error}); the previous settings were restored.",
   "native.tunDnsDeviceNotReady": "The tunnel device was not ready, so the system DNS was left alone.",
   "native.tunDnsRecordCorrupt": "The TUN service's DNS record is corrupt.",
   "native.tunServiceMismatch": "The TUN service response or version does not match",
-  "native.tunServiceOutdated": "The TUN service was installed by an earlier version of the app. Use Repair service to update it.",
+  "native.tunServiceOutdated":
+    "The TUN service was installed by an earlier version of the app. Use Repair service to update it.",
   "native.tunDeviceOptionInvalid": "Invalid TUN device option: {option}",
   "native.tunGuardBlocking": "{error} (the kill switch is blocking network access)",
-  "native.tunGuardReleaseFailed": "The kill switch could not restore the network. The service keeps retrying; you can also repair the TUN service.",
+  "native.tunGuardReleaseFailed":
+    "The kill switch could not restore the network. The service keeps retrying; you can also repair the TUN service.",
   "native.tunAuthFailed": "TUN service authentication failed. Repair the service.",
   "native.tunCredentialsInvalid": "Invalid service credentials",
   "native.tunRequestTooLarge": "The TUN request is too large",
@@ -878,7 +942,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.tunConfigCheckTimeout": "The TUN configuration check timed out",
   "native.tunConfigInvalid": "Invalid configuration",
   "native.tunConfigTooDeep": "The configuration is nested too deeply",
-  "native.tunConfigForbiddenOption": "Subscription configurations cannot access local files or execute extensions: {option}",
+  "native.tunConfigForbiddenOption":
+    "Subscription configurations cannot access local files or execute extensions: {option}",
   "native.tunConfigUnsupportedTopLevel": "The TUN configuration contains unsupported top-level options",
   "native.tunControllerMissing": "The controller endpoint is missing",
   "native.tunControllerAddressInvalid": "Invalid controller address",
@@ -896,7 +961,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "native.tunDnsPathInvalid": "Invalid DNS path",
   "chain.title": "Proxy chain",
   "chain.clear": "Clear",
-  "chain.hint": "Relay traffic through several nodes in order. Latency adds up and the whole chain fails if any hop does.",
+  "chain.hint":
+    "Relay traffic through several nodes in order. Latency adds up and the whole chain fails if any hop does.",
   "chain.emptyHint": "Add at least two nodes to form a chain (entry → exit).",
   "chain.device": "Device",
   "chain.target": "Target",
@@ -925,7 +991,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "secnet.title": "Network security",
   "secnet.subtitle": "Manage DNS, IPv6 and connection protection policies",
   "secnet.killSwitch": "Kill switch",
-  "secnet.killSwitchHint": "Prevent protected traffic from leaking directly when the proxy drops; needs system-level support",
+  "secnet.killSwitchHint":
+    "Prevent protected traffic from leaking directly when the proxy drops; needs system-level support",
   "secnet.killSwitchActive": "Kill switch active — the network will be held closed if the tunnel drops",
   "secnet.killSwitchInactive": "The kill switch could not be armed — reconnect to protect this session",
   "secnet.killSwitchTunOnly": "The kill switch is only available in TUN mode",
@@ -933,7 +1000,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "secnet.repairHint": "Reset the system proxy in one click when the network breaks after a proxy error or switch",
   "secnet.repairOpen": "Repair",
   "secnet.repairTitle": "Network repair",
-  "secnet.repairDesc": "One-click repair re-syncs the system proxy and refreshes diagnostics, to fix no-internet after a proxy crash or a mode switch.",
+  "secnet.repairDesc":
+    "One-click repair re-syncs the system proxy and refreshes diagnostics, to fix no-internet after a proxy crash or a mode switch.",
   "secnet.repairRun": "One-click repair",
   "secnet.repairDesktopOnly": "Network repair is available on the desktop app only.",
   "secnet.repairRecheck": "Re-check",
@@ -959,7 +1027,12 @@ const en: Record<keyof typeof zhCN, string> = {
   "speed.start": "Start test",
   "speed.testing": "Testing…",
   "speed.retest": "Test again",
-  "speed.hint": "Measures real download bandwidth through the current node (uses up to ~100 MB).",
+  "speed.hint": "Measures real download then upload bandwidth through the current node.",
+  "speed.warn": "The test downloads and uploads data through the current node; faster links use more data.",
+  "speed.colSpeed": "Speed",
+  "speed.colCost": "Data used",
+  "speed.testingDownload": "Testing download…",
+  "speed.testingUpload": "Testing upload…",
   "check.healthHint": "Check the current network and proxy",
   "check.start": "Run check",
   "check.again": "Check again",
@@ -972,9 +1045,11 @@ const en: Record<keyof typeof zhCN, string> = {
   "check.dnsLeak": "DNS leak",
   "check.dnsLeakHint": "This checks takeover mode, not actual DNS servers. It does not establish whether DNS leaks.",
   "check.ipv6Leak": "IPv6 leak",
-  "check.ipv6LeakHint": "Compare IPv6 probe exits over the OS path and local proxy. Missing results may mean no IPv6, unsupported proxy or probe failure. Different exits may reflect multiple egress addresses, not necessarily a leak.",
+  "check.ipv6LeakHint":
+    "Compare IPv6 probe exits over the OS path and local proxy. Missing results may mean no IPv6, unsupported proxy or probe failure. Different exits may reflect multiple egress addresses, not necessarily a leak.",
   "check.webrtcLeak": "WebRTC leak",
-  "check.webrtcLeakHint": "Compares public WebRTC candidates with the proxy exit. Different exits may be due to node routing; bypass is reported only when a non-proxy path matches. No candidate is inconclusive.",
+  "check.webrtcLeakHint":
+    "Compares public WebRTC candidates with the proxy exit. Different exits may be due to node routing; bypass is reported only when a non-proxy path matches. No candidate is inconclusive.",
   "check.localOk": "Reachable",
   "check.localFail": "No internet access",
   "check.proxyOff": "Not connected",
@@ -994,7 +1069,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "check.webrtcDifferent": "Different UDP exit: {ip}",
   "check.webrtcUnverified": "Public address {ip}; exit unverified",
   "check.privacyRepair": "Switch to TUN and retest",
-  "check.privacyRepairHint": "System proxy cannot capture all DNS and WebRTC UDP. Switching to TUN reconnects and then reruns the checks.",
+  "check.privacyRepairHint":
+    "System proxy cannot capture all DNS and WebRTC UDP. Switching to TUN reconnects and then reruns the checks.",
   "check.webrtcOff": "WebRTC is unavailable here",
   "check.webrtcNone": "No public candidate; inconclusive",
   "check.webrtcLan": "Only a local address",
@@ -1049,7 +1125,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "unlock.wikipedia": "Wikipedia",
   "unlock.reddit": "Reddit",
   "native.appPolicyInvalid": "Invalid application policy.",
-  "native.appPolicyUnavailable": "The core could not confirm the policy update. Reconnect using the updated client and try again.",
+  "native.appPolicyUnavailable":
+    "The core could not confirm the policy update. Reconnect using the updated client and try again.",
   "native.appPolicyRestoreFailed": "Policy rollback failed. Disconnect, check storage and reconnect before continuing.",
 
   "connections.detailTitle": "Connection details",
@@ -1058,6 +1135,8 @@ const en: Record<keyof typeof zhCN, string> = {
   "connections.detailStatus": "Status",
   "connections.detailNetwork": "Protocol",
   "connections.detailInbound": "Inbound",
+  "connections.detailType": "Type",
+  "connections.closeConnection": "Close connection",
   "connections.detailSource": "Source address",
   "connections.detailDestination": "Destination address",
   "connections.detailStarted": "Started at",
@@ -1097,6 +1176,5 @@ const en: Record<keyof typeof zhCN, string> = {
   "settings.lanDefaultDirectory": "System Downloads folder",
   "settings.lanChooseDirectory": "Choose folder",
   "settings.lanDirectorySaved": "File save location updated",
-
 };
 export default en;

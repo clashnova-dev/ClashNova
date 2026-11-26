@@ -1,4 +1,4 @@
-//! Tauri 适配层：把 airport-lan 的 `LanService` 暴露为 Tauri 命令。
+//! Tauri 适配层：把 lan-service 的 `LanService` 暴露为 Tauri 命令。
 //!
 //! Files and approved text messages share device discovery and the LAN listener.
 //!
@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 
-use airport_lan::protocol::DeviceType;
-use airport_lan::transfer::TransferTask;
-use airport_lan::{IncomingDecision, LanConfig, LanError, LanEvent, LanService};
+use lan_service::protocol::DeviceType;
+use lan_service::transfer::TransferTask;
+use lan_service::{IncomingDecision, LanConfig, LanError, LanEvent, LanService};
 
 /// 会话历史单次拉取上限。
 const HISTORY_LIMIT: u32 = 200;
@@ -159,7 +159,7 @@ pub struct LanSettingsView {
     pub max_concurrent: u32,
 }
 
-// 历史记录直接复用 airport_lan::storage::HistoryRow（已是 camelCase 可序列化）。
+// 历史记录直接复用 lan_service::storage::HistoryRow（已是 camelCase 可序列化）。
 
 fn settings_view(config: &LanConfig) -> LanSettingsView {
     LanSettingsView {
@@ -181,7 +181,7 @@ pub async fn lan_get_local_device(
         let config = state.config.lock().expect("lan config lock");
         (config.alias.clone(), config.listen_port)
     };
-    let ip = airport_lan::discovery::usable_interfaces()
+    let ip = lan_service::discovery::usable_interfaces()
         .ok()
         .and_then(|ifaces| ifaces.into_iter().next())
         .map(|iface| iface.ipv4.to_string());
@@ -199,14 +199,14 @@ pub async fn lan_get_local_device(
 pub async fn lan_add_manual_device(
     state: State<'_, LanTransferState>,
     addr: String,
-) -> Result<airport_lan::DiscoveredDevice, String> {
+) -> Result<lan_service::DiscoveredDevice, String> {
     let socket = addr
         .trim()
         .parse::<std::net::SocketAddr>()
         .or_else(|_| {
             addr.trim()
                 .parse::<std::net::IpAddr>()
-                .map(|ip| std::net::SocketAddr::new(ip, airport_lan::protocol::DEFAULT_PORT))
+                .map(|ip| std::net::SocketAddr::new(ip, lan_service::protocol::DEFAULT_PORT))
         })
         .map_err(|_| "native.lanInvalidAddress".to_string())?;
     state
@@ -303,7 +303,7 @@ pub async fn lan_send_text(
     state: State<'_, LanTransferState>,
     fingerprint: String,
     text: String,
-) -> Result<airport_lan::storage::HistoryRow, String> {
+) -> Result<lan_service::storage::HistoryRow, String> {
     state
         .service()
         .map_err(map_err)?
@@ -364,12 +364,12 @@ pub async fn lan_respond_pair(
 pub async fn lan_get_conversation(
     state: State<'_, LanTransferState>,
     fingerprint: String,
-) -> Result<Vec<airport_lan::storage::HistoryRow>, String> {
+) -> Result<Vec<lan_service::storage::HistoryRow>, String> {
     Ok(state.service().map_err(map_err)?.conversation(&fingerprint))
 }
 
 fn recorded_file_path(
-    storage: &airport_lan::storage::Storage,
+    storage: &lan_service::storage::Storage,
     path: &str,
 ) -> Result<PathBuf, String> {
     let parsed = std::path::Path::new(path);
@@ -631,7 +631,7 @@ pub async fn lan_cancel_transfer(
 #[tauri::command]
 pub async fn lan_get_history(
     state: State<'_, LanTransferState>,
-) -> Result<Vec<airport_lan::storage::HistoryRow>, String> {
+) -> Result<Vec<lan_service::storage::HistoryRow>, String> {
     state
         .service()
         .map_err(map_err)?
@@ -653,7 +653,7 @@ pub async fn lan_clear_history(state: State<'_, LanTransferState>) -> Result<(),
 #[tauri::command]
 pub async fn lan_list_trusted(
     state: State<'_, LanTransferState>,
-) -> Result<Vec<airport_lan::storage::TrustedRow>, String> {
+) -> Result<Vec<lan_service::storage::TrustedRow>, String> {
     Ok(state.service().map_err(map_err)?.trusted_devices())
 }
 
@@ -807,7 +807,7 @@ mod file_action_tests {
     use super::*;
     #[test]
     fn file_actions_are_limited_to_recorded_absolute_paths() {
-        let storage = airport_lan::storage::Storage::in_memory().unwrap();
+        let storage = lan_service::storage::Storage::in_memory().unwrap();
         let dir = tempfile::tempdir().unwrap();
         let file = dir.path().join("recorded document.pdf");
         std::fs::write(&file, b"test").unwrap();

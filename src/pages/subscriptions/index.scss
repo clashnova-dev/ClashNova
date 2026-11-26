@@ -1,0 +1,72 @@
+.qr-share {
+  width: min(360px, calc(100vw - 48px));
+  text-align: center;
+}
+.qr-code {
+  display: block;
+  width: 220px;
+  height: 220px;
+  margin: 4px auto 0;
+  padding: 12px;
+  box-sizing: content-box;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  shape-rendering: crispEdges;
+}
+.qr-code path {
+  fill: #1c2533;
+}
+.qr-name {
+  margin: 12px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+.ctx-menu {
+  position: fixed;
+  min-width: 184px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-hover);
+}
+.ctx-menu li {
+  margin: 0;
+}
+.ctx-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+}
+.ctx-menu button:hover:not(:disabled) {
+  background: var(--hover);
+}
+.ctx-menu button:disabled {
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: default;
+}
+.ctx-menu button.danger {
+  color: var(--danger);
+}
+.ctx-menu button.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+}

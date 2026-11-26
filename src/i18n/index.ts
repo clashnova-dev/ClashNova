@@ -18,7 +18,15 @@ export type MessageValues = Record<string, string | number | MessageObject>;
  */
 export type Text = MessageKey | MessageObject | string;
 
-const dictionaries: Record<Locale, Record<MessageKey, string>> = { "zh-CN": zhCN, en, ja, ko, de, fr, ru };
+const dictionaries: Record<Locale, Record<MessageKey, string>> = {
+  "zh-CN": zhCN,
+  en,
+  ja,
+  ko,
+  de,
+  fr,
+  ru,
+};
 const own = (object: object, name: string) => Object.prototype.hasOwnProperty.call(object, name);
 
 export const messageKeys = Object.keys(zhCN) as MessageKey[];
@@ -33,21 +41,31 @@ export const msg = (key: MessageKey, values?: MessageValues): MessageObject => (
  */
 export function encode(text: Text): string {
   if (typeof text === "string") return text;
-  return text.values && Object.keys(text.values).length ? JSON.stringify({ key: text.key, values: text.values }) : text.key;
+  return text.values && Object.keys(text.values).length
+    ? JSON.stringify({ key: text.key, values: text.values })
+    : text.key;
 }
 function decode(text: string): MessageObject | undefined {
   if (!text.startsWith('{"key":"')) return undefined;
   try {
     const parsed = JSON.parse(text) as { key?: unknown; values?: unknown };
     if (typeof parsed.key !== "string" || !isMessageKey(parsed.key)) return undefined;
-    return { key: parsed.key, values: parsed.values && typeof parsed.values === "object" ? parsed.values as MessageValues : undefined };
-  } catch { return undefined; }
+    return {
+      key: parsed.key,
+      values: parsed.values && typeof parsed.values === "object" ? (parsed.values as MessageValues) : undefined,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 function render(locale: Locale, text: Text | null | undefined, values?: MessageValues): string {
   if (text == null || text === "") return "";
   if (typeof text === "object") return render(locale, text.key, { ...text.values, ...values });
-  if (!isMessageKey(text)) { const message = decode(text); return message ? render(locale, message) : text; }
+  if (!isMessageKey(text)) {
+    const message = decode(text);
+    return message ? render(locale, message) : text;
+  }
   return dictionaries[locale][text].replace(/\{(\w+)\}/g, (token, name: string) => {
     const value = values?.[name];
     // A value can be a message itself, e.g. a native error key inside "Test failed: {error}".

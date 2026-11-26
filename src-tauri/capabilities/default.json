@@ -59,6 +59,7 @@
     "allow-begin-probe",
     "allow-probe-delay",
     "allow-probe-speed",
+    "allow-probe-speed-up",
     "allow-end-probe",
     "allow-fetch-subscription",
     "allow-fetch-subscription-details",

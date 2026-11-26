@@ -1,11 +1,11 @@
-// 结构化规则编辑所用的类型/策略映射,以及 sing-box 规则对象 ↔ 简单 UI 规则的互转。
-// 只处理「单匹配 + 单值 + direct/select/reject」这类简单规则;复杂规则(多匹配、逻辑规则、
-// 指向具体节点等)无法用表单表达,解析时返回 null,由调用方原样保留、保存时放回,确保不丢规则。
+// Type/policy mappings for structured rule editing, plus conversion between sing-box rule objects ↔ simple UI rules.
+// Handles only simple rules of the form "single matcher + single value + direct/select/reject"; complex rules (multiple matchers, logical rules,
+// pointing at a specific node, etc.) cannot be expressed in the form, so parsing returns null; the caller keeps them as-is and writes them back on save, so no rule is lost.
 
 export type RulePolicy = "direct" | "select" | "reject";
 export type UiRule = { id: string; type: string; value: string; policy: RulePolicy };
 
-// matcher key(sing-box 字段)→ 展示用 code 与 i18n 名称键。
+// matcher key (sing-box field) → display code and i18n name key.
 export const RULE_TYPES = [
   { key: "domain", code: "DOMAIN", nameKey: "rules.typeDomain" },
   { key: "domain_suffix", code: "DOMAIN-SUFFIX", nameKey: "rules.typeDomainSuffix" },
@@ -28,7 +28,7 @@ export function ruleCode(type: string): string {
   return RULE_TYPES.find(t => t.key === type)?.code ?? type.toUpperCase();
 }
 
-/** sing-box 规则 → 简单 UI 规则;无法表达为单匹配表单的返回 null(交由调用方原样保留)。 */
+/** sing-box rule → simple UI rule; returns null for anything not expressible as a single-matcher form (left for the caller to preserve as-is). */
 export function ruleToUi(rule: unknown): UiRule | null {
   if (!rule || typeof rule !== "object") return null;
   const obj = rule as Record<string, unknown>;
@@ -48,13 +48,13 @@ export function ruleToUi(rule: unknown): UiRule | null {
   else if (obj.outbound === "direct") policy = "direct";
   else if (obj.outbound === "select") policy = "select";
   if (!policy) return null;
-  // 只允许 matcher + outbound/action;出现其它键说明是复杂规则,保留不编辑。
+  // Allow only matcher + outbound/action; any other key means a complex rule, which is kept and not edited.
   const allowed = new Set([type, "outbound", "action"]);
   if (keys.some(k => !allowed.has(k))) return null;
   return { id: crypto.randomUUID(), type, value, policy };
 }
 
-/** 简单 UI 规则 → sing-box 规则对象。 */
+/** Simple UI rule → sing-box rule object. */
 export function uiToRule(rule: UiRule): Record<string, unknown> {
   const value: string | number = rule.type === "port" ? Number(rule.value) : rule.value;
   const out: Record<string, unknown> = { [rule.type]: [value] };
@@ -63,7 +63,7 @@ export function uiToRule(rule: UiRule): Record<string, unknown> {
   return out;
 }
 
-/** 内容基础校验:非空;port 必须是 1–65535 的整数。 */
+/** Basic value validation: non-empty; port must be an integer in 1–65535. */
 export function validRuleValue(type: string, value: string): boolean {
   const v = value.trim();
   if (!v) return false;

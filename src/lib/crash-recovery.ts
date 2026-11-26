@@ -8,9 +8,15 @@ export async function restoreCrashConnection(deps: {
   connect(): Promise<void>;
   report(key: "recovery.restoring" | "recovery.profileUnavailable" | "recovery.tunUnavailable"): void;
 }): Promise<void> {
-  if (!await deps.requested()) return;
-  if (!deps.canConnect()) { deps.report("recovery.profileUnavailable"); return; }
-  if (deps.tun && !await deps.tunReady()) { deps.report("recovery.tunUnavailable"); return; }
+  if (!(await deps.requested())) return;
+  if (!deps.canConnect()) {
+    deps.report("recovery.profileUnavailable");
+    return;
+  }
+  if (deps.tun && !(await deps.tunReady())) {
+    deps.report("recovery.tunUnavailable");
+    return;
+  }
   deps.report("recovery.restoring");
   await deps.connect();
 }

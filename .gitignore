@@ -5,7 +5,7 @@ node_modules/
 dist/
 src-tauri/target/
 tun-service/target/
-airport-lan/target/
+lan-service/target/
 src-tauri/binaries/*
 !src-tauri/binaries/*LICENSE*
 src-tauri/updater.key
@@ -19,3 +19,6 @@ __pycache__/
 release-artifacts/
 
 .pnpm-store/
+
+# Claude Code local config (preview launch.json, etc.)
+.claude/

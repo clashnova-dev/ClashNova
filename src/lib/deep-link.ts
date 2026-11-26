@@ -17,13 +17,17 @@ const CODE = /^[A-Za-z0-9_-]{16,64}$/;
 
 export function parseDeepLink(raw: string): DeepLink | null {
   let url: URL;
-  try { url = new URL(raw); }
-  catch { return null; }
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
   if (url.protocol === "clash:" || url.protocol === "clashmeta:") return parseClashLink(url);
   if (url.protocol !== "clashnova:") return null;
   const path = url.pathname === "/" ? "" : url.pathname.replace(/\/$/, "");
   const host = url.hostname;
-  if (!path && (host === "open" || host === "nodes" || host === "settings" || host === "connect")) return { kind: host };
+  if (!path && (host === "open" || host === "nodes" || host === "settings" || host === "connect"))
+    return { kind: host };
   if (host === "subscription" && path === "/import") return readImportCode(url);
   return null;
 }
@@ -41,7 +45,9 @@ function parseClashLink(url: URL): DeepLink {
 
 function readImportCode(url: URL): DeepLink {
   const names: string[] = [];
-  url.searchParams.forEach((_value, key) => { names.push(key); });
+  url.searchParams.forEach((_value, key) => {
+    names.push(key);
+  });
   if (names.length !== 1 || (names[0] !== "code" && names[0] !== "token")) return { kind: "rejected" };
   const code = url.searchParams.get(names[0]) ?? "";
   return CODE.test(code) ? { kind: "import", code } : { kind: "rejected" };
@@ -61,5 +67,7 @@ function isSubscriptionAddress(value: string): boolean {
     if (url.username || url.password) return false;
     if (url.protocol === "https:") return true;
     return url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }

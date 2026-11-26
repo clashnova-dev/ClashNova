@@ -2,7 +2,8 @@ import type zhCN from "./zh-CN.ts";
 
 const ru: Record<keyof typeof zhCN, string> = {
   "confirmation.portTitle": "Порт занят",
-  "confirmation.portBody": "Порт {port} занят указанными процессами. Их завершение может прервать работу приложений и соединений. Освободить порт и подключиться?",
+  "confirmation.portBody":
+    "Порт {port} занят указанными процессами. Их завершение может прервать работу приложений и соединений. Освободить порт и подключиться?",
   "confirmation.portRelease": "Завершить и подключить",
   "native.portOwnerUnknown": "Не удалось определить процесс на порту {port}. Закройте его вручную или смените порт.",
   "native.portOwnerProtected": "Порт {port} занят защищённым процессом. Выберите другой порт.",
@@ -19,6 +20,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "rules.search": "Поиск по содержимому, типу или выходу",
   "rules.source": "Источник",
   "rules.edit": "Изменить правила",
+  "rules.chinaGeosite": "Китай напрямую (geosite)",
+  "rules.adBlock": "Блокировать рекламу (geosite)",
   "rules.fieldType": "Тип правила",
   "rules.fieldContent": "Содержимое правила",
   "rules.fieldPolicy": "Политика прокси",
@@ -41,7 +44,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "rules.policyProxy": "Прокси",
   "rules.policyReject": "Блокировать",
   "common.edit": "Изменить",
-  "rules.editHint": "Измените собственные правила маршрутизации этой подписки (массив правил sing-box). Встроенные правила Китай/LAN-напрямую и политики приложений здесь не показаны.",
+  "rules.editHint":
+    "Измените собственные правила маршрутизации этой подписки (массив правил sing-box). Встроенные правила Китай/LAN-напрямую и политики приложений здесь не показаны.",
   "rules.type": "Тип",
   "rules.content": "Содержимое",
   "rules.target": "Выход",
@@ -58,46 +62,61 @@ const ru: Record<keyof typeof zhCN, string> = {
   "rules.pageOf": "Страница {page} / {pages}",
 
   "check.webrtcTimeout": "Время проверки истекло; не подтверждено",
-  "check.reconnectConfirm": "Текущая конфигурация будет применена заново с кратким переподключением. Системный DNS и другие прокси-приложения не сбрасываются.",
-  "check.proxyScope": "Системный/ручной прокси охватывает только совместимые приложения. DNS, IPv6 и WebRTC UDP могут идти напрямую. Для более полного охвата используйте TUN и повторите проверку.",
-  "check.tunScope": "TUN перехватывает DNS и IPv6 и направляет STUN через прокси. Прямые правила и исключения маршрутов сохраняются. Конфигурация сама по себе не доказывает отсутствие утечек.",
+  "check.reconnectConfirm":
+    "Текущая конфигурация будет применена заново с кратким переподключением. Системный DNS и другие прокси-приложения не сбрасываются.",
+  "check.proxyScope":
+    "Системный/ручной прокси охватывает только совместимые приложения. DNS, IPv6 и WebRTC UDP могут идти напрямую. Для более полного охвата используйте TUN и повторите проверку.",
+  "check.tunScope":
+    "TUN перехватывает DNS и IPv6 и направляет STUN через прокси. Прямые правила и исключения маршрутов сохраняются. Конфигурация сама по себе не доказывает отсутствие утечек.",
   "check.dnsConfiguration": "Конфигурация DNS",
   "check.routeExceptions": "Исключения маршрутов: {count}",
-  "check.webviewScope": "Результат WebRTC относится только к WebView приложения. Проверьте DNS и WebRTC в используемом браузере. Тайм-аут или отсутствие кандидатов не доказывают отсутствие утечек.",
+  "check.webviewScope":
+    "Результат WebRTC относится только к WebView приложения. Проверьте DNS и WebRTC в используемом браузере. Тайм-аут или отсутствие кандидатов не доказывают отсутствие утечек.",
   "check.browserChecks": "Проверить в браузере",
   "check.checkedAt": "Проверено: {time}",
   "recovery.intentWriteFailed": "Не удалось сохранить состояние восстановления: {error}",
   "recovery.coreScheduled": "Ядро завершилось. Попытка восстановления {attempt} через {seconds} с: {error}",
-  "recovery.coreExhausted": "Повторные ошибки восстановления; автоматические попытки остановлены. Проверьте журналы и подключитесь вручную: {error}",
-  "recovery.cleanupBlocked": "Остановка старого ядра не подтверждена. Восстановление приостановлено во избежание конфликта: {error}",
+  "recovery.coreExhausted":
+    "Повторные ошибки восстановления; автоматические попытки остановлены. Проверьте журналы и подключитесь вручную: {error}",
+  "recovery.cleanupBlocked":
+    "Остановка старого ядра не подтверждена. Восстановление приостановлено во избежание конфликта: {error}",
   "recovery.supervisorFailed": "Не удалось запустить наблюдение за клиентом: {error}",
   "recovery.restoring": "Клиент восстановлен после неожиданного завершения. Подключение…",
-  "recovery.profileUnavailable": "Клиент открыт заново, но подписка или узел для восстановления недоступны. Подключитесь вручную.",
-  "recovery.tunUnavailable": "Клиент открыт заново, но служба TUN не готова. Проверьте настройки и подключитесь вручную.",
+  "recovery.profileUnavailable":
+    "Клиент открыт заново, но подписка или узел для восстановления недоступны. Подключитесь вручную.",
+  "recovery.tunUnavailable":
+    "Клиент открыт заново, но служба TUN не готова. Проверьте настройки и подключитесь вручную.",
 
   "confirmation.continue": "Продолжить",
   "confirmation.removeTitle": "Удалить подписку?",
-  "confirmation.removeBody": "Локальная подписка «{name}» и её настройки будут удалены. Для повторного использования потребуется импорт.",
+  "confirmation.removeBody":
+    "Локальная подписка «{name}» и её настройки будут удалены. Для повторного использования потребуется импорт.",
   "confirmation.activeSubscription": "Подписка используется. Удаление отключит прокси и очистит текущие узлы.",
   "confirmation.exposeTitle": "Поделиться данными подписки?",
-  "confirmation.exposeBody": "Ссылки и QR-коды содержат данные доступа. Их обладатели могут использовать ваш трафик. Передавайте их только доверенным устройствам.",
+  "confirmation.exposeBody":
+    "Ссылки и QR-коды содержат данные доступа. Их обладатели могут использовать ваш трафик. Передавайте их только доверенным устройствам.",
   "confirmation.switchTitle": "Переключить подписку?",
   "confirmation.switchBody": "Переключение на «{name}» разорвёт текущее соединение.",
   "confirmation.refreshTitle": "Обновить текущую подписку?",
   "confirmation.refreshBody": "Обновление заменит текущие настройки и может прервать соединения.",
   "confirmation.networkTitle": "Сохранить настройки сети?",
-  "confirmation.networkBody": "Изменения порта прокси, LAN, DNS и TUN вступят в силу при следующем подключении. Проверьте их перед сохранением.",
-  "confirmation.lanWarning": "Устройства локальной сети смогут использовать этот прокси. Включайте только в доверенной сети.",
+  "confirmation.networkBody":
+    "Изменения порта прокси, LAN, DNS и TUN вступят в силу при следующем подключении. Проверьте их перед сохранением.",
+  "confirmation.lanWarning":
+    "Устройства локальной сети смогут использовать этот прокси. Включайте только в доверенной сети.",
   "confirmation.guardWarning": "Аварийная блокировка будет отключена. При обрыве туннеля трафик может пойти напрямую.",
   "confirmation.routeWarning": "Проверьте исключения маршрутизации. Исключённый трафик пойдёт напрямую.",
   "confirmation.proxyTitle": "Изменить режим прокси?",
-  "confirmation.proxyBody": "Будет изменён системный прокси или виртуальный адаптер; возможен краткий обрыв сети. Если TUN не установлен, потребуется системное разрешение.",
+  "confirmation.proxyBody":
+    "Будет изменён системный прокси или виртуальный адаптер; возможен краткий обрыв сети. Если TUN не установлен, потребуется системное разрешение.",
   "confirmation.routingTitle": "Изменить режим маршрутизации?",
   "confirmation.routingBody": "Смена режима перезагрузит настройки и может ненадолго прервать соединения.",
-  "confirmation.installBody": "Будет установлена фоновая сетевая служба для управления адаптером TUN. Требуются права администратора.",
+  "confirmation.installBody":
+    "Будет установлена фоновая сетевая служба для управления адаптером TUN. Требуются права администратора.",
   "confirmation.repairBody": "Будут обновлены фоновая сетевая служба и ядро прокси. Требуются права администратора.",
   "confirmation.updateTitle": "Установить и перезапустить клиент?",
-  "confirmation.updateBody": "Будет установлена версия {version}, затем клиент перезапустится. Текущее прокси-соединение будет разорвано.",
+  "confirmation.updateBody":
+    "Будет установлена версия {version}, затем клиент перезапустится. Текущее прокси-соединение будет разорвано.",
   "confirmation.startupTitle": "Изменить автозапуск?",
   "confirmation.startupEnable": "Клиент будет автоматически запускаться при входе в систему.",
   "confirmation.startupDisable": "Клиент больше не будет автоматически запускаться при входе в систему.",
@@ -227,11 +246,13 @@ const ru: Record<keyof typeof zhCN, string> = {
   "app.orImportALocalFile": "Или импортируйте локальный файл",
   "app.chooseFile": "Выбрать файл",
   "app.useAUrlInstead": "Использовать URL вместо файла",
-  "app.supportsSingBoxJsonClash": "Поддерживаются sing-box JSON, Clash YAML и ссылки-подписки. Преобразование выполняется локально.",
+  "app.supportsSingBoxJsonClash":
+    "Поддерживаются sing-box JSON, Clash YAML и ссылки-подписки. Преобразование выполняется локально.",
   "app.importing": "Импорт…",
   "app.importUse": "Импортировать и использовать",
   "deepLink.importTitle": "Подтвердите импорт подписки",
-  "deepLink.importBody": "Страница просит импортировать подписку. Одноразовый код используется только после подтверждения и сразу удаляется при отмене.",
+  "deepLink.importBody":
+    "Страница просит импортировать подписку. Одноразовый код используется только после подтверждения и сразу удаляется при отмене.",
   "deepLink.importUrlBody": "Ссылка запросила импорт этой подписки. Импортируйте только из доверенных источников.",
   "deepLink.confirmImport": "Импортировать",
   "deepLink.rejected": "Эту ссылку нельзя использовать",
@@ -289,8 +310,10 @@ const ru: Record<keyof typeof zhCN, string> = {
   "nodes.checksEvery3MinutesAnd": "Проверяет каждые 3 минуты и выбирает сервер с низкой задержкой",
   "nodes.autoSwitch": "Автопереключение",
   "nodes.testedAfterConnect": "Проверка после подключения",
-  "nodes.requestTimeAfterConnectionSetup": "Время запроса после установки соединения; первое подключение {delay} мс. Не скорость загрузки.",
-  "nodes.firstConnectionMsSecondTest": "Первое подключение {delay} мс; вторая проверка не завершена. Не скорость загрузки.",
+  "nodes.requestTimeAfterConnectionSetup":
+    "Время запроса после установки соединения; первое подключение {delay} мс. Не скорость загрузки.",
+  "nodes.firstConnectionMsSecondTest":
+    "Первое подключение {delay} мс; вторая проверка не завершена. Не скорость загрузки.",
   "nodes.notSelected": "Не выбрано",
   "nodes.test": "Тест",
   "nodes.all": "Все серверы",
@@ -326,7 +349,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "nodes.notReady": "Этот сервер не в сети или его конфигурация не готова.",
   "nodes.customRegion": "Другой",
 
-  "subscriptions.updatedRestartForUsage": "Подписка обновлена. Перезапустите обновлённое приложение, чтобы загрузить данные о трафике.",
+  "subscriptions.updatedRestartForUsage":
+    "Подписка обновлена. Перезапустите обновлённое приложение, чтобы загрузить данные о трафике.",
   "subscriptions.updatedAt": "Обновлено",
   "subscriptions.expiresAt": "Истекает",
   "subscriptions.expired": "Истекла",
@@ -347,18 +371,21 @@ const ru: Record<keyof typeof zhCN, string> = {
   "subscriptions.removeSubscription": "Удалить подписку",
   "subscriptions.editTitle": "Редактировать файл",
   "subscriptions.editHint": "Измените конфигурацию «{name}». Изменения вступят в силу после сохранения.",
-  "subscriptions.editRemoteHint": "Измените конфигурацию «{name}». У этой подписки есть источник обновления — обновление перезапишет локальные правки.",
+  "subscriptions.editRemoteHint":
+    "Измените конфигурацию «{name}». У этой подписки есть источник обновления — обновление перезапишет локальные правки.",
   "subscriptions.editNamed": "Редактировать {name}",
   "subscriptions.editPaste": "Вставить из буфера обмена",
   "subscriptions.editFormat": "Форматировать",
   "subscriptions.editExpand": "Полный экран",
   "subscriptions.editCollapse": "Выйти из полноэкранного режима",
   "subscriptions.editInfoTitle": "Изменить сведения",
-  "subscriptions.editInfoHint": "Переименование применяется сразу. При изменении URL источника подписка загружается заново и её узлы заменяются.",
+  "subscriptions.editInfoHint":
+    "Переименование применяется сразу. При изменении URL источника подписка загружается заново и её узлы заменяются.",
   "subscriptions.editNodesTitle": "Изменить узлы",
   "subscriptions.editNodesAdvanced": "Дополнительно",
   "subscriptions.editNodesPaste": "Несколько URI разделяйте переносами строк (поддерживается Base64)",
-  "subscriptions.editNodesAddHint": "Вставьте ссылки или подписку Base64 — при сохранении они преобразуются и добавятся как узлы.",
+  "subscriptions.editNodesAddHint":
+    "Вставьте ссылки или подписку Base64 — при сохранении они преобразуются и добавятся как узлы.",
   "subscriptions.editNodesFilter": "Фильтр",
   "subscriptions.deleteNode": "Удалить узел",
   "subscriptions.editNodesEmpty": "Нет узлов",
@@ -369,7 +396,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "subscriptions.shareQrHint": "Отсканируйте код телефоном, чтобы импортировать эту подписку.",
   "subscriptions.count": "Подписок: {count}",
   "subscriptions.usedTraffic": "Использовано трафика",
-  "subscriptions.restored": "Подписка и выбранный сервер восстановлены. Нажмите «Подключить», чтобы начать, или обновите её в разделе «Подписки».",
+  "subscriptions.restored":
+    "Подписка и выбранный сервер восстановлены. Нажмите «Подключить», чтобы начать, или обновите её в разделе «Подписки».",
   "subscriptions.nonePurchase": "Нет активной подписки. Сначала приобретите тариф.",
   "subscriptions.urlCopied": "URL подписки скопирован. Не передавайте его другим.",
   "subscriptions.addPrompt": "Добавьте URL подписки или импортируйте локальный файл",
@@ -379,7 +407,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "subscriptions.imported": "Подписка импортирована",
   "subscriptions.importFirst": "Сначала импортируйте подписку и выберите сервер",
   "subscriptions.selectedNodeMissing": "Выбранный сервер отсутствует. Обновите подписку.",
-  "subscriptions.noReadyNodes": "Нет готовых серверов. Попросите администратора проверить состояние и конфигурацию серверов.",
+  "subscriptions.noReadyNodes":
+    "Нет готовых серверов. Попросите администратора проверить состояние и конфигурацию серверов.",
 
   "connections.unknownPolicyHint": "Процесс не определён. Правила приложения недоступны.",
   "connections.caseSensitive": "Учитывать регистр",
@@ -434,8 +463,10 @@ const ru: Record<keyof typeof zhCN, string> = {
   "connections.noActiveConnections": "Нет активных соединений",
   "connections.connectToSeeNetworkRequests": "Подключитесь, чтобы видеть сетевые запросы",
   "connections.closeAllConnections": "Закрыть все соединения",
-  "connections.activeDownloadsAndRequestsWill": "Активные загрузки и запросы будут прерваны. Приложения могут переподключиться автоматически.",
-  "connections.unableToLoadConnectionsMake": "Не удалось загрузить соединения. Убедитесь, что вы перезапустили обновлённое приложение.",
+  "connections.activeDownloadsAndRequestsWill":
+    "Активные загрузки и запросы будут прерваны. Приложения могут переподключиться автоматически.",
+  "connections.unableToLoadConnectionsMake":
+    "Не удалось загрузить соединения. Убедитесь, что вы перезапустили обновлённое приложение.",
   "connections.connectionMonitoringIsAvailableIn": "Мониторинг соединений доступен только в десктоп-приложении",
 
   "logs.empty": "Логов пока нет",
@@ -462,7 +493,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "logs.paused": "Приостановлено",
   "logs.live": "В реальном времени",
   "logs.shown": "{count} / {total} записей",
-  "logs.windowHint": "Только последние записи текущего сеанса, а не полная история файлов. Пауза останавливает показ, но не запись в файл.",
+  "logs.windowHint":
+    "Только последние записи текущего сеанса, а не полная история файлов. Пауза останавливает показ, но не запись в файл.",
   "logs.followLatest": "Следить за новыми",
   "logs.scrollBottom": "В конец",
   "logs.detail": "Подробности записи",
@@ -475,8 +507,10 @@ const ru: Record<keyof typeof zhCN, string> = {
 
   "settings.showLiveSpeed": "Показывать скорость в реальном времени",
   "settings.testConcurrency": "Параллельных проверок",
-  "settings.testConcurrencyHelp": "Сколько узлов проверяется на задержку одновременно; увеличьте для больших списков (1-64).",
-  "settings.showUploadAndDownloadSpeed": "Показывать скорость отдачи и загрузки рядом со значком в трее; в Windows — во всплывающей подсказке и меню.",
+  "settings.testConcurrencyHelp":
+    "Сколько узлов проверяется на задержку одновременно; увеличьте для больших списков (1-64).",
+  "settings.showUploadAndDownloadSpeed":
+    "Показывать скорость отдачи и загрузки рядом со значком в трее; в Windows — во всплывающей подсказке и меню.",
   "settings.systemProxyCheck": "Проверка системного прокси",
   "settings.checkAgain": "Проверить снова",
   "settings.checkingSystemProxy": "Проверка системного прокси…",
@@ -492,11 +526,13 @@ const ru: Record<keyof typeof zhCN, string> = {
   "settings.copyLanAddress": "Копировать адрес LAN {address}",
   "settings.lanCopied": "Адрес скопирован",
   "settings.lanLoading": "Чтение адресов LAN…",
-  "settings.allowOtherDevicesOnYour": "Разрешить другим устройствам в локальной сети использовать этот прокси. Включайте только в доверенных сетях.",
+  "settings.allowOtherDevicesOnYour":
+    "Разрешить другим устройствам в локальной сети использовать этот прокси. Включайте только в доверенных сетях.",
   "settings.proxyPort": "Порт прокси",
   "settings.sharedHttpAndSocksPort": "Общий порт HTTP и SOCKS, от 1024 до 65535.",
   "settings.disconnectToChangeNetworkSettings": "Отключитесь, чтобы изменить сетевые настройки",
-  "settings.lanDevicesUseThisComputers": "Устройства в LAN используют IP этого компьютера в локальной сети и заданный порт",
+  "settings.lanDevicesUseThisComputers":
+    "Устройства в LAN используют IP этого компьютера в локальной сети и заданный порт",
   "settings.onlyThisComputerCanAccess": "Доступ к прокси есть только у этого компьютера",
   "settings.saveNetworkSettings": "Сохранить сетевые настройки",
   "settings.startup": "Запуск",
@@ -506,31 +542,39 @@ const ru: Record<keyof typeof zhCN, string> = {
   "settings.networkSaved": "Сетевые настройки сохранены. Они применятся при следующем подключении.",
   "settings.portInvalid": "Порт прокси должен быть целым числом от 1024 до 65535",
   "settings.tunStack": "Стек TUN",
-  "settings.tunStackHelp": "Mixed использует системный TCP-стек вместе с UDP-стеком в пространстве пользователя и подходит почти всем. Переключайтесь на System или gVisor только если брандмауэр или драйвер мешает работе TUN.",
+  "settings.tunStackHelp":
+    "Mixed использует системный TCP-стек вместе с UDP-стеком в пространстве пользователя и подходит почти всем. Переключайтесь на System или gVisor только если брандмауэр или драйвер мешает работе TUN.",
   "settings.tunStackMixed": "Mixed",
   "settings.tunStackSystem": "System",
   "settings.tunMtu": "TUN MTU",
-  "settings.tunMtuHelp": "Максимальный размер передаваемого блока виртуального адаптера, от 1280 до 9000; по умолчанию 1500. Большее значение повышает пропускную способность, но некоторые UDP-приложения могут работать нестабильно.",
+  "settings.tunMtuHelp":
+    "Максимальный размер передаваемого блока виртуального адаптера, от 1280 до 9000; по умолчанию 1500. Большее значение повышает пропускную способность, но некоторые UDP-приложения могут работать нестабильно.",
   "settings.tunStrictRoute": "Строгая маршрутизация",
-  "settings.tunStrictRouteHelp": "Не даёт трафику и DNS уходить в обход туннеля; лучше оставить включённым. Некоторые сети виртуальных машин и контейнеров в Windows работают только при выключенной опции.",
+  "settings.tunStrictRouteHelp":
+    "Не даёт трафику и DNS уходить в обход туннеля; лучше оставить включённым. Некоторые сети виртуальных машин и контейнеров в Windows работают только при выключенной опции.",
   "settings.tunIpv6": "Разрешать адреса IPv6",
-  "settings.tunIpv6Help": "Разрешает IPv6, если узел его поддерживает. При отключении TUN использует разрешение IPv4 и отклоняет перехваченный IPv6. Прямые правила и исключения проверяйте отдельно.",
+  "settings.tunIpv6Help":
+    "Разрешает IPv6, если узел его поддерживает. При отключении TUN использует разрешение IPv4 и отклоняет перехваченный IPv6. Прямые правила и исключения проверяйте отдельно.",
   "settings.tunAutoRedirect": "Перенаправление nftables",
-  "settings.tunAutoRedirectHelp": "Перенаправляет через nftables вместо обычной маршрутизации: быстрее и не конфликтует с мостами Docker. Требуется поддержка nftables в системе.",
+  "settings.tunAutoRedirectHelp":
+    "Перенаправляет через nftables вместо обычной маршрутизации: быстрее и не конфликтует с мостами Docker. Требуется поддержка nftables в системе.",
   "settings.tunExclude": "Адреса в обход",
   "settings.dnsMode": "Режим DNS",
-  "settings.dnsModeHelp": "Fake-IP позволяет узлу-выходу разрешать зарубежные имена (надёжнее); реальное разрешение идёт через DoH узла.",
+  "settings.dnsModeHelp":
+    "Fake-IP позволяет узлу-выходу разрешать зарубежные имена (надёжнее); реальное разрешение идёт через DoH узла.",
   "settings.dnsFakeip": "Fake-IP",
   "settings.dnsReal": "Реальный",
   "settings.dnsDomestic": "Внутренний DNS",
   "settings.dnsRemote": "Удалённый DNS",
   "settings.dnsLocal": "Авто (AliDNS DoH)",
-  "settings.tunExcludeHelp": "Эти сети остаются вне виртуального адаптера, по одной в строке, не более 64. Трафик и DNS к ним больше не идут через туннель.",
+  "settings.tunExcludeHelp":
+    "Эти сети остаются вне виртуального адаптера, по одной в строке, не более 64. Трафик и DNS к ним больше не идут через туннель.",
   "settings.tunStackInvalid": "Недопустимый стек TUN",
   "settings.tunMtuInvalid": "TUN MTU должен быть целым числом от 1280 до 9000",
   "settings.tunExcludeInvalid": "Адреса в обход должны быть IP-сетями, например 192.168.0.0/16, не более 64",
   "settings.tunKillSwitch": "Аварийное отключение",
-  "settings.tunKillSwitchHelp": "При неожиданном разрыве туннеля блокирует весь сетевой доступ, пока он не восстановится или вы не снимете блокировку, чтобы трафик не ушёл напрямую. Адреса в обход не затрагиваются. Экспериментально, по умолчанию выключено.",
+  "settings.tunKillSwitchHelp":
+    "При неожиданном разрыве туннеля блокирует весь сетевой доступ, пока он не восстановится или вы не снимете блокировку, чтобы трафик не ушёл напрямую. Адреса в обход не затрагиваются. Экспериментально, по умолчанию выключено.",
   "settings.manualProxy": "Ручной прокси",
   "settings.appearanceLanguage": "Оформление и язык",
   "settings.localAccess": "Локальный доступ",
@@ -558,12 +602,14 @@ const ru: Record<keyof typeof zhCN, string> = {
   "settings.updateDesktopOnly": "Проверяйте обновления в приложении для компьютера",
   "settings.viewHelp": "Открыть справку",
   "settings.about": "О программе",
-  "settings.systemProxyCannotCaptureWebrtc": "Системный прокси не перехватывает UDP WebRTC. Используйте режим TUN, чтобы защитить UDP-трафик браузера.",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "Системный прокси не перехватывает UDP WebRTC. Используйте режим TUN, чтобы защитить UDP-трафик браузера.",
 
   "tun.tunService": "Служба TUN",
   "tun.tunServiceHasNotBeen": "Служба TUN ещё не проверена",
   "tun.tunServiceIsAvailableIn": "Служба TUN доступна только в десктоп-приложении",
-  "tun.administratorAuthorizationIsRequiredOnce": "Потребуется однократное разрешение администратора. Виртуальный адаптер создаётся при подключении.",
+  "tun.administratorAuthorizationIsRequiredOnce":
+    "Потребуется однократное разрешение администратора. Виртуальный адаптер создаётся при подключении.",
   "tun.waitingForSystemAuthorization": "Ожидание разрешения системы…",
   "tun.repairService": "Восстановить службу",
   "tun.authorizeInstallation": "Разрешить установку",
@@ -575,8 +621,10 @@ const ru: Record<keyof typeof zhCN, string> = {
   "tun.tunServiceInstallationDidNot": "Установка службы TUN не завершена. Откройте настройки для подробностей.",
   "tun.tunServiceRemovalDidNot": "Удаление службы TUN не завершено. Откройте настройки для подробностей.",
   "tun.busy": "Операция со службой уже выполняется",
-  "tun.serviceOutdatedNotice": "Служба TUN устарела. Используйте «Восстановить службу» в настройках, чтобы обновить её.",
-  "tun.guardBlocking": "Туннель разорван, и аварийное отключение блокирует сетевой доступ. Переподключитесь или снимите блокировку, чтобы вернуться к прямому соединению.",
+  "tun.serviceOutdatedNotice":
+    "Служба TUN устарела. Используйте «Восстановить службу» в настройках, чтобы обновить её.",
+  "tun.guardBlocking":
+    "Туннель разорван, и аварийное отключение блокирует сетевой доступ. Переподключитесь или снимите блокировку, чтобы вернуться к прямому соединению.",
   "tun.guardRelease": "Снять блокировку и восстановить сеть",
 
   "shortcuts.enableGlobalShortcuts": "Включить глобальные горячие клавиши",
@@ -594,14 +642,18 @@ const ru: Record<keyof typeof zhCN, string> = {
   "shortcuts.shortcutsAreDisabled": "Горячие клавиши отключены",
   "shortcuts.globalShortcutsAreAvailableIn": "Глобальные горячие клавиши доступны только в десктоп-приложении",
 
-  "notifications.systemNotificationFailedCheckSystem": "Не удалось показать системное уведомление. Проверьте настройки уведомлений системы.",
-  "notifications.notificationSentIfItIs": "Уведомление отправлено. Если его не видно, проверьте настройки уведомлений и режим «Не беспокоить».",
+  "notifications.systemNotificationFailedCheckSystem":
+    "Не удалось показать системное уведомление. Проверьте настройки уведомлений системы.",
+  "notifications.notificationSentIfItIs":
+    "Уведомление отправлено. Если его не видно, проверьте настройки уведомлений и режим «Не беспокоить».",
   "notifications.dismissNotification": "Закрыть уведомление",
   "notifications.systemNotifications": "Системные уведомления",
-  "notifications.connectionAndServiceUpdatesIn": "Уведомления о подключении и службе. Сообщения в приложении остаются доступны при отключении.",
+  "notifications.connectionAndServiceUpdatesIn":
+    "Уведомления о подключении и службе. Сообщения в приложении остаются доступны при отключении.",
   "notifications.testNotification": "Тестовое уведомление",
   "notifications.allowAirportNotificationsInSystem": "Разрешите уведомления ClashNova в настройках системы.",
-  "notifications.systemNotificationsAreDisabledOnly": "Системные уведомления отключены; показывается только сообщение в приложении.",
+  "notifications.systemNotificationsAreDisabledOnly":
+    "Системные уведомления отключены; показывается только сообщение в приложении.",
   "notifications.thisIsATestNotification": "Это тестовое уведомление.",
   "notifications.proxyConnected": "Прокси подключён",
   "notifications.proxyDisconnected": "Прокси отключён",
@@ -644,12 +696,13 @@ const ru: Record<keyof typeof zhCN, string> = {
   "error.windowActionFailed": "Действие с окном не выполнено: {error}",
   "error.network": "Не удалось связаться с сервером. Проверьте сеть и повторите попытку.",
   "error.subscriptionTooLarge": "Размер подписки превышает 2 МиБ",
-  "error.subscriptionNotSingBox": "Поддерживаются только подписки sing-box JSON. Сначала преобразуйте Clash YAML в sing-box.",
+  "error.subscriptionNotSingBox":
+    "Поддерживаются только подписки sing-box JSON. Сначала преобразуйте Clash YAML в sing-box.",
   "error.subscriptionNoOutbounds": "В подписке нет исходящих (outbounds) sing-box",
   "error.subscriptionBadTags": "Теги исходящих в подписке недопустимы или повторяются",
   "error.subscriptionNoNodes": "В подписке нет пригодных серверов. Проверьте формат или адреса серверов.",
-  "error.subscriptionTagDirect": "Подписка использует тег \"direct\", поэтому нельзя создать правило прямого соединения",
-  "error.subscriptionTagSelect": "Подписка использует тег \"select\", поэтому нельзя создать переключатель серверов",
+  "error.subscriptionTagDirect": 'Подписка использует тег "direct", поэтому нельзя создать правило прямого соединения',
+  "error.subscriptionTagSelect": 'Подписка использует тег "select", поэтому нельзя создать переключатель серверов',
   "error.subscriptionTagAuto": "Подписка использует тег автоматического выбора. Отредактируйте подписку.",
 
   "tray.open": "Показать окно",
@@ -710,11 +763,13 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.subscriptionUrlInvalid": "Недопустимый URL подписки",
   "native.subscriptionUrlNeedsHttps": "Используйте URL подписки с HTTPS. HTTP разрешён только для localhost.",
   "native.subscriptionFetchFailed": "Не удалось получить подписку: {error}",
-  "native.subscriptionForbidden": "Сервер подписки вернул 403 и отклонил загрузку. Проверьте, что ссылка открывается в браузере, или попросите провайдера снять ограничение.",
+  "native.subscriptionForbidden":
+    "Сервер подписки вернул 403 и отклонил загрузку. Проверьте, что ссылка открывается в браузере, или попросите провайдера снять ограничение.",
   "native.subscriptionHttpStatus": "HTTP-статус подписки {status}",
   "native.subscriptionRedirectInsecure": "Подписка перенаправлена на небезопасный адрес",
   "native.subscriptionNotUtf8": "Подписка не является текстом в UTF-8",
-  "native.subscriptionConvertFailed": "Не удалось преобразовать подписку. Проверьте формат Clash YAML или ссылки-подписки и протоколы серверов.",
+  "native.subscriptionConvertFailed":
+    "Не удалось преобразовать подписку. Проверьте формат Clash YAML или ссылки-подписки и протоколы серверов.",
   "native.subscriptionNoNodes": "В подписке нет пригодных серверов",
   "native.subscriptionListInvalid": "Недопустимый формат списка подписок",
   "native.converterRunFailed": "Не удалось запустить конвертер подписки: {error}",
@@ -744,7 +799,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.coreSpawnFailed": "Не удалось найти или запустить sing-box: {error}",
   "native.coreStartFailed": "sing-box не запустился: {status}",
   "native.coreListenTimeout": "sing-box не начал слушать локальный порт в течение 5 секунд",
-  "native.egressCheckFailed": "Проверка связи сервера не удалась: {error}. Системный прокси не изменён. Проверьте протокол и ключ сервера.",
+  "native.egressCheckFailed":
+    "Проверка связи сервера не удалась: {error}. Системный прокси не изменён. Проверьте протокол и ключ сервера.",
   "native.coreExitedReconnecting": "Ядро завершило работу. Переподключение…",
   "native.reconnectFailed": "Не удалось переподключиться: {status}",
   "native.coreCrashed": "Ядро неожиданно завершило работу: {status}",
@@ -753,17 +809,21 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.trafficSecretFailed": "Не удалось сгенерировать учётные данные для локальной точки",
   "native.systemProxyEnabled": "Системный прокси включён",
   "native.systemProxyDisabled": "Системный прокси доступен и сейчас отключён",
-  "native.otherProxyInUse": "Системный прокси или TUN уже включён ({detail}). Выключите его и подключитесь снова. Системный прокси не изменялся.",
+  "native.otherProxyInUse":
+    "Системный прокси или TUN уже включён ({detail}). Выключите его и подключитесь снова. Системный прокси не изменялся.",
   "native.systemProxyMismatch": "Считанные настройки системного прокси не совпадают с заданными",
   "native.systemProxyApplyFailed": "Не удалось задать или проверить системный прокси: {error}",
   "native.systemProxyEnableFailed": "Не удалось включить системный прокси: {error}",
-  "native.systemProxyRestoreFailed": "Не удалось восстановить системный прокси. Запись для восстановления сохранена: {error}",
+  "native.systemProxyRestoreFailed":
+    "Не удалось восстановить системный прокси. Запись для восстановления сохранена: {error}",
   "native.proxyBackupReadFailed": "Не удалось прочитать файл восстановления прокси: {error}",
   "native.proxyBackupInvalid": "Файл восстановления прокси повреждён",
   "native.proxyBackupPathUnknown": "Не удалось определить, где хранить файл восстановления системного прокси",
-  "native.authenticatedProxyInUse": "{service} использует прокси с аутентификацией. Используйте режим ручного прокси, чтобы сохранить его настройки.",
+  "native.authenticatedProxyInUse":
+    "{service} использует прокси с аутентификацией. Используйте режим ручного прокси, чтобы сохранить его настройки.",
   "native.noNetworkServices": "Не найдено ни одной настраиваемой сетевой службы",
-  "native.desktopNeedsManualProxy": "Используйте режим ручного прокси в этой среде. Автоматическая настройка системного прокси поддерживает GNOME.",
+  "native.desktopNeedsManualProxy":
+    "Используйте режим ручного прокси в этой среде. Автоматическая настройка системного прокси поддерживает GNOME.",
   "native.nodeAddressInvalid": "Недопустимый адрес сервера",
   "native.nodeResolveFailed": "Не удалось разрешить адрес сервера: {error}",
   "native.nodeConnectTimeout": "Таймаут подключения к серверу",
@@ -815,12 +875,14 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.shortcutInvalid": "Недопустимое сочетание клавиш",
   "native.shortcutNeedsModifier": "Добавьте в сочетание Ctrl, Alt или Command/Win",
   "native.shortcutDuplicate": "Сочетания клавиш должны быть уникальными",
-  "native.shortcutUnavailable": "Сочетание {shortcut} занято или не поддерживается системой. Выберите другое сочетание.",
+  "native.shortcutUnavailable":
+    "Сочетание {shortcut} занято или не поддерживается системой. Выберите другое сочетание.",
   "native.shortcutReleaseFailed": "Не удалось освободить предыдущее сочетание",
   "native.shortcutsBusy": "Настройки сочетаний клавиш заняты",
   "native.shortcutsUnreadable": "Не удалось прочитать сочетания клавиш",
   "native.shortcutsSaveFailed": "Не удалось сохранить сочетания клавиш",
-  "native.shortcutsRollbackFailed": "Не удалось восстановить сочетания клавиш. Сохраните настройки снова или перезапустите клиент.",
+  "native.shortcutsRollbackFailed":
+    "Не удалось восстановить сочетания клавиш. Сохраните настройки снова или перезапустите клиент.",
   "native.shortcutsConfigInvalid": "Конфигурация сочетаний клавиш недопустима. Сохраните настройки снова.",
   "native.shortcutsSettingsUnreadable": "Не удалось прочитать настройки сочетаний клавиш",
   "native.settingsDirUnavailable": "Не удалось прочитать папку настроек",
@@ -832,26 +894,33 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.tunInstallInProgress": "Идёт установка службы",
   "native.disconnectToInstallTun": "Отключитесь перед установкой или восстановлением службы TUN",
   "native.disconnectToUninstallTun": "Отключитесь перед удалением службы",
-  "native.tunServiceInstalledNotStarted": "Служба установлена, но не запустилась. Проверьте, не занят ли порт службы 47653, затем восстановите службу.",
-  "native.tunServiceOperationIncomplete": "Операция службы TUN не завершена: возможно, разрешение было отменено или установка системной службы не удалась. Повторите попытку и подтвердите в системном запросе разрешения.",
+  "native.tunServiceInstalledNotStarted":
+    "Служба установлена, но не запустилась. Проверьте, не занят ли порт службы 47653, затем восстановите службу.",
+  "native.tunServiceOperationIncomplete":
+    "Операция службы TUN не завершена: возможно, разрешение было отменено или установка системной службы не удалась. Повторите попытку и подтвердите в системном запросе разрешения.",
   "native.elevationFailed": "Не удалось запросить права администратора: {error}",
   "native.installPathControlChars": "Путь установки содержит управляющие символы",
   "native.installPathInvalid": "Недопустимый путь установки",
   "native.windowsDirNotFound": "Не удалось найти системный каталог Windows",
   "native.tunNoFinalOutbound": "У TUN нет исходящего по умолчанию",
-  "native.tunCoreStartFailed": "Ядро TUN не запустилось. Возможно, этой учётной записи не разрешено создавать виртуальный сетевой адаптер. Проверьте разрешения системы или переключитесь на режим системного прокси.",
+  "native.tunCoreStartFailed":
+    "Ядро TUN не запустилось. Возможно, этой учётной записи не разрешено создавать виртуальный сетевой адаптер. Проверьте разрешения системы или переключитесь на режим системного прокси.",
   "native.tunCoreNotStarted": "Ядро TUN не запустилось",
   "native.tunCoreStopped": "Ядро TUN остановлено",
-  "native.tunStopUnconfirmed": "Запрос на остановку TUN не подтверждён. Служба остановится после истечения тайм-аута heartbeat; вскоре проверьте сеть: {error}",
+  "native.tunStopUnconfirmed":
+    "Запрос на остановку TUN не подтверждён. Служба остановится после истечения тайм-аута heartbeat; вскоре проверьте сеть: {error}",
   "native.tunServiceNotRunning": "Служба TUN не запущена. Установите или восстановите её.",
-  "native.tunDnsOverrideFailed": "Не удалось направить системный DNS в туннель ({error}); прежние настройки восстановлены.",
+  "native.tunDnsOverrideFailed":
+    "Не удалось направить системный DNS в туннель ({error}); прежние настройки восстановлены.",
   "native.tunDnsDeviceNotReady": "Устройство туннеля не готово, системный DNS не изменён.",
   "native.tunDnsRecordCorrupt": "Запись DNS службы TUN повреждена.",
   "native.tunServiceMismatch": "Ответ или версия службы TUN не совпадают",
-  "native.tunServiceOutdated": "Служба TUN установлена более ранней версией приложения. Используйте «Восстановить службу», чтобы обновить её.",
+  "native.tunServiceOutdated":
+    "Служба TUN установлена более ранней версией приложения. Используйте «Восстановить службу», чтобы обновить её.",
   "native.tunDeviceOptionInvalid": "Недопустимый параметр устройства TUN: {option}",
   "native.tunGuardBlocking": "{error} (аварийное отключение блокирует сетевой доступ)",
-  "native.tunGuardReleaseFailed": "Аварийное отключение не смогло восстановить сеть. Служба продолжает попытки; вы также можете восстановить службу TUN.",
+  "native.tunGuardReleaseFailed":
+    "Аварийное отключение не смогло восстановить сеть. Служба продолжает попытки; вы также можете восстановить службу TUN.",
   "native.tunAuthFailed": "Не удалась аутентификация службы TUN. Восстановите службу.",
   "native.tunCredentialsInvalid": "Недопустимые учётные данные службы",
   "native.tunRequestTooLarge": "Запрос TUN слишком большой",
@@ -866,7 +935,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.tunConfigCheckTimeout": "Истекло время проверки конфигурации TUN",
   "native.tunConfigInvalid": "Недопустимая конфигурация",
   "native.tunConfigTooDeep": "Конфигурация вложена слишком глубоко",
-  "native.tunConfigForbiddenOption": "Конфигурациям подписок запрещён доступ к локальным файлам и запуск расширений: {option}",
+  "native.tunConfigForbiddenOption":
+    "Конфигурациям подписок запрещён доступ к локальным файлам и запуск расширений: {option}",
   "native.tunConfigUnsupportedTopLevel": "Конфигурация TUN содержит неподдерживаемые параметры верхнего уровня",
   "native.tunControllerMissing": "Отсутствует точка контроллера",
   "native.tunControllerAddressInvalid": "Недопустимый адрес контроллера",
@@ -884,7 +954,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "native.tunDnsPathInvalid": "Недопустимый путь DNS",
   "chain.title": "Цепочка прокси",
   "chain.clear": "Очистить",
-  "chain.hint": "Пропускает трафик через несколько узлов по порядку. Задержка суммируется, и вся цепочка рвётся при отказе любого узла.",
+  "chain.hint":
+    "Пропускает трафик через несколько узлов по порядку. Задержка суммируется, и вся цепочка рвётся при отказе любого узла.",
   "chain.emptyHint": "Добавьте хотя бы два узла (вход → выход).",
   "chain.device": "Устройство",
   "chain.target": "Цель",
@@ -913,15 +984,18 @@ const ru: Record<keyof typeof zhCN, string> = {
   "secnet.title": "Сетевая безопасность",
   "secnet.subtitle": "Управление DNS, IPv6 и политиками защиты сетевого подключения",
   "secnet.killSwitch": "Аварийное отключение",
-  "secnet.killSwitchHint": "Не даёт защищённому трафику уйти напрямую при разрыве прокси; требуется поддержка на уровне системы",
+  "secnet.killSwitchHint":
+    "Не даёт защищённому трафику уйти напрямую при разрыве прокси; требуется поддержка на уровне системы",
   "secnet.killSwitchActive": "Аварийное отключение активно — при разрыве туннеля сеть будет заблокирована",
   "secnet.killSwitchInactive": "Не удалось включить аварийное отключение — переподключитесь, чтобы защитить этот сеанс",
   "secnet.killSwitchTunOnly": "Аварийное отключение доступно только в режиме TUN",
   "secnet.repair": "Восстановление сети",
-  "secnet.repairHint": "Сбрасывает системный прокси в один клик, когда сеть перестаёт работать после ошибки или смены прокси",
+  "secnet.repairHint":
+    "Сбрасывает системный прокси в один клик, когда сеть перестаёт работать после ошибки или смены прокси",
   "secnet.repairOpen": "Восстановить",
   "secnet.repairTitle": "Восстановление сети",
-  "secnet.repairDesc": "Восстановление в один клик заново синхронизирует системный прокси и обновляет сетевую диагностику, чтобы устранить отсутствие интернета после сбоя прокси или смены режима.",
+  "secnet.repairDesc":
+    "Восстановление в один клик заново синхронизирует системный прокси и обновляет сетевую диагностику, чтобы устранить отсутствие интернета после сбоя прокси или смены режима.",
   "secnet.repairRun": "Восстановить в один клик",
   "secnet.repairDesktopOnly": "Восстановление сети доступно только в настольном приложении.",
   "secnet.repairRecheck": "Проверить снова",
@@ -947,7 +1021,12 @@ const ru: Record<keyof typeof zhCN, string> = {
   "speed.start": "Начать",
   "speed.testing": "Измерение…",
   "speed.retest": "Повторить",
-  "speed.hint": "Измеряет реальную скорость загрузки через текущий узел (до ~100 МБ).",
+  "speed.hint": "Последовательно измеряет скорость загрузки и отдачи через текущий узел.",
+  "speed.warn": "Тест загружает и отправляет данные через текущий узел; чем быстрее канал, тем больше расход.",
+  "speed.colSpeed": "Скорость",
+  "speed.colCost": "Расход",
+  "speed.testingDownload": "Загрузка…",
+  "speed.testingUpload": "Отдача…",
   "check.healthHint": "Проверить текущую сеть и прокси",
   "check.start": "Начать проверку",
   "check.again": "Проверить снова",
@@ -960,9 +1039,11 @@ const ru: Record<keyof typeof zhCN, string> = {
   "check.dnsLeak": "Проверка утечки DNS",
   "check.dnsLeakHint": "Проверяется режим перехвата, а не фактически используемые DNS-серверы.",
   "check.ipv6Leak": "Проверка утечки IPv6",
-  "check.ipv6LeakHint": "Сравнивает выходы IPv6 через ОС и локальный прокси. Отсутствие результата может означать отсутствие IPv6 или сбой проверки. Разные выходы сами по себе не доказывают утечку.",
+  "check.ipv6LeakHint":
+    "Сравнивает выходы IPv6 через ОС и локальный прокси. Отсутствие результата может означать отсутствие IPv6 или сбой проверки. Разные выходы сами по себе не доказывают утечку.",
   "check.webrtcLeak": "Проверка утечки WebRTC",
-  "check.webrtcLeakHint": "Сравниваются кандидаты WebRTC и выход прокси. Разные выходы сами по себе не доказывают утечку. Отсутствие кандидатов не гарантирует защиту.",
+  "check.webrtcLeakHint":
+    "Сравниваются кандидаты WebRTC и выход прокси. Разные выходы сами по себе не доказывают утечку. Отсутствие кандидатов не гарантирует защиту.",
   "check.localOk": "Доступна",
   "check.localFail": "Нет доступа в интернет",
   "check.proxyOff": "Не подключено",
@@ -982,7 +1063,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "check.webrtcDifferent": "Другой выход UDP: {ip}",
   "check.webrtcUnverified": "Публичный адрес {ip}; выход не проверен",
   "check.privacyRepair": "Включить TUN и проверить",
-  "check.privacyRepairHint": "Системный прокси не перехватывает все запросы DNS и WebRTC UDP. Переход на TUN переподключает и повторяет проверку.",
+  "check.privacyRepairHint":
+    "Системный прокси не перехватывает все запросы DNS и WebRTC UDP. Переход на TUN переподключает и повторяет проверку.",
   "check.webrtcOff": "Здесь недоступно",
   "check.webrtcNone": "Нет публичного кандидата; результат неясен",
   "check.webrtcLan": "Только локальный адрес",
@@ -1037,8 +1119,10 @@ const ru: Record<keyof typeof zhCN, string> = {
   "unlock.wikipedia": "Wikipedia",
   "unlock.reddit": "Reddit",
   "native.appPolicyInvalid": "Недопустимая политика приложения.",
-  "native.appPolicyUnavailable": "Ядро не подтвердило изменение. Переподключитесь через обновлённый клиент и повторите попытку.",
-  "native.appPolicyRestoreFailed": "Не удалось восстановить политику. Отключитесь, проверьте хранилище и подключитесь снова.",
+  "native.appPolicyUnavailable":
+    "Ядро не подтвердило изменение. Переподключитесь через обновлённый клиент и повторите попытку.",
+  "native.appPolicyRestoreFailed":
+    "Не удалось восстановить политику. Отключитесь, проверьте хранилище и подключитесь снова.",
 
   "connections.detailTitle": "Сведения о соединении",
   "connections.detailGeneral": "Обзор",
@@ -1046,6 +1130,8 @@ const ru: Record<keyof typeof zhCN, string> = {
   "connections.detailStatus": "Состояние",
   "connections.detailNetwork": "Протокол",
   "connections.detailInbound": "Входящее подключение",
+  "connections.detailType": "Тип",
+  "connections.closeConnection": "Закрыть соединение",
   "connections.detailSource": "Адрес источника",
   "connections.detailDestination": "Адрес назначения",
   "connections.detailStarted": "Время начала",
@@ -1085,6 +1171,5 @@ const ru: Record<keyof typeof zhCN, string> = {
   "settings.lanDefaultDirectory": "Системная папка загрузок",
   "settings.lanChooseDirectory": "Выбрать папку",
   "settings.lanDirectorySaved": "Папка для файлов обновлена",
-
 };
 export default ru;

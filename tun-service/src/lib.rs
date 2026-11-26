@@ -324,6 +324,26 @@ pub fn validate_profile_options(config: &Value) -> Result<()> {
         match value {
             Value::Object(map) => {
                 for (key, value) in map {
+                    // rule_set 有两种形态,都要安全:规则里是标签引用(字符串),放行;`route.rule_set`
+                    // 定义里是对象,只放行 SagerNet 官方规则集(经 jsDelivr 可信镜像)的远程 https 源
+                    // ——local 规则集会让 root 核心读本地文件,非 SagerNet 路径(jsDelivr 可托管任意
+                    // 仓库)、非 https 一律拒绝。改源要同步改这里。下方通用检查还会再挡任何内嵌 path。
+                    if key == "rule_set"
+                        && !value.as_array().is_some_and(|items| {
+                            items.iter().all(|item| {
+                                item.is_string()
+                                    || (item["type"].as_str() == Some("remote")
+                                        && item["url"].as_str().is_some_and(|url| {
+                                            url.starts_with("https://cdn.jsdelivr.net/gh/SagerNet/")
+                                        }))
+                            })
+                        })
+                    {
+                        return Err(msg(
+                            "native.tunConfigForbiddenOption",
+                            &[("option", text("rule_set"))],
+                        ));
+                    }
                     if (key.ends_with("_path") && key != "process_path")
                         || key.ends_with("_paths")
                         || key.ends_with("_file")
@@ -332,7 +352,6 @@ pub fn validate_profile_options(config: &Value) -> Result<()> {
                         || matches!(
                             key.as_str(),
                             "include"
-                                | "rule_set"
                                 | "acme"
                                 | "cache_file"
                                 | "external_ui"
@@ -523,6 +542,36 @@ mod tests {
         c["route"] = serde_json::json!({"rule_set":[{"path":"/etc/shadow"}]});
         assert!(safe_config(c).is_err());
         assert!(safe_config(config()).is_ok());
+    }
+    #[test]
+    fn allows_only_trusted_remote_rule_sets() {
+        // 规则里的标签引用(字符串)放行,配套定义为可信镜像上的远程 https 源。
+        let mut c = config();
+        c["route"]["rule_set"] = serde_json::json!([
+            {"type":"remote","tag":"geosite-cn","format":"binary","url":"https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs"}
+        ]);
+        c["route"]["rules"] = serde_json::json!([{"rule_set":["geosite-cn"],"outbound":"direct"}]);
+        assert!(safe_config(c.clone()).is_ok());
+        // local 规则集(root 读本地文件)拒绝。
+        c["route"]["rule_set"] =
+            serde_json::json!([{"type":"local","tag":"x","format":"binary","path":"/etc/shadow"}]);
+        assert!(safe_config(c.clone()).is_err());
+        // 非白名单主机拒绝。
+        c["route"]["rule_set"] =
+            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://evil.example/x.srs"}]);
+        assert!(safe_config(c.clone()).is_err());
+        // jsDelivr 主机但非 SagerNet 路径(可托管任意仓库)拒绝。
+        c["route"]["rule_set"] =
+            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://cdn.jsdelivr.net/gh/evil/repo@x/y.srs"}]);
+        assert!(safe_config(c.clone()).is_err());
+        // 非 https 拒绝。
+        c["route"]["rule_set"] =
+            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"http://cdn.jsdelivr.net/x.srs"}]);
+        assert!(safe_config(c.clone()).is_err());
+        // 规则 matcher 里混入对象想夹带 local path,拒绝。
+        c["route"]["rule_set"] = serde_json::json!([]);
+        c["route"]["rules"] = serde_json::json!([{"rule_set":[{"type":"local","path":"/etc/shadow"}],"outbound":"direct"}]);
+        assert!(safe_config(c).is_err());
     }
     #[test]
     fn accepts_live_app_slots_without_granting_file_or_listener_access() {

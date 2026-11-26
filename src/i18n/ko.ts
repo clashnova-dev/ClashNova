@@ -2,7 +2,8 @@ import type zhCN from "./zh-CN.ts";
 
 const ko: Record<keyof typeof zhCN, string> = {
   "confirmation.portTitle": "포트 사용 중",
-  "confirmation.portBody": "포트 {port}를 아래 프로세스가 사용 중입니다. 종료하면 해당 앱과 연결이 중단될 수 있습니다. 포트를 비우고 연결할까요?",
+  "confirmation.portBody":
+    "포트 {port}를 아래 프로세스가 사용 중입니다. 종료하면 해당 앱과 연결이 중단될 수 있습니다. 포트를 비우고 연결할까요?",
   "confirmation.portRelease": "종료 후 연결",
   "native.portOwnerUnknown": "포트 {port}를 사용하는 프로세스를 확인할 수 없습니다. 직접 종료하거나 포트를 변경하세요.",
   "native.portOwnerProtected": "포트 {port}는 보호된 프로세스가 사용 중입니다. 다른 포트를 선택하세요.",
@@ -19,6 +20,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "rules.search": "내용, 유형 또는 대상 검색",
   "rules.source": "출처",
   "rules.edit": "규칙 편집",
+  "rules.chinaGeosite": "중국 사이트 직접 연결 (geosite)",
+  "rules.adBlock": "광고 차단 (geosite)",
   "rules.fieldType": "규칙 유형",
   "rules.fieldContent": "규칙 내용",
   "rules.fieldPolicy": "프록시 정책",
@@ -41,7 +44,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "rules.policyProxy": "프록시",
   "rules.policyReject": "차단",
   "common.edit": "편집",
-  "rules.editHint": "이 구독 자체의 라우팅 규칙(sing-box 규칙 배열)을 편집합니다. 내장 중국/LAN 직접 연결과 앱 정책은 여기에 없습니다.",
+  "rules.editHint":
+    "이 구독 자체의 라우팅 규칙(sing-box 규칙 배열)을 편집합니다. 내장 중국/LAN 직접 연결과 앱 정책은 여기에 없습니다.",
   "rules.type": "유형",
   "rules.content": "규칙 내용",
   "rules.target": "대상",
@@ -58,29 +62,37 @@ const ko: Record<keyof typeof zhCN, string> = {
   "rules.pageOf": "{page} / {pages} 페이지",
 
   "check.webrtcTimeout": "시간 초과 · 확인되지 않음",
-  "check.reconnectConfirm": "현재 설정을 다시 적용합니다. 연결 중이면 잠시 끊고 다시 연결합니다. 시스템 DNS나 다른 프록시 앱은 초기화하지 않습니다.",
-  "check.proxyScope": "시스템/수동 프록시는 지원 앱만 처리합니다. 시스템 DNS, IPv6, WebRTC UDP는 직접 연결될 수 있습니다. TUN에서 다시 검사하세요.",
-  "check.tunScope": "TUN 설정은 DNS와 IPv6를 처리하고 STUN을 프록시로 보냅니다. 직접 연결 규칙과 경로 예외는 유지됩니다. 설정만으로 유출 여부를 확인할 수는 없습니다.",
+  "check.reconnectConfirm":
+    "현재 설정을 다시 적용합니다. 연결 중이면 잠시 끊고 다시 연결합니다. 시스템 DNS나 다른 프록시 앱은 초기화하지 않습니다.",
+  "check.proxyScope":
+    "시스템/수동 프록시는 지원 앱만 처리합니다. 시스템 DNS, IPv6, WebRTC UDP는 직접 연결될 수 있습니다. TUN에서 다시 검사하세요.",
+  "check.tunScope":
+    "TUN 설정은 DNS와 IPv6를 처리하고 STUN을 프록시로 보냅니다. 직접 연결 규칙과 경로 예외는 유지됩니다. 설정만으로 유출 여부를 확인할 수는 없습니다.",
   "check.dnsConfiguration": "DNS 설정",
   "check.routeExceptions": "경로 예외: {count}개",
-  "check.webviewScope": "WebRTC 결과는 이 앱의 WebView에만 적용됩니다. 실제 브라우저에서도 DNS와 WebRTC를 검사하세요. 시간 초과나 후보 없음은 안전을 의미하지 않습니다.",
+  "check.webviewScope":
+    "WebRTC 결과는 이 앱의 WebView에만 적용됩니다. 실제 브라우저에서도 DNS와 WebRTC를 검사하세요. 시간 초과나 후보 없음은 안전을 의미하지 않습니다.",
   "check.browserChecks": "브라우저 검사",
   "check.checkedAt": "검사 시각: {time}",
   "recovery.intentWriteFailed": "연결 복구 상태를 저장하지 못했습니다: {error}",
   "recovery.coreScheduled": "코어가 종료되었습니다. {seconds}초 후 {attempt}번째 복구를 시도합니다: {error}",
-  "recovery.coreExhausted": "복구가 반복 실패하여 자동 재시도를 중지했습니다. 로그를 확인하고 수동으로 연결하세요: {error}",
-  "recovery.cleanupBlocked": "기존 코어의 종료를 확인할 수 없습니다. 충돌 방지를 위해 복구를 일시 중지했습니다: {error}",
+  "recovery.coreExhausted":
+    "복구가 반복 실패하여 자동 재시도를 중지했습니다. 로그를 확인하고 수동으로 연결하세요: {error}",
+  "recovery.cleanupBlocked":
+    "기존 코어의 종료를 확인할 수 없습니다. 충돌 방지를 위해 복구를 일시 중지했습니다: {error}",
   "recovery.supervisorFailed": "클라이언트 감시를 시작하지 못했습니다: {error}",
   "recovery.restoring": "예기치 않은 종료에서 복구되었습니다. 다시 연결 중…",
   "recovery.profileUnavailable": "클라이언트를 다시 열었지만 복구할 구독 또는 노드가 없습니다. 수동으로 연결하세요.",
-  "recovery.tunUnavailable": "클라이언트를 다시 열었지만 TUN 서비스가 준비되지 않았습니다. 설정을 확인하고 수동으로 연결하세요.",
+  "recovery.tunUnavailable":
+    "클라이언트를 다시 열었지만 TUN 서비스가 준비되지 않았습니다. 설정을 확인하고 수동으로 연결하세요.",
 
   "confirmation.continue": "계속",
   "confirmation.removeTitle": "구독을 삭제할까요?",
   "confirmation.removeBody": "로컬에 저장된 “{name}” 구독과 설정을 삭제합니다. 다시 사용하려면 다시 가져와야 합니다.",
   "confirmation.activeSubscription": "사용 중인 구독입니다. 삭제하면 연결이 끊기고 현재 노드가 지워집니다.",
   "confirmation.exposeTitle": "구독 인증 정보를 공유할까요?",
-  "confirmation.exposeBody": "구독 링크와 QR 코드에는 연결 인증 정보가 들어 있습니다. 다른 사람이 트래픽을 사용할 수 있으므로 신뢰하는 기기에만 공유하세요.",
+  "confirmation.exposeBody":
+    "구독 링크와 QR 코드에는 연결 인증 정보가 들어 있습니다. 다른 사람이 트래픽을 사용할 수 있으므로 신뢰하는 기기에만 공유하세요.",
   "confirmation.switchTitle": "구독을 전환할까요?",
   "confirmation.switchBody": "“{name}”(으)로 전환하면 현재 연결이 끊깁니다.",
   "confirmation.refreshTitle": "현재 구독을 업데이트할까요?",
@@ -91,10 +103,12 @@ const ko: Record<keyof typeof zhCN, string> = {
   "confirmation.guardWarning": "킬 스위치가 비활성화됩니다. 터널이 끊기면 트래픽이 직접 연결될 수 있습니다.",
   "confirmation.routeWarning": "라우팅 제외 범위를 확인하세요. 제외된 트래픽은 직접 연결됩니다.",
   "confirmation.proxyTitle": "프록시 방식을 변경할까요?",
-  "confirmation.proxyBody": "시스템 프록시 또는 가상 어댑터를 변경하여 네트워크가 잠시 끊길 수 있습니다. TUN이 설치되지 않았다면 시스템 승인을 요청합니다.",
+  "confirmation.proxyBody":
+    "시스템 프록시 또는 가상 어댑터를 변경하여 네트워크가 잠시 끊길 수 있습니다. TUN이 설치되지 않았다면 시스템 승인을 요청합니다.",
   "confirmation.routingTitle": "라우팅 모드를 변경할까요?",
   "confirmation.routingBody": "라우팅 모드를 변경하면 설정을 다시 불러오며 기존 연결이 잠시 끊길 수 있습니다.",
-  "confirmation.installBody": "TUN 가상 어댑터를 관리하기 위해 관리자 승인이 필요한 백그라운드 네트워크 서비스를 설치합니다.",
+  "confirmation.installBody":
+    "TUN 가상 어댑터를 관리하기 위해 관리자 승인이 필요한 백그라운드 네트워크 서비스를 설치합니다.",
   "confirmation.repairBody": "백그라운드 네트워크 서비스와 프록시 코어를 업데이트합니다. 관리자 승인이 필요합니다.",
   "confirmation.updateTitle": "설치 후 클라이언트를 다시 시작할까요?",
   "confirmation.updateBody": "{version} 설치 후 다시 시작합니다. 현재 프록시 연결이 끊깁니다.",
@@ -231,7 +245,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "app.importing": "가져오는 중…",
   "app.importUse": "가져와서 사용",
   "deepLink.importTitle": "구독 가져오기 확인",
-  "deepLink.importBody": "웹페이지가 구독 가져오기를 요청했습니다. 코드는 확인한 뒤에만 한 번 사용되며, 취소하면 바로 버려집니다.",
+  "deepLink.importBody":
+    "웹페이지가 구독 가져오기를 요청했습니다. 코드는 확인한 뒤에만 한 번 사용되며, 취소하면 바로 버려집니다.",
   "deepLink.importUrlBody": "링크가 이 구독을 가져오도록 요청했습니다. 신뢰할 수 있는 출처에서만 가져오세요.",
   "deepLink.confirmImport": "가져오기",
   "deepLink.rejected": "이 링크는 사용할 수 없습니다",
@@ -289,7 +304,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "nodes.checksEvery3MinutesAnd": "3분마다 확인하여 지연 시간이 낮은 노드를 선택합니다",
   "nodes.autoSwitch": "자동 전환",
   "nodes.testedAfterConnect": "연결 후 확인",
-  "nodes.requestTimeAfterConnectionSetup": "연결 설정 후의 요청 시간입니다. 첫 연결 {delay} ms. 다운로드 대역폭이 아닙니다.",
+  "nodes.requestTimeAfterConnectionSetup":
+    "연결 설정 후의 요청 시간입니다. 첫 연결 {delay} ms. 다운로드 대역폭이 아닙니다.",
   "nodes.firstConnectionMsSecondTest": "첫 연결 {delay} ms, 두 번째 테스트 미완료. 다운로드 대역폭이 아닙니다.",
   "nodes.notSelected": "선택되지 않음",
   "nodes.test": "테스트",
@@ -307,7 +323,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "nodes.testing": "테스트 중…",
   "nodes.timedOut": "시간 초과 / 실패",
   "nodes.notTested": "테스트 안 함",
-  "nodes.requestLatencyThroughTheNode": "노드를 통한 요청 지연 시간입니다. 낮을수록 빠르며, 다운로드 대역폭이 아닙니다.",
+  "nodes.requestLatencyThroughTheNode":
+    "노드를 통한 요청 지연 시간입니다. 낮을수록 빠르며, 다운로드 대역폭이 아닙니다.",
   "nodes.thisSubscriptionHasNoAvailable": "이 구독에는 사용 가능한 노드가 없습니다.",
   "nodes.manageSubscriptions": "구독 관리",
   "nodes.searchNodes": "노드 검색",
@@ -326,7 +343,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "nodes.notReady": "이 노드는 오프라인 상태이거나 구성이 준비되지 않았습니다.",
   "nodes.customRegion": "사용자 지정",
 
-  "subscriptions.updatedRestartForUsage": "구독이 업데이트되었습니다. 사용량 정보를 불러오려면 업데이트된 앱을 다시 시작하세요.",
+  "subscriptions.updatedRestartForUsage":
+    "구독이 업데이트되었습니다. 사용량 정보를 불러오려면 업데이트된 앱을 다시 시작하세요.",
   "subscriptions.updatedAt": "업데이트됨",
   "subscriptions.expiresAt": "만료",
   "subscriptions.expired": "만료됨",
@@ -347,14 +365,16 @@ const ko: Record<keyof typeof zhCN, string> = {
   "subscriptions.removeSubscription": "구독 제거",
   "subscriptions.editTitle": "파일 편집",
   "subscriptions.editHint": "「{name}」 설정을 직접 편집합니다. 저장하면 즉시 적용됩니다.",
-  "subscriptions.editRemoteHint": "「{name}」 설정을 편집합니다. 이 구독에는 업데이트 소스가 있어 새로 고치면 로컬 변경이 덮어쓰입니다.",
+  "subscriptions.editRemoteHint":
+    "「{name}」 설정을 편집합니다. 이 구독에는 업데이트 소스가 있어 새로 고치면 로컬 변경이 덮어쓰입니다.",
   "subscriptions.editNamed": "{name} 편집",
   "subscriptions.editPaste": "클립보드에서 붙여넣기",
   "subscriptions.editFormat": "서식 정리",
   "subscriptions.editExpand": "전체 화면",
   "subscriptions.editCollapse": "전체 화면 종료",
   "subscriptions.editInfoTitle": "정보 편집",
-  "subscriptions.editInfoHint": "이름 변경은 즉시 적용됩니다. 소스 URL을 변경하면 구독을 다시 가져와 노드를 교체합니다.",
+  "subscriptions.editInfoHint":
+    "이름 변경은 즉시 적용됩니다. 소스 URL을 변경하면 구독을 다시 가져와 노드를 교체합니다.",
   "subscriptions.editNodesTitle": "노드 편집",
   "subscriptions.editNodesAdvanced": "고급",
   "subscriptions.editNodesPaste": "여러 URI는 줄바꿈으로 구분하세요 (Base64 지원)",
@@ -434,7 +454,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "connections.noActiveConnections": "활성 연결 없음",
   "connections.connectToSeeNetworkRequests": "연결하면 네트워크 요청을 볼 수 있습니다",
   "connections.closeAllConnections": "모든 연결 닫기",
-  "connections.activeDownloadsAndRequestsWill": "진행 중인 다운로드와 요청이 중단됩니다. 애플리케이션이 자동으로 다시 연결될 수 있습니다.",
+  "connections.activeDownloadsAndRequestsWill":
+    "진행 중인 다운로드와 요청이 중단됩니다. 애플리케이션이 자동으로 다시 연결될 수 있습니다.",
   "connections.unableToLoadConnectionsMake": "연결을 불러올 수 없습니다. 업데이트된 앱을 다시 시작했는지 확인하세요.",
   "connections.connectionMonitoringIsAvailableIn": "연결 모니터링은 데스크톱 앱에서만 사용할 수 있습니다",
 
@@ -462,7 +483,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "logs.paused": "일시 중지됨",
   "logs.live": "실시간",
   "logs.shown": "{count} / {total}개",
-  "logs.windowHint": "현재 세션의 최근 로그만 표시하며 전체 파일 기록은 아닙니다. 표시를 중지해도 파일 기록은 계속됩니다.",
+  "logs.windowHint":
+    "현재 세션의 최근 로그만 표시하며 전체 파일 기록은 아닙니다. 표시를 중지해도 파일 기록은 계속됩니다.",
   "logs.followLatest": "최신 로그 따라가기",
   "logs.scrollBottom": "맨 아래로",
   "logs.detail": "로그 상세",
@@ -476,7 +498,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "settings.showLiveSpeed": "실시간 속도 표시",
   "settings.testConcurrency": "테스트 동시 실행 수",
   "settings.testConcurrencyHelp": "한 번에 지연 테스트할 노드 수. 노드가 많으면 높여 더 빠르게 테스트합니다 (1-64).",
-  "settings.showUploadAndDownloadSpeed": "트레이 아이콘 옆에 업로드 및 다운로드 속도를 표시합니다. Windows에서는 툴팁과 메뉴에 표시됩니다.",
+  "settings.showUploadAndDownloadSpeed":
+    "트레이 아이콘 옆에 업로드 및 다운로드 속도를 표시합니다. Windows에서는 툴팁과 메뉴에 표시됩니다.",
   "settings.systemProxyCheck": "시스템 프록시 확인",
   "settings.checkAgain": "다시 확인",
   "settings.checkingSystemProxy": "시스템 프록시 확인 중…",
@@ -492,7 +515,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "settings.copyLanAddress": "LAN 주소 {address} 복사",
   "settings.lanCopied": "주소가 복사되었습니다",
   "settings.lanLoading": "LAN 주소를 읽는 중…",
-  "settings.allowOtherDevicesOnYour": "로컬 네트워크의 다른 기기가 이 프록시를 사용하도록 허용합니다. 신뢰할 수 있는 네트워크에서만 켜세요.",
+  "settings.allowOtherDevicesOnYour":
+    "로컬 네트워크의 다른 기기가 이 프록시를 사용하도록 허용합니다. 신뢰할 수 있는 네트워크에서만 켜세요.",
   "settings.proxyPort": "프록시 포트",
   "settings.sharedHttpAndSocksPort": "HTTP와 SOCKS가 공유하는 포트이며, 1024부터 65535까지입니다.",
   "settings.disconnectToChangeNetworkSettings": "네트워크 설정을 변경하려면 연결을 끊으세요",
@@ -506,31 +530,40 @@ const ko: Record<keyof typeof zhCN, string> = {
   "settings.networkSaved": "네트워크 설정을 저장했습니다. 다음 연결부터 적용됩니다.",
   "settings.portInvalid": "프록시 포트는 1024부터 65535까지의 정수여야 합니다",
   "settings.tunStack": "TUN 스택",
-  "settings.tunStackHelp": "Mixed는 시스템 TCP 스택과 사용자 공간 UDP 스택을 함께 사용하며 대부분의 사용자에게 적합합니다. 방화벽이나 드라이버 때문에 TUN이 작동하지 않을 때만 System이나 gVisor로 전환하세요.",
+  "settings.tunStackHelp":
+    "Mixed는 시스템 TCP 스택과 사용자 공간 UDP 스택을 함께 사용하며 대부분의 사용자에게 적합합니다. 방화벽이나 드라이버 때문에 TUN이 작동하지 않을 때만 System이나 gVisor로 전환하세요.",
   "settings.tunStackMixed": "Mixed",
   "settings.tunStackSystem": "System",
   "settings.tunMtu": "TUN MTU",
-  "settings.tunMtuHelp": "가상 어댑터의 최대 전송 단위이며, 1280부터 9000까지, 기본값은 1500입니다. 값이 클수록 처리량이 높아지지만 일부 UDP 애플리케이션이 불안정해질 수 있습니다.",
+  "settings.tunMtuHelp":
+    "가상 어댑터의 최대 전송 단위이며, 1280부터 9000까지, 기본값은 1500입니다. 값이 클수록 처리량이 높아지지만 일부 UDP 애플리케이션이 불안정해질 수 있습니다.",
   "settings.tunStrictRoute": "엄격한 라우팅",
-  "settings.tunStrictRouteHelp": "트래픽과 DNS가 터널 밖으로 새어 나가지 않도록 하며, 켜 두는 것이 좋습니다. Windows의 일부 가상 머신 및 컨테이너 네트워크는 꺼야만 작동합니다.",
+  "settings.tunStrictRouteHelp":
+    "트래픽과 DNS가 터널 밖으로 새어 나가지 않도록 하며, 켜 두는 것이 좋습니다. Windows의 일부 가상 머신 및 컨테이너 네트워크는 꺼야만 작동합니다.",
   "settings.tunIpv6": "IPv6 주소 확인",
-  "settings.tunIpv6Help": "노드가 지원하면 IPv6 해석과 연결을 허용합니다. 끄면 TUN은 IPv4로 해석하고 포착한 IPv6 트래픽을 거부합니다. 직접 연결 규칙과 경로 예외는 별도로 확인하세요.",
+  "settings.tunIpv6Help":
+    "노드가 지원하면 IPv6 해석과 연결을 허용합니다. 끄면 TUN은 IPv4로 해석하고 포착한 IPv6 트래픽을 거부합니다. 직접 연결 규칙과 경로 예외는 별도로 확인하세요.",
   "settings.tunAutoRedirect": "nftables 리디렉션",
-  "settings.tunAutoRedirectHelp": "라우팅만 사용하는 대신 nftables로 리디렉션합니다. 더 빠르고 Docker 브리지와 충돌하지 않습니다. 이 시스템에 nftables가 필요합니다.",
+  "settings.tunAutoRedirectHelp":
+    "라우팅만 사용하는 대신 nftables로 리디렉션합니다. 더 빠르고 Docker 브리지와 충돌하지 않습니다. 이 시스템에 nftables가 필요합니다.",
   "settings.tunExclude": "우회 주소",
   "settings.dnsMode": "DNS 모드",
-  "settings.dnsModeHelp": "Fake-IP는 해외 도메인을 출구에서 해석해 더 안정적입니다. 실제 해석은 노드 DoH로 직접 해석합니다.",
+  "settings.dnsModeHelp":
+    "Fake-IP는 해외 도메인을 출구에서 해석해 더 안정적입니다. 실제 해석은 노드 DoH로 직접 해석합니다.",
   "settings.dnsFakeip": "Fake-IP",
   "settings.dnsReal": "실제 해석",
   "settings.dnsDomestic": "국내 DNS",
   "settings.dnsRemote": "원격 DNS",
   "settings.dnsLocal": "자동 (AliDNS DoH)",
-  "settings.tunExcludeHelp": "이 네트워크들은 가상 어댑터를 거치지 않으며, 한 줄에 하나씩 최대 64개까지 입력합니다. 이 주소로 보내는 트래픽과 DNS는 더 이상 터널을 통과하지 않습니다.",
+  "settings.tunExcludeHelp":
+    "이 네트워크들은 가상 어댑터를 거치지 않으며, 한 줄에 하나씩 최대 64개까지 입력합니다. 이 주소로 보내는 트래픽과 DNS는 더 이상 터널을 통과하지 않습니다.",
   "settings.tunStackInvalid": "잘못된 TUN 스택",
   "settings.tunMtuInvalid": "TUN MTU는 1280부터 9000까지의 정수여야 합니다",
-  "settings.tunExcludeInvalid": "우회 주소는 192.168.0.0/16과 같은 IP 네트워크여야 하며 최대 64개까지 입력할 수 있습니다",
+  "settings.tunExcludeInvalid":
+    "우회 주소는 192.168.0.0/16과 같은 IP 네트워크여야 하며 최대 64개까지 입력할 수 있습니다",
   "settings.tunKillSwitch": "킬 스위치",
-  "settings.tunKillSwitchHelp": "터널이 예기치 않게 끊기면 다시 연결되거나 해제할 때까지 모든 네트워크 접근을 차단하여 트래픽이 직접 나가지 못하게 합니다. 우회 주소는 영향을 받지 않습니다. 실험적 기능이며 기본적으로 꺼져 있습니다.",
+  "settings.tunKillSwitchHelp":
+    "터널이 예기치 않게 끊기면 다시 연결되거나 해제할 때까지 모든 네트워크 접근을 차단하여 트래픽이 직접 나가지 못하게 합니다. 우회 주소는 영향을 받지 않습니다. 실험적 기능이며 기본적으로 꺼져 있습니다.",
   "settings.manualProxy": "수동 프록시",
   "settings.appearanceLanguage": "모양 및 언어",
   "settings.localAccess": "로컬 접근",
@@ -558,7 +591,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "settings.updateDesktopOnly": "데스크톱 앱에서 업데이트를 확인하세요",
   "settings.viewHelp": "도움말 보기",
   "settings.about": "정보",
-  "settings.systemProxyCannotCaptureWebrtc": "시스템 프록시는 WebRTC UDP를 수집할 수 없습니다. 브라우저 UDP 송신을 보호하려면 TUN 모드를 사용하세요.",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "시스템 프록시는 WebRTC UDP를 수집할 수 없습니다. 브라우저 UDP 송신을 보호하려면 TUN 모드를 사용하세요.",
 
   "tun.tunService": "TUN 서비스",
   "tun.tunServiceHasNotBeen": "TUN 서비스를 아직 확인하지 않았습니다",
@@ -569,14 +603,16 @@ const ko: Record<keyof typeof zhCN, string> = {
   "tun.authorizeInstallation": "설치 승인",
   "tun.uninstallService": "서비스 제거",
   "tun.uninstallTunService": "TUN 서비스를 제거할까요?",
-  "tun.tunWillBeUnavailableSystem": "TUN을 사용할 수 없게 됩니다. 시스템 프록시와 수동 프록시 모드는 계속 사용할 수 있습니다.",
+  "tun.tunWillBeUnavailableSystem":
+    "TUN을 사용할 수 없게 됩니다. 시스템 프록시와 수동 프록시 모드는 계속 사용할 수 있습니다.",
   "tun.tunServiceInstalled": "TUN 서비스를 설치했습니다",
   "tun.tunServiceUninstalled": "TUN 서비스를 제거했습니다",
   "tun.tunServiceInstallationDidNot": "TUN 서비스 설치가 완료되지 않았습니다. 자세한 내용은 설정을 여세요.",
   "tun.tunServiceRemovalDidNot": "TUN 서비스 제거가 완료되지 않았습니다. 자세한 내용은 설정을 여세요.",
   "tun.busy": "이미 서비스 작업이 진행 중입니다",
   "tun.serviceOutdatedNotice": "TUN 서비스가 최신 버전이 아닙니다. 설정의 서비스 복구를 사용해 업데이트하세요.",
-  "tun.guardBlocking": "터널이 끊겨 킬 스위치가 네트워크 접근을 차단하고 있습니다. 다시 연결하거나 해제하여 직접 연결로 돌아가세요.",
+  "tun.guardBlocking":
+    "터널이 끊겨 킬 스위치가 네트워크 접근을 차단하고 있습니다. 다시 연결하거나 해제하여 직접 연결로 돌아가세요.",
   "tun.guardRelease": "해제하고 네트워크 복원",
 
   "shortcuts.enableGlobalShortcuts": "전역 단축키 사용",
@@ -598,7 +634,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "notifications.notificationSentIfItIs": "알림을 보냈습니다. 보이지 않으면 알림 설정과 방해 금지 모드를 확인하세요.",
   "notifications.dismissNotification": "알림 닫기",
   "notifications.systemNotifications": "시스템 알림",
-  "notifications.connectionAndServiceUpdatesIn": "연결 및 서비스 업데이트 알림입니다. 꺼 두어도 앱 내 메시지는 계속 표시됩니다.",
+  "notifications.connectionAndServiceUpdatesIn":
+    "연결 및 서비스 업데이트 알림입니다. 꺼 두어도 앱 내 메시지는 계속 표시됩니다.",
   "notifications.testNotification": "테스트 알림",
   "notifications.allowAirportNotificationsInSystem": "시스템 설정에서 ClashNova 알림을 허용하세요.",
   "notifications.systemNotificationsAreDisabledOnly": "시스템 알림이 꺼져 있어 앱 내 메시지만 표시됩니다.",
@@ -648,8 +685,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "error.subscriptionNoOutbounds": "구독에 sing-box 아웃바운드가 없습니다",
   "error.subscriptionBadTags": "구독의 아웃바운드 태그가 잘못되었거나 중복되었습니다",
   "error.subscriptionNoNodes": "구독에 사용 가능한 노드가 없습니다. 형식이나 서버 주소를 확인하세요.",
-  "error.subscriptionTagDirect": "구독이 \"direct\" 태그를 사용하여 직접 연결 규칙을 만들 수 없습니다",
-  "error.subscriptionTagSelect": "구독이 \"select\" 태그를 사용하여 노드 선택기를 만들 수 없습니다",
+  "error.subscriptionTagDirect": '구독이 "direct" 태그를 사용하여 직접 연결 규칙을 만들 수 없습니다',
+  "error.subscriptionTagSelect": '구독이 "select" 태그를 사용하여 노드 선택기를 만들 수 없습니다',
   "error.subscriptionTagAuto": "구독이 자동 선택 태그를 사용합니다. 구독을 편집하세요.",
 
   "tray.open": "창 표시",
@@ -710,11 +747,13 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.subscriptionUrlInvalid": "잘못된 구독 URL입니다",
   "native.subscriptionUrlNeedsHttps": "HTTPS 구독 URL을 사용하세요. HTTP는 localhost에서만 허용됩니다.",
   "native.subscriptionFetchFailed": "구독을 가져올 수 없습니다: {error}",
-  "native.subscriptionForbidden": "구독 서버가 403을 반환하며 다운로드를 거부했습니다. 브라우저에서 링크가 작동하는지 확인하거나 제공업체에 제한을 풀어 달라고 요청하세요.",
+  "native.subscriptionForbidden":
+    "구독 서버가 403을 반환하며 다운로드를 거부했습니다. 브라우저에서 링크가 작동하는지 확인하거나 제공업체에 제한을 풀어 달라고 요청하세요.",
   "native.subscriptionHttpStatus": "구독 HTTP 상태 {status}",
   "native.subscriptionRedirectInsecure": "구독이 안전하지 않은 주소로 리디렉션되었습니다",
   "native.subscriptionNotUtf8": "구독이 UTF-8 텍스트가 아닙니다",
-  "native.subscriptionConvertFailed": "구독을 변환할 수 없습니다. Clash YAML 또는 공유 링크 형식과 노드 프로토콜을 확인하세요.",
+  "native.subscriptionConvertFailed":
+    "구독을 변환할 수 없습니다. Clash YAML 또는 공유 링크 형식과 노드 프로토콜을 확인하세요.",
   "native.subscriptionNoNodes": "구독에 사용 가능한 노드가 없습니다",
   "native.subscriptionListInvalid": "잘못된 구독 목록 형식입니다",
   "native.converterRunFailed": "구독 변환기를 실행할 수 없습니다: {error}",
@@ -728,7 +767,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.configNoMixedInbound": "구성에 mixed 프록시 인바운드가 없습니다",
   "native.configNoNodes": "구성에 노드가 없습니다",
   "native.cachePathInvalid": "잘못된 캐시 경로입니다",
-  "native.proxyPortUnavailable": "프록시 포트 {port}을(를) 사용할 수 없습니다. 이미 사용 중인지 또는 권한이 필요한지 확인하세요.",
+  "native.proxyPortUnavailable":
+    "프록시 포트 {port}을(를) 사용할 수 없습니다. 이미 사용 중인지 또는 권한이 필요한지 확인하세요.",
   "native.networkSettingsInvalid": "네트워크 설정 파일이 잘못되었습니다. 설정에서 다시 저장하세요.",
   "native.networkSettingsReadFailed": "네트워크 설정을 읽을 수 없습니다: {error}",
   "native.disconnectToChangeNetwork": "네트워크 설정을 변경하기 전에 연결을 끊으세요",
@@ -744,7 +784,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.coreSpawnFailed": "sing-box를 찾거나 시작할 수 없습니다: {error}",
   "native.coreStartFailed": "sing-box 시작에 실패했습니다: {status}",
   "native.coreListenTimeout": "sing-box가 5초 안에 로컬 포트에서 수신을 시작하지 않았습니다",
-  "native.egressCheckFailed": "노드 연결 확인에 실패했습니다: {error}. 시스템 프록시는 변경되지 않았습니다. 노드의 서버 프로토콜과 키를 확인하세요.",
+  "native.egressCheckFailed":
+    "노드 연결 확인에 실패했습니다: {error}. 시스템 프록시는 변경되지 않았습니다. 노드의 서버 프로토콜과 키를 확인하세요.",
   "native.coreExitedReconnecting": "코어가 종료되었습니다. 다시 연결하는 중…",
   "native.reconnectFailed": "다시 연결에 실패했습니다: {status}",
   "native.coreCrashed": "코어가 예기치 않게 종료되었습니다: {status}",
@@ -753,7 +794,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.trafficSecretFailed": "로컬 엔드포인트의 자격 증명을 생성할 수 없습니다",
   "native.systemProxyEnabled": "시스템 프록시가 켜져 있습니다",
   "native.systemProxyDisabled": "시스템 프록시를 사용할 수 있으며 현재 꺼져 있습니다",
-  "native.otherProxyInUse": "시스템 프록시 또는 TUN이 이미 켜져 있습니다({detail}). 끈 다음 연결하세요. 시스템 프록시는 바꾸지 않았습니다.",
+  "native.otherProxyInUse":
+    "시스템 프록시 또는 TUN이 이미 켜져 있습니다({detail}). 끈 다음 연결하세요. 시스템 프록시는 바꾸지 않았습니다.",
   "native.systemProxyMismatch": "다시 읽은 시스템 프록시가 의도한 설정과 일치하지 않습니다",
   "native.systemProxyApplyFailed": "시스템 프록시를 설정하거나 확인할 수 없습니다: {error}",
   "native.systemProxyEnableFailed": "시스템 프록시를 켤 수 없습니다: {error}",
@@ -761,9 +803,11 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.proxyBackupReadFailed": "프록시 복구 파일을 읽을 수 없습니다: {error}",
   "native.proxyBackupInvalid": "프록시 복구 파일이 잘못되었습니다",
   "native.proxyBackupPathUnknown": "시스템 프록시 복구 파일을 보관할 위치를 결정할 수 없습니다",
-  "native.authenticatedProxyInUse": "{service}이(가) 인증된 프록시를 사용합니다. 해당 설정을 유지하려면 수동 프록시 모드를 사용하세요.",
+  "native.authenticatedProxyInUse":
+    "{service}이(가) 인증된 프록시를 사용합니다. 해당 설정을 유지하려면 수동 프록시 모드를 사용하세요.",
   "native.noNetworkServices": "설정 가능한 네트워크 서비스를 찾을 수 없습니다",
-  "native.desktopNeedsManualProxy": "이 데스크톱에서는 수동 프록시 모드를 사용하세요. 자동 시스템 프록시 설정은 GNOME을 지원합니다.",
+  "native.desktopNeedsManualProxy":
+    "이 데스크톱에서는 수동 프록시 모드를 사용하세요. 자동 시스템 프록시 설정은 GNOME을 지원합니다.",
   "native.nodeAddressInvalid": "잘못된 노드 주소입니다",
   "native.nodeResolveFailed": "노드를 확인할 수 없습니다: {error}",
   "native.nodeConnectTimeout": "노드 연결 시간이 초과되었습니다",
@@ -815,7 +859,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.shortcutInvalid": "잘못된 단축키 조합입니다",
   "native.shortcutNeedsModifier": "단축키에 Ctrl, Alt 또는 Command/Win을 포함하세요",
   "native.shortcutDuplicate": "단축키는 서로 중복되지 않아야 합니다",
-  "native.shortcutUnavailable": "단축키 {shortcut}은(는) 이미 사용 중이거나 시스템에서 지원하지 않습니다. 다른 조합을 선택하세요.",
+  "native.shortcutUnavailable":
+    "단축키 {shortcut}은(는) 이미 사용 중이거나 시스템에서 지원하지 않습니다. 다른 조합을 선택하세요.",
   "native.shortcutReleaseFailed": "이전 단축키를 해제할 수 없습니다",
   "native.shortcutsBusy": "단축키 설정이 사용 중입니다",
   "native.shortcutsUnreadable": "단축키를 읽을 수 없습니다",
@@ -832,17 +877,21 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.tunInstallInProgress": "서비스 설치가 진행 중입니다",
   "native.disconnectToInstallTun": "TUN 서비스를 설치하거나 복구하기 전에 연결을 끊으세요",
   "native.disconnectToUninstallTun": "서비스를 제거하기 전에 연결을 끊으세요",
-  "native.tunServiceInstalledNotStarted": "서비스가 설치되었지만 시작되지 않았습니다. 서비스 포트 47653이 사용 중인지 확인한 다음 서비스를 복구하세요.",
-  "native.tunServiceOperationIncomplete": "TUN 서비스 작업이 완료되지 않았습니다. 권한 승인이 취소되었거나 시스템 서비스 설치에 실패했을 수 있습니다. 다시 시도하고 시스템 권한 승인 창에서 확인하세요.",
+  "native.tunServiceInstalledNotStarted":
+    "서비스가 설치되었지만 시작되지 않았습니다. 서비스 포트 47653이 사용 중인지 확인한 다음 서비스를 복구하세요.",
+  "native.tunServiceOperationIncomplete":
+    "TUN 서비스 작업이 완료되지 않았습니다. 권한 승인이 취소되었거나 시스템 서비스 설치에 실패했을 수 있습니다. 다시 시도하고 시스템 권한 승인 창에서 확인하세요.",
   "native.elevationFailed": "관리자 권한을 요청할 수 없습니다: {error}",
   "native.installPathControlChars": "설치 경로에 제어 문자가 포함되어 있습니다",
   "native.installPathInvalid": "잘못된 설치 경로입니다",
   "native.windowsDirNotFound": "Windows 시스템 디렉터리를 찾을 수 없습니다",
   "native.tunNoFinalOutbound": "TUN에 기본 아웃바운드가 없습니다",
-  "native.tunCoreStartFailed": "TUN 코어 시작에 실패했습니다. 이 계정은 가상 네트워크 어댑터를 만들 권한이 없을 수 있습니다. 시스템 권한을 확인하거나 시스템 프록시 모드로 전환하세요.",
+  "native.tunCoreStartFailed":
+    "TUN 코어 시작에 실패했습니다. 이 계정은 가상 네트워크 어댑터를 만들 권한이 없을 수 있습니다. 시스템 권한을 확인하거나 시스템 프록시 모드로 전환하세요.",
   "native.tunCoreNotStarted": "TUN 코어가 시작되지 않았습니다",
   "native.tunCoreStopped": "TUN 코어가 중지되었습니다",
-  "native.tunStopUnconfirmed": "TUN 중지 요청이 확인되지 않았습니다. 서비스는 하트비트 시간이 초과된 후 중지됩니다. 잠시 후 네트워크를 확인하세요: {error}",
+  "native.tunStopUnconfirmed":
+    "TUN 중지 요청이 확인되지 않았습니다. 서비스는 하트비트 시간이 초과된 후 중지됩니다. 잠시 후 네트워크를 확인하세요: {error}",
   "native.tunServiceNotRunning": "TUN 서비스가 실행되고 있지 않습니다. 설치하거나 복구하세요.",
   "native.tunDnsOverrideFailed": "시스템 DNS를 터널로 지정하지 못했습니다({error}). 이전 설정으로 되돌렸습니다.",
   "native.tunDnsDeviceNotReady": "터널 장치가 준비되지 않아 시스템 DNS를 변경하지 않았습니다.",
@@ -851,7 +900,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "native.tunServiceOutdated": "TUN 서비스가 이전 버전의 앱으로 설치되었습니다. 서비스 복구를 사용해 업데이트하세요.",
   "native.tunDeviceOptionInvalid": "잘못된 TUN 장치 옵션입니다: {option}",
   "native.tunGuardBlocking": "{error} (킬 스위치가 네트워크 접근을 차단하고 있습니다)",
-  "native.tunGuardReleaseFailed": "킬 스위치가 네트워크를 복원하지 못했습니다. 서비스가 계속 다시 시도합니다. TUN 서비스를 복구할 수도 있습니다.",
+  "native.tunGuardReleaseFailed":
+    "킬 스위치가 네트워크를 복원하지 못했습니다. 서비스가 계속 다시 시도합니다. TUN 서비스를 복구할 수도 있습니다.",
   "native.tunAuthFailed": "TUN 서비스 인증에 실패했습니다. 서비스를 복구하세요.",
   "native.tunCredentialsInvalid": "잘못된 서비스 자격 증명입니다",
   "native.tunRequestTooLarge": "TUN 요청이 너무 큽니다",
@@ -913,7 +963,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "secnet.title": "네트워크 보안",
   "secnet.subtitle": "DNS, IPv6 및 네트워크 연결 보호 정책을 관리합니다",
   "secnet.killSwitch": "킬 스위치",
-  "secnet.killSwitchHint": "프록시가 끊길 때 보호된 트래픽이 직접 유출되지 않도록 합니다. 시스템 수준의 지원이 필요합니다",
+  "secnet.killSwitchHint":
+    "프록시가 끊길 때 보호된 트래픽이 직접 유출되지 않도록 합니다. 시스템 수준의 지원이 필요합니다",
   "secnet.killSwitchActive": "킬 스위치가 작동 중입니다. 터널이 예기치 않게 끊기면 네트워크를 차단합니다",
   "secnet.killSwitchInactive": "킬 스위치를 켤 수 없습니다. 연결을 끊었다가 다시 연결하세요",
   "secnet.killSwitchTunOnly": "킬 스위치는 TUN 모드에서만 사용할 수 있습니다",
@@ -921,7 +972,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "secnet.repairHint": "프록시 오류나 전환 후 네트워크가 끊겼을 때 한 번의 클릭으로 시스템 프록시를 재설정합니다",
   "secnet.repairOpen": "복구",
   "secnet.repairTitle": "네트워크 복구",
-  "secnet.repairDesc": "원클릭 복구는 시스템 프록시를 다시 동기화하고 네트워크 진단을 새로 고쳐, 프록시가 비정상 종료된 뒤 인터넷이 안 되거나 모드를 전환한 뒤 네트워크가 끊기는 문제를 해결합니다.",
+  "secnet.repairDesc":
+    "원클릭 복구는 시스템 프록시를 다시 동기화하고 네트워크 진단을 새로 고쳐, 프록시가 비정상 종료된 뒤 인터넷이 안 되거나 모드를 전환한 뒤 네트워크가 끊기는 문제를 해결합니다.",
   "secnet.repairRun": "원클릭 복구",
   "secnet.repairDesktopOnly": "네트워크 복구는 데스크톱 앱에서만 사용할 수 있습니다.",
   "secnet.repairRecheck": "다시 검사",
@@ -947,7 +999,12 @@ const ko: Record<keyof typeof zhCN, string> = {
   "speed.start": "측정 시작",
   "speed.testing": "측정 중…",
   "speed.retest": "다시 측정",
-  "speed.hint": "현재 노드로 실제 다운로드 대역폭을 측정합니다(최대 약 100MB 사용).",
+  "speed.hint": "현재 노드로 다운로드와 업로드 대역폭을 차례로 측정합니다.",
+  "speed.warn": "테스트는 현재 노드로 데이터를 다운로드·업로드하며, 회선이 빠를수록 데이터를 더 사용합니다.",
+  "speed.colSpeed": "실제 속도",
+  "speed.colCost": "데이터 사용",
+  "speed.testingDownload": "다운로드 측정 중…",
+  "speed.testingUpload": "업로드 측정 중…",
   "check.healthHint": "현재 네트워크와 프록시 상태를 확인합니다",
   "check.start": "검사 시작",
   "check.again": "다시 검사",
@@ -960,9 +1017,11 @@ const ko: Record<keyof typeof zhCN, string> = {
   "check.dnsLeak": "DNS 유출 검사",
   "check.dnsLeakHint": "연결 모드만 확인하며 실제 DNS 서버와 유출 여부는 검증하지 않습니다.",
   "check.ipv6Leak": "IPv6 유출 검사",
-  "check.ipv6LeakHint": "OS 경로와 로컬 프록시의 IPv6 출구를 비교합니다. 결과 없음은 IPv6 미지원 또는 검사 실패일 수 있습니다. 여러 출구가 있을 수 있어 불일치만으로 유출을 단정할 수 없습니다.",
+  "check.ipv6LeakHint":
+    "OS 경로와 로컬 프록시의 IPv6 출구를 비교합니다. 결과 없음은 IPv6 미지원 또는 검사 실패일 수 있습니다. 여러 출구가 있을 수 있어 불일치만으로 유출을 단정할 수 없습니다.",
   "check.webrtcLeak": "WebRTC 유출 검사",
-  "check.webrtcLeakHint": "WebRTC 후보와 프록시 출구를 비교합니다. 다른 출구만으로 유출을 단정하지 않으며 후보가 없어도 안전을 보장하지 않습니다.",
+  "check.webrtcLeakHint":
+    "WebRTC 후보와 프록시 출구를 비교합니다. 다른 출구만으로 유출을 단정하지 않으며 후보가 없어도 안전을 보장하지 않습니다.",
   "check.localOk": "연결됨",
   "check.localFail": "인터넷에 연결할 수 없음",
   "check.proxyOff": "연결 안 됨",
@@ -982,7 +1041,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "check.webrtcDifferent": "다른 UDP 출구: {ip}",
   "check.webrtcUnverified": "공인 주소 {ip}, 출구 미확인",
   "check.privacyRepair": "TUN으로 전환하고 재검사",
-  "check.privacyRepairHint": "시스템 프록시는 모든 DNS와 WebRTC UDP를 처리하지 못합니다. TUN으로 전환하면 재연결 후 검사합니다.",
+  "check.privacyRepairHint":
+    "시스템 프록시는 모든 DNS와 WebRTC UDP를 처리하지 못합니다. TUN으로 전환하면 재연결 후 검사합니다.",
   "check.webrtcOff": "이 환경에서는 사용할 수 없음",
   "check.webrtcNone": "공인 후보 없음, 확인 불가",
   "check.webrtcLan": "로컬 주소만 있음",
@@ -1046,6 +1106,8 @@ const ko: Record<keyof typeof zhCN, string> = {
   "connections.detailStatus": "상태",
   "connections.detailNetwork": "프로토콜",
   "connections.detailInbound": "인바운드",
+  "connections.detailType": "유형",
+  "connections.closeConnection": "연결 닫기",
   "connections.detailSource": "출발지 주소",
   "connections.detailDestination": "목적지 주소",
   "connections.detailStarted": "시작 시간",
@@ -1085,6 +1147,5 @@ const ko: Record<keyof typeof zhCN, string> = {
   "settings.lanDefaultDirectory": "시스템 다운로드 폴더",
   "settings.lanChooseDirectory": "폴더 선택",
   "settings.lanDirectorySaved": "파일 저장 위치가 변경되었습니다",
-
 };
 export default ko;

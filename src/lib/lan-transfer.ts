@@ -1,9 +1,9 @@
-// 局域网文件传输的前端类型。字段与 Rust（src-tauri/src/lan_transfer.rs、
-// airport-lan crate）的 serde camelCase 输出一致。见 docs/desktop/局域网文件传输设计.md。
+// Frontend types for LAN file transfer. Fields match the serde camelCase output of the Rust side
+// (src-tauri/src/lan_transfer.rs, airport-lan crate). See docs/desktop/局域网文件传输设计.md.
 
-/** 默认局域网端口，与核心层 airport_lan::protocol::DEFAULT_PORT 保持一致。 */
+/** Default LAN port; kept in sync with the core layer's airport_lan::protocol::DEFAULT_PORT. */
 export const DEFAULT_LAN_PORT = 53317;
-/** 单条文本消息体积上限（字节），需与核心层文本上限保持一致。 */
+/** Maximum size of a single text message (bytes); must match the core layer's text limit. */
 export const MAX_TEXT_BYTES = 65536;
 
 export type LanDeviceType = "mobile" | "desktop" | "web" | "headless" | "server";
@@ -11,20 +11,14 @@ export type LanDeviceType = "mobile" | "desktop" | "web" | "headless" | "server"
 export type LanDirection = "send" | "receive";
 
 export type LanTransferStateName =
-  | "PENDING"
-  | "WAITING_APPROVAL"
-  | "TRANSFERRING"
-  | "PAUSED"
-  | "COMPLETED"
-  | "FAILED"
-  | "CANCELED";
+  "PENDING" | "WAITING_APPROVAL" | "TRANSFERRING" | "PAUSED" | "COMPLETED" | "FAILED" | "CANCELED";
 
 export interface LanLocalDevice {
   alias: string;
   fingerprint: string;
   deviceType: LanDeviceType;
   port: number;
-  /** 本机物理网卡私网 IPv4（供二维码直连）；无合适网卡时为 null。 */
+  /** The machine's physical NIC private IPv4 (for QR-code direct connection); null when no suitable NIC exists. */
   ip?: string | null;
 }
 
@@ -61,7 +55,7 @@ export interface LanHistoryEntry {
   text?: string | null;
 }
 
-/** 已配对（可信）设备。对应 Rust storage::TrustedRow。 */
+/** A paired (trusted) device. Corresponds to the Rust storage::TrustedRow. */
 export interface LanTrustedDevice {
   fingerprint: string;
   alias: string;
@@ -69,7 +63,7 @@ export interface LanTrustedDevice {
   autoAccept: boolean;
 }
 
-/** 收到的配对请求（lan://pair 事件）。 */
+/** An incoming pairing request (lan://pair event). */
 export interface LanPairRequest {
   requestId: string;
   peerAlias: string;

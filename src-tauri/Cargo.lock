@@ -68,11 +68,11 @@ dependencies = [
 name = "airport-client"
 version = "0.1.6"
 dependencies = [
- "airport-lan",
  "airport-tun-service",
  "chrono",
  "gdk-pixbuf",
  "getrandom 0.3.4",
+ "lan-service",
  "log",
  "objc2",
  "objc2-app-kit",
@@ -102,30 +102,6 @@ dependencies = [
  "tokio",
  "windows-sys 0.61.2",
  "winreg 0.55.0",
-]
-
-[[package]]
-name = "airport-lan"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "axum-server",
- "futures-util",
- "if-addrs",
- "log",
- "rcgen",
- "reqwest",
- "rusqlite",
- "rustls",
- "serde",
- "serde_json",
- "sha2",
- "socket2 0.5.10",
- "thiserror 2.0.21",
- "tokio",
- "tokio-util",
- "uuid",
 ]
 
 [[package]]
@@ -2573,6 +2549,32 @@ checksum = "0fbe853b403ae61a04233030ae8a79d94975281ed9770a1f9e246732b534b28d"
 dependencies = [
  "bitflags 2.13.2",
  "serde",
+]
+
+[[package]]
+name = "lan-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "axum-server",
+ "futures-util",
+ "if-addrs",
+ "log",
+ "rcgen",
+ "reqwest",
+ "rusqlite",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2",
+ "socket2 0.5.10",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-rustls",
+ "tokio-util",
+ "tower-service",
+ "uuid",
 ]
 
 [[package]]

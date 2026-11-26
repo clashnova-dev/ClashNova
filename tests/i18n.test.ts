@@ -11,8 +11,8 @@ import { parsePreferences } from "../src/lib/preferences.ts";
 const src = fileURLToPath(new URL("../src/", import.meta.url));
 const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name).replaceAll("\\", "/")]);
 const sources = walk(src).filter(file => /\.(vue|ts)$/.test(file));
-// Not app copy: the dictionaries, the long-form help articles, and the patterns that recognise region names inside node names.
-const appCode = sources.filter(file => !file.includes("/i18n/") && !file.endsWith("content/help.ts") && !file.endsWith("lib/regions.ts"));
+// Not app copy: the dictionaries, the long-form help articles, unit specs, and the patterns that recognise region names inside node names.
+const appCode = sources.filter(file => !file.includes("/i18n/") && !file.endsWith("content/help.ts") && !file.endsWith("pages/help/help-content.ts") && !file.endsWith(".spec.ts") && !file.endsWith("lib/regions.ts"));
 // The native side sends keys too: the app and the TUN service helper.
 const root = fileURLToPath(new URL("../", import.meta.url));
 const rustCode = ["src-tauri/src", "tun-service/src"].flatMap(dir => walk(join(root, dir))).filter(file => file.endsWith(".rs"));

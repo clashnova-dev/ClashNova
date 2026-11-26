@@ -1,0 +1,23 @@
+// 共享 SCSS 工具 mixin。
+// 规范:这里只放**与主题无关**的结构性 mixin;所有颜色/明暗色一律继续用
+// app.css 里的 CSS 自定义属性(var(--bg)/var(--accent) 等),不要在 scss 里硬编码颜色。
+
+// 单行文本截断为省略号。
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// flex 三居中。
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 纵向可滚动区域(配合 flex 父级的 min-height:0)。
+@mixin scroll-y {
+  min-height: 0;
+  overflow-y: auto;
+}

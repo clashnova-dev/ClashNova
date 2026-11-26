@@ -1,0 +1,327 @@
+.settings-page {
+  width: 100%;
+  max-width: 1000px;
+  margin-inline: auto;
+  gap: 16px;
+  padding-bottom: 10px;
+}
+.network-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.settings-card {
+  min-width: 0;
+  padding: 18px 22px 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: none;
+}
+.settings-card h2,
+.settings-card :deep(.shortcut-settings h2) {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 650;
+  color: var(--strong);
+}
+.settings-card .setting-row,
+.settings-card :deep(.shortcut-settings .setting-row) {
+  min-height: 58px;
+  gap: 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.settings-card h2 + .setting-row,
+.settings-card :deep(.shortcut-settings h2 + .setting-row) {
+  border-top: 0;
+}
+.settings-card .setting-row > span:first-child,
+.settings-card :deep(.shortcut-settings .setting-row > span:first-child),
+.settings-card :deep(.shortcut-settings .setting-row > label) {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.settings-card .setting-row > strong {
+  font:
+    13px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  -webkit-user-select: text;
+  user-select: text;
+  flex: none;
+}
+.settings-card .setting-description,
+.settings-card :deep(.setting-description) {
+  max-width: 540px;
+  line-height: 1.6;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.settings-card .setting-row > button:not(.toggle-switch),
+.settings-head > button,
+.update-item > button {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  flex: none;
+}
+.settings-card .port-input {
+  width: 200px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 13px;
+  flex: none;
+}
+.settings-card :deep(.select-menu) {
+  width: 200px;
+  max-width: 100%;
+  min-width: 0;
+}
+.settings-card :deep(.select-trigger) {
+  height: 34px;
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.settings-card .seg {
+  padding: 3px;
+  border-radius: 8px;
+  max-width: 100%;
+}
+.settings-card .seg > button {
+  min-height: 28px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  gap: 6px;
+}
+.settings-card :deep(.toggle-switch) {
+  width: 38px;
+  min-width: 38px;
+  height: 22px;
+  min-height: 22px;
+  flex: none;
+}
+.settings-card :deep(.toggle-switch > span) {
+  width: 16px;
+  height: 16px;
+}
+.settings-card :deep(.toggle-switch.enabled > span) {
+  transform: translateX(16px);
+}
+.settings-card .exclude-input {
+  width: 280px;
+  max-width: 55%;
+  min-height: 78px;
+  flex: none;
+  border-radius: 8px;
+}
+.settings-card .tun-exclude-row {
+  align-items: flex-start;
+}
+.settings-card :deep(.tun-service-row) {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.settings-card :deep(.tun-service-row > span:first-child) {
+  flex: 1 1 240px;
+}
+.settings-card :deep(.tun-service-actions) {
+  align-self: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+  flex-shrink: 1;
+  margin-inline-start: auto;
+}
+.settings-card :deep(.tun-service-actions button) {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.settings-card :deep(.shortcut-settings) {
+  margin: 0;
+  padding-bottom: 0;
+}
+.settings-card :deep(.shortcut-actions) {
+  padding: 12px 0 14px;
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+}
+.settings-card :deep(.shortcut-actions button) {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  flex: none;
+}
+.settings-card .form-error,
+.settings-card :deep(.shortcut-error) {
+  padding: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.network-save-bar {
+  position: sticky;
+  bottom: -10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -2px;
+  padding: 12px 0 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.network-settings-actions {
+  padding: 0;
+  gap: 16px;
+  min-height: 36px;
+}
+.network-settings-actions .muted {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.network-settings-actions button {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 14px;
+  flex: none;
+  font-size: 13px;
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.network-settings-actions button:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff;
+}
+.network-save-bar .form-error {
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.settings-head {
+  margin-bottom: 8px;
+  align-items: center;
+}
+.settings-head h2 {
+  margin: 0;
+}
+.settings-note {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+.update-item {
+  padding: 14px 0;
+  align-items: flex-start;
+  color: var(--text);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.about-card {
+  padding: 22px;
+}
+.about-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.about-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex: none;
+}
+.about-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.about-identity strong {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.about-link:hover {
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+.about-link .brand-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.about-link :deep(svg) {
+  transform: none;
+}
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 14px 0 0;
+  margin: 18px 0 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  font-size: 13px;
+  justify-content: flex-start;
+}
+.help-link > svg:last-child {
+  margin-inline-start: auto;
+}
+@media (max-width: 900px) {
+  .settings-card {
+    padding-inline: 18px;
+  }
+  .settings-card .setting-row,
+  .settings-card :deep(.shortcut-settings .setting-row) {
+    gap: 14px;
+  }
+  .settings-card .seg > button {
+    padding-inline: 8px;
+  }
+  .settings-card .seg svg {
+    display: none;
+  }
+  .network-save-bar {
+    bottom: -16px;
+  }
+}

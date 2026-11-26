@@ -2,12 +2,16 @@ import type zhCN from "./zh-CN.ts";
 
 const de: Record<keyof typeof zhCN, string> = {
   "confirmation.portTitle": "Port belegt",
-  "confirmation.portBody": "Port {port} wird von den folgenden Prozessen verwendet. Das Beenden kann Anwendungen und Verbindungen unterbrechen. Port freigeben und verbinden?",
+  "confirmation.portBody":
+    "Port {port} wird von den folgenden Prozessen verwendet. Das Beenden kann Anwendungen und Verbindungen unterbrechen. Port freigeben und verbinden?",
   "confirmation.portRelease": "Beenden und verbinden",
-  "native.portOwnerUnknown": "Der Prozess auf Port {port} ist unbekannt. Manuell schließen oder einen anderen Port wählen.",
+  "native.portOwnerUnknown":
+    "Der Prozess auf Port {port} ist unbekannt. Manuell schließen oder einen anderen Port wählen.",
   "native.portOwnerProtected": "Port {port} gehört einem geschützten Prozess. Einen anderen Port wählen.",
-  "native.portConflictChanged": "Die Portbelegung hat sich geändert oder die Bestätigung ist abgelaufen. Erneut verbinden.",
-  "native.portReleaseFailed": "Port {port} kann nicht freigegeben werden. Prozess manuell schließen oder einen anderen Port wählen.",
+  "native.portConflictChanged":
+    "Die Portbelegung hat sich geändert oder die Bestätigung ist abgelaufen. Erneut verbinden.",
+  "native.portReleaseFailed":
+    "Port {port} kann nicht freigegeben werden. Prozess manuell schließen oder einen anderen Port wählen.",
 
   "nav.rules": "Regeln",
   "common.clearSearch": "Suche löschen",
@@ -19,6 +23,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "rules.search": "Inhalt, Typ oder Ziel suchen",
   "rules.source": "Quelle",
   "rules.edit": "Regeln bearbeiten",
+  "rules.chinaGeosite": "China direkt (geosite)",
+  "rules.adBlock": "Werbung blockieren (geosite)",
   "rules.fieldType": "Regeltyp",
   "rules.fieldContent": "Regelinhalt",
   "rules.fieldPolicy": "Proxy-Richtlinie",
@@ -41,7 +47,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "rules.policyProxy": "Proxy",
   "rules.policyReject": "Blockieren",
   "common.edit": "Bearbeiten",
-  "rules.editHint": "Bearbeite die eigenen Routing-Regeln dieses Abonnements (ein sing-box-Regel-Array). Eingebaute China/LAN-Direktregeln und App-Richtlinien sind hier nicht enthalten.",
+  "rules.editHint":
+    "Bearbeite die eigenen Routing-Regeln dieses Abonnements (ein sing-box-Regel-Array). Eingebaute China/LAN-Direktregeln und App-Richtlinien sind hier nicht enthalten.",
   "rules.type": "Typ",
   "rules.content": "Inhalt",
   "rules.target": "Ziel",
@@ -58,46 +65,66 @@ const de: Record<keyof typeof zhCN, string> = {
   "rules.pageOf": "Seite {page} / {pages}",
 
   "check.webrtcTimeout": "Zeitüberschreitung; ungeprüft",
-  "check.reconnectConfirm": "Die aktuelle Konfiguration wird erneut angewendet. Eine aktive Verbindung wird kurz getrennt. System-DNS und andere Proxy-Apps bleiben unverändert.",
-  "check.proxyScope": "System-/manueller Proxy erfasst nur unterstützte Apps. DNS, IPv6 und WebRTC-UDP können direkt verbinden. Für umfassenderes Routing TUN verwenden und erneut prüfen.",
-  "check.tunScope": "TUN erfasst DNS und IPv6 und leitet STUN über den Proxy. Direktregeln und Routenausnahmen gelten weiterhin. Die Konfiguration allein bestätigt keine Leckfreiheit.",
+  "check.reconnectConfirm":
+    "Die aktuelle Konfiguration wird erneut angewendet. Eine aktive Verbindung wird kurz getrennt. System-DNS und andere Proxy-Apps bleiben unverändert.",
+  "check.proxyScope":
+    "System-/manueller Proxy erfasst nur unterstützte Apps. DNS, IPv6 und WebRTC-UDP können direkt verbinden. Für umfassenderes Routing TUN verwenden und erneut prüfen.",
+  "check.tunScope":
+    "TUN erfasst DNS und IPv6 und leitet STUN über den Proxy. Direktregeln und Routenausnahmen gelten weiterhin. Die Konfiguration allein bestätigt keine Leckfreiheit.",
   "check.dnsConfiguration": "DNS-Konfiguration",
   "check.routeExceptions": "Routenausnahmen: {count}",
-  "check.webviewScope": "WebRTC-Ergebnisse gelten nur für die Webview dieser App. DNS und WebRTC im verwendeten Browser prüfen. Zeitüberschreitung oder fehlende Kandidaten bestätigen keine Leckfreiheit.",
+  "check.webviewScope":
+    "WebRTC-Ergebnisse gelten nur für die Webview dieser App. DNS und WebRTC im verwendeten Browser prüfen. Zeitüberschreitung oder fehlende Kandidaten bestätigen keine Leckfreiheit.",
   "check.browserChecks": "Im Browser prüfen",
   "check.checkedAt": "Geprüft: {time}",
   "recovery.intentWriteFailed": "Verbindungsstatus konnte nicht gespeichert werden: {error}",
   "recovery.coreScheduled": "Kern beendet. Wiederherstellungsversuch {attempt} in {seconds}s: {error}",
-  "recovery.coreExhausted": "Wiederherstellung mehrfach fehlgeschlagen. Automatische Versuche gestoppt. Protokolle prüfen und manuell verbinden: {error}",
-  "recovery.cleanupBlocked": "Beenden des alten Kerns nicht bestätigt. Wiederherstellung pausiert, um Konflikte zu vermeiden: {error}",
+  "recovery.coreExhausted":
+    "Wiederherstellung mehrfach fehlgeschlagen. Automatische Versuche gestoppt. Protokolle prüfen und manuell verbinden: {error}",
+  "recovery.cleanupBlocked":
+    "Beenden des alten Kerns nicht bestätigt. Wiederherstellung pausiert, um Konflikte zu vermeiden: {error}",
   "recovery.supervisorFailed": "Client-Überwachung konnte nicht gestartet werden: {error}",
   "recovery.restoring": "Client nach unerwartetem Beenden wiederhergestellt. Verbindung wird aufgebaut…",
-  "recovery.profileUnavailable": "Client erneut geöffnet, aber kein Abonnement oder Knoten verfügbar. Bitte manuell verbinden.",
-  "recovery.tunUnavailable": "Client erneut geöffnet, aber TUN-Dienst nicht bereit. Einstellungen prüfen und manuell verbinden.",
+  "recovery.profileUnavailable":
+    "Client erneut geöffnet, aber kein Abonnement oder Knoten verfügbar. Bitte manuell verbinden.",
+  "recovery.tunUnavailable":
+    "Client erneut geöffnet, aber TUN-Dienst nicht bereit. Einstellungen prüfen und manuell verbinden.",
 
   "confirmation.continue": "Fortfahren",
   "confirmation.removeTitle": "Abonnement entfernen?",
-  "confirmation.removeBody": "Das lokal gespeicherte Abonnement „{name}“ und seine Konfiguration werden entfernt. Zur erneuten Nutzung ist ein Import erforderlich.",
-  "confirmation.activeSubscription": "Dieses Abonnement wird verwendet. Das Entfernen trennt die Verbindung und löscht die aktuellen Knoten.",
+  "confirmation.removeBody":
+    "Das lokal gespeicherte Abonnement „{name}“ und seine Konfiguration werden entfernt. Zur erneuten Nutzung ist ein Import erforderlich.",
+  "confirmation.activeSubscription":
+    "Dieses Abonnement wird verwendet. Das Entfernen trennt die Verbindung und löscht die aktuellen Knoten.",
   "confirmation.exposeTitle": "Zugangsdaten teilen?",
-  "confirmation.exposeBody": "Abonnement-Links und QR-Codes enthalten Zugangsdaten. Dritte könnten Ihr Datenvolumen nutzen. Nur mit vertrauenswürdigen Geräten teilen.",
+  "confirmation.exposeBody":
+    "Abonnement-Links und QR-Codes enthalten Zugangsdaten. Dritte könnten Ihr Datenvolumen nutzen. Nur mit vertrauenswürdigen Geräten teilen.",
   "confirmation.switchTitle": "Abonnement wechseln?",
   "confirmation.switchBody": "Der Wechsel zu „{name}“ trennt die aktuelle Verbindung.",
   "confirmation.refreshTitle": "Aktuelles Abonnement aktualisieren?",
-  "confirmation.refreshBody": "Die Aktualisierung ersetzt die aktuelle Konfiguration und kann bestehende Verbindungen unterbrechen.",
+  "confirmation.refreshBody":
+    "Die Aktualisierung ersetzt die aktuelle Konfiguration und kann bestehende Verbindungen unterbrechen.",
   "confirmation.networkTitle": "Netzwerkeinstellungen speichern?",
-  "confirmation.networkBody": "Änderungen an Proxy-Port, LAN, DNS und TUN gelten ab der nächsten Verbindung. Bitte vor dem Speichern prüfen.",
-  "confirmation.lanWarning": "Geräte im LAN können auf diesen Proxy zugreifen. Nur in vertrauenswürdigen Netzwerken aktivieren.",
-  "confirmation.guardWarning": "Der Kill Switch wird deaktiviert. Bei Tunnelausfall kann Datenverkehr direkt verbunden werden.",
+  "confirmation.networkBody":
+    "Änderungen an Proxy-Port, LAN, DNS und TUN gelten ab der nächsten Verbindung. Bitte vor dem Speichern prüfen.",
+  "confirmation.lanWarning":
+    "Geräte im LAN können auf diesen Proxy zugreifen. Nur in vertrauenswürdigen Netzwerken aktivieren.",
+  "confirmation.guardWarning":
+    "Der Kill Switch wird deaktiviert. Bei Tunnelausfall kann Datenverkehr direkt verbunden werden.",
   "confirmation.routeWarning": "Bitte Routing-Ausnahmen prüfen. Ausgenommener Datenverkehr wird direkt verbunden.",
   "confirmation.proxyTitle": "Proxy-Verfahren ändern?",
-  "confirmation.proxyBody": "Systemproxy oder virtueller Adapter werden geändert; das Netzwerk kann kurz unterbrochen werden. Fehlt TUN, wird eine Systemfreigabe angefordert.",
+  "confirmation.proxyBody":
+    "Systemproxy oder virtueller Adapter werden geändert; das Netzwerk kann kurz unterbrochen werden. Fehlt TUN, wird eine Systemfreigabe angefordert.",
   "confirmation.routingTitle": "Routing-Modus ändern?",
-  "confirmation.routingBody": "Der Wechsel lädt die Konfiguration neu und kann bestehende Verbindungen kurz unterbrechen.",
-  "confirmation.installBody": "Ein Hintergrund-Netzwerkdienst zur Verwaltung des TUN-Adapters wird installiert. Administratorfreigabe erforderlich.",
-  "confirmation.repairBody": "Hintergrund-Netzwerkdienst und Proxy-Kern werden aktualisiert. Administratorfreigabe erforderlich.",
+  "confirmation.routingBody":
+    "Der Wechsel lädt die Konfiguration neu und kann bestehende Verbindungen kurz unterbrechen.",
+  "confirmation.installBody":
+    "Ein Hintergrund-Netzwerkdienst zur Verwaltung des TUN-Adapters wird installiert. Administratorfreigabe erforderlich.",
+  "confirmation.repairBody":
+    "Hintergrund-Netzwerkdienst und Proxy-Kern werden aktualisiert. Administratorfreigabe erforderlich.",
   "confirmation.updateTitle": "Installieren und neu starten?",
-  "confirmation.updateBody": "{version} wird installiert und der Client neu gestartet. Die aktuelle Proxy-Verbindung wird unterbrochen.",
+  "confirmation.updateBody":
+    "{version} wird installiert und der Client neu gestartet. Die aktuelle Proxy-Verbindung wird unterbrochen.",
   "confirmation.startupTitle": "Autostart ändern?",
   "confirmation.startupEnable": "Der Client wird bei der Anmeldung automatisch gestartet.",
   "confirmation.startupDisable": "Der Client wird bei der Anmeldung nicht mehr automatisch gestartet.",
@@ -109,7 +136,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "log.startupProgress": "Verbindungsstart · {stage} · {milliseconds} ms vergangen",
   "native.proxyEgressTimeout": "Zeitüberschreitung bei der Proxy-Prüfung. Knoten oder Netzwerk prüfen.",
 
-  "native.settingsStoreInvalid": "Die lokale Einstellungsdatei ist ungültig oder unsicher. Das Original bleibt erhalten.",
+  "native.settingsStoreInvalid":
+    "Die lokale Einstellungsdatei ist ungültig oder unsicher. Das Original bleibt erhalten.",
   "native.settingsStoreTooLarge": "Die lokalen Einstellungen überschreiten das Größenlimit.",
   "native.settingsKeyInvalid": "Der Zugriff auf diesen Einstellungsschlüssel ist nicht erlaubt.",
 
@@ -227,12 +255,15 @@ const de: Record<keyof typeof zhCN, string> = {
   "app.orImportALocalFile": "Oder eine lokale Datei importieren",
   "app.chooseFile": "Datei auswählen",
   "app.useAUrlInstead": "Stattdessen eine URL verwenden",
-  "app.supportsSingBoxJsonClash": "Unterstützt sing-box JSON, Clash YAML und Share-Links. Die Konvertierung erfolgt lokal.",
+  "app.supportsSingBoxJsonClash":
+    "Unterstützt sing-box JSON, Clash YAML und Share-Links. Die Konvertierung erfolgt lokal.",
   "app.importing": "Import läuft…",
   "app.importUse": "Importieren & verwenden",
   "deepLink.importTitle": "Import bestätigen",
-  "deepLink.importBody": "Eine Webseite möchte ein Abonnement importieren. Der Einmalcode wird erst nach der Bestätigung verwendet und beim Abbrechen sofort verworfen.",
-  "deepLink.importUrlBody": "Ein Link möchte dieses Abonnement importieren. Importiere nur aus Quellen, denen du vertraust.",
+  "deepLink.importBody":
+    "Eine Webseite möchte ein Abonnement importieren. Der Einmalcode wird erst nach der Bestätigung verwendet und beim Abbrechen sofort verworfen.",
+  "deepLink.importUrlBody":
+    "Ein Link möchte dieses Abonnement importieren. Importiere nur aus Quellen, denen du vertraust.",
   "deepLink.confirmImport": "Importieren",
   "deepLink.rejected": "Dieser Link kann nicht verwendet werden",
   "deepLink.importFailed": "Das Abonnement wurde nicht importiert",
@@ -289,8 +320,10 @@ const de: Record<keyof typeof zhCN, string> = {
   "nodes.checksEvery3MinutesAnd": "Prüft alle 3 Minuten und wählt einen Knoten mit geringer Latenz",
   "nodes.autoSwitch": "Automatischer Wechsel",
   "nodes.testedAfterConnect": "Prüfung nach dem Verbinden",
-  "nodes.requestTimeAfterConnectionSetup": "Anfragezeit nach dem Verbindungsaufbau; erste Verbindung {delay} ms. Keine Download-Bandbreite.",
-  "nodes.firstConnectionMsSecondTest": "Erste Verbindung {delay} ms; zweiter Test unvollständig. Keine Download-Bandbreite.",
+  "nodes.requestTimeAfterConnectionSetup":
+    "Anfragezeit nach dem Verbindungsaufbau; erste Verbindung {delay} ms. Keine Download-Bandbreite.",
+  "nodes.firstConnectionMsSecondTest":
+    "Erste Verbindung {delay} ms; zweiter Test unvollständig. Keine Download-Bandbreite.",
   "nodes.notSelected": "Nicht ausgewählt",
   "nodes.test": "Test",
   "nodes.all": "Alle Knoten",
@@ -307,7 +340,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "nodes.testing": "Test läuft…",
   "nodes.timedOut": "Zeitüberschreitung / fehlgeschlagen",
   "nodes.notTested": "Nicht getestet",
-  "nodes.requestLatencyThroughTheNode": "Anfragelatenz über den Knoten. Niedriger ist schneller; dies ist keine Download-Bandbreite.",
+  "nodes.requestLatencyThroughTheNode":
+    "Anfragelatenz über den Knoten. Niedriger ist schneller; dies ist keine Download-Bandbreite.",
   "nodes.thisSubscriptionHasNoAvailable": "Dieses Abonnement hat keine verfügbaren Knoten.",
   "nodes.manageSubscriptions": "Abonnements verwalten",
   "nodes.searchNodes": "Knoten suchen",
@@ -326,7 +360,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "nodes.notReady": "Dieser Knoten ist offline oder seine Konfiguration ist nicht bereit.",
   "nodes.customRegion": "Benutzerdefiniert",
 
-  "subscriptions.updatedRestartForUsage": "Abonnement aktualisiert. Starte die aktualisierte App neu, um die Verbrauchsinformationen zu laden.",
+  "subscriptions.updatedRestartForUsage":
+    "Abonnement aktualisiert. Starte die aktualisierte App neu, um die Verbrauchsinformationen zu laden.",
   "subscriptions.updatedAt": "Aktualisiert",
   "subscriptions.expiresAt": "Läuft ab",
   "subscriptions.expired": "Abgelaufen",
@@ -347,18 +382,21 @@ const de: Record<keyof typeof zhCN, string> = {
   "subscriptions.removeSubscription": "Abonnement entfernen",
   "subscriptions.editTitle": "Datei bearbeiten",
   "subscriptions.editHint": "Bearbeite die Konfiguration von „{name}“. Änderungen werden beim Speichern wirksam.",
-  "subscriptions.editRemoteHint": "Bearbeite die Konfiguration von „{name}“. Dieses Abonnement hat eine Aktualisierungsquelle – beim Aktualisieren werden lokale Änderungen überschrieben.",
+  "subscriptions.editRemoteHint":
+    "Bearbeite die Konfiguration von „{name}“. Dieses Abonnement hat eine Aktualisierungsquelle – beim Aktualisieren werden lokale Änderungen überschrieben.",
   "subscriptions.editNamed": "{name} bearbeiten",
   "subscriptions.editPaste": "Aus Zwischenablage einfügen",
   "subscriptions.editFormat": "Formatieren",
   "subscriptions.editExpand": "Vollbild",
   "subscriptions.editCollapse": "Vollbild beenden",
   "subscriptions.editInfoTitle": "Infos bearbeiten",
-  "subscriptions.editInfoHint": "Umbenennen wird sofort wirksam. Beim Ändern der Quell-URL wird das Abonnement neu geladen und seine Knoten ersetzt.",
+  "subscriptions.editInfoHint":
+    "Umbenennen wird sofort wirksam. Beim Ändern der Quell-URL wird das Abonnement neu geladen und seine Knoten ersetzt.",
   "subscriptions.editNodesTitle": "Knoten bearbeiten",
   "subscriptions.editNodesAdvanced": "Erweitert",
   "subscriptions.editNodesPaste": "Mehrere URIs durch Zeilenumbrüche trennen (Base64 unterstützt)",
-  "subscriptions.editNodesAddHint": "Füge Freigabelinks oder ein Base64-Abonnement ein; sie werden beim Speichern umgewandelt und als Knoten angehängt.",
+  "subscriptions.editNodesAddHint":
+    "Füge Freigabelinks oder ein Base64-Abonnement ein; sie werden beim Speichern umgewandelt und als Knoten angehängt.",
   "subscriptions.editNodesFilter": "Filtern",
   "subscriptions.deleteNode": "Knoten löschen",
   "subscriptions.editNodesEmpty": "Keine Knoten",
@@ -369,7 +407,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "subscriptions.shareQrHint": "Mit dem Handy scannen, um dieses Abonnement zu importieren.",
   "subscriptions.count": "{count} Abonnement(s)",
   "subscriptions.usedTraffic": "Verbrauchtes Datenvolumen",
-  "subscriptions.restored": "Dein Abonnement und der ausgewählte Knoten wurden wiederhergestellt. Klicke auf Verbinden, um zu starten, oder aktualisiere es unter Abonnements.",
+  "subscriptions.restored":
+    "Dein Abonnement und der ausgewählte Knoten wurden wiederhergestellt. Klicke auf Verbinden, um zu starten, oder aktualisiere es unter Abonnements.",
   "subscriptions.nonePurchase": "Kein aktives Abonnement. Kaufe zuerst einen Tarif.",
   "subscriptions.urlCopied": "Abonnement-URL kopiert. Halte sie geheim.",
   "subscriptions.addPrompt": "Füge eine Abonnement-URL hinzu oder importiere eine lokale Datei",
@@ -379,7 +418,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "subscriptions.imported": "Abonnement importiert",
   "subscriptions.importFirst": "Importiere zuerst ein Abonnement und wähle einen Knoten",
   "subscriptions.selectedNodeMissing": "Der ausgewählte Knoten fehlt. Aktualisiere das Abonnement.",
-  "subscriptions.noReadyNodes": "Keine einsatzbereiten Knoten verfügbar. Bitte deinen Administrator, Knotenzustand und Konfiguration zu prüfen.",
+  "subscriptions.noReadyNodes":
+    "Keine einsatzbereiten Knoten verfügbar. Bitte deinen Administrator, Knotenzustand und Konfiguration zu prüfen.",
 
   "connections.unknownPolicyHint": "Prozess nicht erkannt. App-Regeln sind nicht verfügbar.",
   "connections.caseSensitive": "Groß-/Kleinschreibung beachten",
@@ -434,8 +474,10 @@ const de: Record<keyof typeof zhCN, string> = {
   "connections.noActiveConnections": "Keine aktiven Verbindungen",
   "connections.connectToSeeNetworkRequests": "Verbinde dich, um Netzwerkanfragen zu sehen",
   "connections.closeAllConnections": "Alle Verbindungen schließen",
-  "connections.activeDownloadsAndRequestsWill": "Aktive Downloads und Anfragen werden unterbrochen. Anwendungen verbinden sich möglicherweise automatisch neu.",
-  "connections.unableToLoadConnectionsMake": "Verbindungen können nicht geladen werden. Stelle sicher, dass du die aktualisierte App neu gestartet hast.",
+  "connections.activeDownloadsAndRequestsWill":
+    "Aktive Downloads und Anfragen werden unterbrochen. Anwendungen verbinden sich möglicherweise automatisch neu.",
+  "connections.unableToLoadConnectionsMake":
+    "Verbindungen können nicht geladen werden. Stelle sicher, dass du die aktualisierte App neu gestartet hast.",
   "connections.connectionMonitoringIsAvailableIn": "Die Verbindungsüberwachung ist nur in der Desktop-App verfügbar",
 
   "logs.empty": "Noch keine Protokolle",
@@ -462,7 +504,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "logs.paused": "Pausiert",
   "logs.live": "Live",
   "logs.shown": "{count} / {total} Einträge",
-  "logs.windowHint": "Nur die letzten Protokolle dieser Sitzung, nicht der gesamte Dateiverlauf. Eine Pause stoppt die Anzeige, nicht die Aufzeichnung.",
+  "logs.windowHint":
+    "Nur die letzten Protokolle dieser Sitzung, nicht der gesamte Dateiverlauf. Eine Pause stoppt die Anzeige, nicht die Aufzeichnung.",
   "logs.followLatest": "Neueste verfolgen",
   "logs.scrollBottom": "Zum Ende",
   "logs.detail": "Protokolldetails",
@@ -475,8 +518,10 @@ const de: Record<keyof typeof zhCN, string> = {
 
   "settings.showLiveSpeed": "Live-Geschwindigkeit anzeigen",
   "settings.testConcurrency": "Test-Parallelität",
-  "settings.testConcurrencyHelp": "Wie viele Knoten gleichzeitig auf Latenz geprüft werden; bei vielen Knoten höher setzen (1-64).",
-  "settings.showUploadAndDownloadSpeed": "Upload- und Download-Geschwindigkeit neben dem Infobereich-Symbol anzeigen; unter Windows in Tooltip und Menü.",
+  "settings.testConcurrencyHelp":
+    "Wie viele Knoten gleichzeitig auf Latenz geprüft werden; bei vielen Knoten höher setzen (1-64).",
+  "settings.showUploadAndDownloadSpeed":
+    "Upload- und Download-Geschwindigkeit neben dem Infobereich-Symbol anzeigen; unter Windows in Tooltip und Menü.",
   "settings.systemProxyCheck": "Systemproxy-Prüfung",
   "settings.checkAgain": "Erneut prüfen",
   "settings.checkingSystemProxy": "Systemproxy wird geprüft…",
@@ -492,7 +537,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "settings.copyLanAddress": "LAN-Adresse {address} kopieren",
   "settings.lanCopied": "Adresse kopiert",
   "settings.lanLoading": "LAN-Adressen werden gelesen…",
-  "settings.allowOtherDevicesOnYour": "Erlaube anderen Geräten in deinem lokalen Netzwerk, diesen Proxy zu verwenden. Nur in vertrauenswürdigen Netzwerken aktivieren.",
+  "settings.allowOtherDevicesOnYour":
+    "Erlaube anderen Geräten in deinem lokalen Netzwerk, diesen Proxy zu verwenden. Nur in vertrauenswürdigen Netzwerken aktivieren.",
   "settings.proxyPort": "Proxy-Port",
   "settings.sharedHttpAndSocksPort": "Gemeinsamer HTTP- und SOCKS-Port, von 1024 bis 65535.",
   "settings.disconnectToChangeNetworkSettings": "Trennen, um die Netzwerkeinstellungen zu ändern",
@@ -506,31 +552,39 @@ const de: Record<keyof typeof zhCN, string> = {
   "settings.networkSaved": "Netzwerkeinstellungen gespeichert. Sie gelten für die nächste Verbindung.",
   "settings.portInvalid": "Der Proxy-Port muss eine ganze Zahl von 1024 bis 65535 sein",
   "settings.tunStack": "TUN-Stack",
-  "settings.tunStackHelp": "Mixed verwendet den System-TCP-Stack mit einem UDP-Stack im Userspace und passt für nahezu jeden. Wechsle nur zu System oder gVisor, wenn eine Firewall oder ein Treiber TUN am Funktionieren hindert.",
+  "settings.tunStackHelp":
+    "Mixed verwendet den System-TCP-Stack mit einem UDP-Stack im Userspace und passt für nahezu jeden. Wechsle nur zu System oder gVisor, wenn eine Firewall oder ein Treiber TUN am Funktionieren hindert.",
   "settings.tunStackMixed": "Mixed",
   "settings.tunStackSystem": "System",
   "settings.tunMtu": "TUN-MTU",
-  "settings.tunMtuHelp": "Maximale Übertragungseinheit des virtuellen Adapters, von 1280 bis 9000; standardmäßig 1500. Ein höherer Wert steigert den Durchsatz, aber einige UDP-Anwendungen können instabil werden.",
+  "settings.tunMtuHelp":
+    "Maximale Übertragungseinheit des virtuellen Adapters, von 1280 bis 9000; standardmäßig 1500. Ein höherer Wert steigert den Durchsatz, aber einige UDP-Anwendungen können instabil werden.",
   "settings.tunStrictRoute": "Strikte Route",
-  "settings.tunStrictRouteHelp": "Verhindert, dass Datenverkehr und DNS am Tunnel vorbei austreten; sollte am besten aktiviert bleiben. Einige Netzwerke virtueller Maschinen und Container unter Windows funktionieren nur, wenn es deaktiviert ist.",
+  "settings.tunStrictRouteHelp":
+    "Verhindert, dass Datenverkehr und DNS am Tunnel vorbei austreten; sollte am besten aktiviert bleiben. Einige Netzwerke virtueller Maschinen und Container unter Windows funktionieren nur, wenn es deaktiviert ist.",
   "settings.tunIpv6": "IPv6-Adressen auflösen",
-  "settings.tunIpv6Help": "IPv6-Auflösung und -Verbindungen erlauben, wenn der Knoten IPv6 unterstützt. Sonst löst TUN nur IPv4 auf und verwirft erfassten IPv6-Verkehr. Direktregeln und Ausnahmen separat prüfen.",
+  "settings.tunIpv6Help":
+    "IPv6-Auflösung und -Verbindungen erlauben, wenn der Knoten IPv6 unterstützt. Sonst löst TUN nur IPv4 auf und verwirft erfassten IPv6-Verkehr. Direktregeln und Ausnahmen separat prüfen.",
   "settings.tunAutoRedirect": "nftables-Umleitung",
-  "settings.tunAutoRedirectHelp": "Leitet mit nftables statt nur mit Routing um: schneller und ohne Konflikt mit Docker-Bridges. Erfordert nftables auf diesem System.",
+  "settings.tunAutoRedirectHelp":
+    "Leitet mit nftables statt nur mit Routing um: schneller und ohne Konflikt mit Docker-Bridges. Erfordert nftables auf diesem System.",
   "settings.tunExclude": "Bypass-Adressen",
   "settings.dnsMode": "DNS-Modus",
-  "settings.dnsModeHelp": "Fake-IP lässt den Exit fremde Namen auflösen (robuster); echte Auflösung nutzt das DoH des Knotens.",
+  "settings.dnsModeHelp":
+    "Fake-IP lässt den Exit fremde Namen auflösen (robuster); echte Auflösung nutzt das DoH des Knotens.",
   "settings.dnsFakeip": "Fake-IP",
   "settings.dnsReal": "Echt",
   "settings.dnsDomestic": "Inländisches DNS",
   "settings.dnsRemote": "Remote-DNS",
   "settings.dnsLocal": "Automatisch (AliDNS DoH)",
-  "settings.tunExcludeHelp": "Diese Netzwerke bleiben vom virtuellen Adapter ausgenommen, eines pro Zeile, höchstens 64. An sie gesendeter Datenverkehr und DNS laufen nicht mehr durch den Tunnel.",
+  "settings.tunExcludeHelp":
+    "Diese Netzwerke bleiben vom virtuellen Adapter ausgenommen, eines pro Zeile, höchstens 64. An sie gesendeter Datenverkehr und DNS laufen nicht mehr durch den Tunnel.",
   "settings.tunStackInvalid": "Ungültiger TUN-Stack",
   "settings.tunMtuInvalid": "Die TUN-MTU muss eine ganze Zahl von 1280 bis 9000 sein",
   "settings.tunExcludeInvalid": "Bypass-Adressen müssen IP-Netzwerke wie 192.168.0.0/16 sein, höchstens 64",
   "settings.tunKillSwitch": "Kill-Switch",
-  "settings.tunKillSwitchHelp": "Wenn der Tunnel unerwartet abbricht, wird jeglicher Netzwerkzugriff blockiert, bis er wieder besteht oder du ihn freigibst, damit kein Datenverkehr direkt nach außen gelangt. Bypass-Adressen sind nicht betroffen. Experimentell und standardmäßig deaktiviert.",
+  "settings.tunKillSwitchHelp":
+    "Wenn der Tunnel unerwartet abbricht, wird jeglicher Netzwerkzugriff blockiert, bis er wieder besteht oder du ihn freigibst, damit kein Datenverkehr direkt nach außen gelangt. Bypass-Adressen sind nicht betroffen. Experimentell und standardmäßig deaktiviert.",
   "settings.manualProxy": "Manueller Proxy",
   "settings.appearanceLanguage": "Darstellung & Sprache",
   "settings.localAccess": "Lokaler Zugriff",
@@ -558,29 +612,37 @@ const de: Record<keyof typeof zhCN, string> = {
   "settings.updateDesktopOnly": "Suche nach Updates in der Desktop-App",
   "settings.viewHelp": "Hilfe anzeigen",
   "settings.about": "Über",
-  "settings.systemProxyCannotCaptureWebrtc": "Der Systemproxy kann WebRTC-UDP nicht erfassen. Verwende den TUN-Modus, um den UDP-Ausgang des Browsers zu schützen.",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "Der Systemproxy kann WebRTC-UDP nicht erfassen. Verwende den TUN-Modus, um den UDP-Ausgang des Browsers zu schützen.",
 
   "tun.tunService": "TUN-Dienst",
   "tun.tunServiceHasNotBeen": "Der TUN-Dienst wurde noch nicht geprüft",
   "tun.tunServiceIsAvailableIn": "Der TUN-Dienst ist nur in der Desktop-App verfügbar",
-  "tun.administratorAuthorizationIsRequiredOnce": "Eine Administratorberechtigung ist einmalig erforderlich. Der virtuelle Adapter wird beim Verbinden erstellt.",
+  "tun.administratorAuthorizationIsRequiredOnce":
+    "Eine Administratorberechtigung ist einmalig erforderlich. Der virtuelle Adapter wird beim Verbinden erstellt.",
   "tun.waitingForSystemAuthorization": "Warten auf Systemberechtigung…",
   "tun.repairService": "Dienst reparieren",
   "tun.authorizeInstallation": "Installation autorisieren",
   "tun.uninstallService": "Dienst deinstallieren",
   "tun.uninstallTunService": "TUN-Dienst deinstallieren?",
-  "tun.tunWillBeUnavailableSystem": "TUN wird nicht mehr verfügbar sein. System- und manueller Proxy-Modus bleiben verfügbar.",
+  "tun.tunWillBeUnavailableSystem":
+    "TUN wird nicht mehr verfügbar sein. System- und manueller Proxy-Modus bleiben verfügbar.",
   "tun.tunServiceInstalled": "TUN-Dienst installiert",
   "tun.tunServiceUninstalled": "TUN-Dienst deinstalliert",
-  "tun.tunServiceInstallationDidNot": "Die Installation des TUN-Diensts wurde nicht abgeschlossen. Öffne die Einstellungen für Details.",
-  "tun.tunServiceRemovalDidNot": "Das Entfernen des TUN-Diensts wurde nicht abgeschlossen. Öffne die Einstellungen für Details.",
+  "tun.tunServiceInstallationDidNot":
+    "Die Installation des TUN-Diensts wurde nicht abgeschlossen. Öffne die Einstellungen für Details.",
+  "tun.tunServiceRemovalDidNot":
+    "Das Entfernen des TUN-Diensts wurde nicht abgeschlossen. Öffne die Einstellungen für Details.",
   "tun.busy": "Es läuft bereits ein Dienstvorgang",
-  "tun.serviceOutdatedNotice": "Der TUN-Dienst ist nicht die aktuelle Version. Nutze „Dienst reparieren“ in den Einstellungen, um ihn zu aktualisieren.",
-  "tun.guardBlocking": "Der Tunnel ist abgebrochen und der Kill-Switch blockiert den Netzwerkzugriff. Verbinde dich neu oder gib ihn frei, um zu einer direkten Verbindung zurückzukehren.",
+  "tun.serviceOutdatedNotice":
+    "Der TUN-Dienst ist nicht die aktuelle Version. Nutze „Dienst reparieren“ in den Einstellungen, um ihn zu aktualisieren.",
+  "tun.guardBlocking":
+    "Der Tunnel ist abgebrochen und der Kill-Switch blockiert den Netzwerkzugriff. Verbinde dich neu oder gib ihn frei, um zu einer direkten Verbindung zurückzukehren.",
   "tun.guardRelease": "Freigeben und Netzwerk wiederherstellen",
 
   "shortcuts.enableGlobalShortcuts": "Globale Tastenkürzel aktivieren",
-  "shortcuts.worksWhenTheWindowIs": "Funktioniert, wenn das Fenster ausgeblendet ist. Lösche eine Belegung, um die Aktion zu deaktivieren.",
+  "shortcuts.worksWhenTheWindowIs":
+    "Funktioniert, wenn das Fenster ausgeblendet ist. Lösche eine Belegung, um die Aktion zu deaktivieren.",
   "shortcuts.pressAKeyCombination": "Tastenkombination drücken…",
   "shortcuts.notSet": "Nicht festgelegt",
   "shortcuts.clearShortcut": "Tastenkürzel löschen",
@@ -594,14 +656,18 @@ const de: Record<keyof typeof zhCN, string> = {
   "shortcuts.shortcutsAreDisabled": "Tastenkürzel sind deaktiviert",
   "shortcuts.globalShortcutsAreAvailableIn": "Globale Tastenkürzel sind nur in der Desktop-App verfügbar",
 
-  "notifications.systemNotificationFailedCheckSystem": "Systembenachrichtigung fehlgeschlagen. Prüfe die Systembenachrichtigungseinstellungen.",
-  "notifications.notificationSentIfItIs": "Benachrichtigung gesendet. Falls sie nicht sichtbar ist, prüfe die Benachrichtigungseinstellungen und „Nicht stören“.",
+  "notifications.systemNotificationFailedCheckSystem":
+    "Systembenachrichtigung fehlgeschlagen. Prüfe die Systembenachrichtigungseinstellungen.",
+  "notifications.notificationSentIfItIs":
+    "Benachrichtigung gesendet. Falls sie nicht sichtbar ist, prüfe die Benachrichtigungseinstellungen und „Nicht stören“.",
   "notifications.dismissNotification": "Benachrichtigung schließen",
   "notifications.systemNotifications": "Systembenachrichtigungen",
-  "notifications.connectionAndServiceUpdatesIn": "Verbindungs- und Dienst-Updates. In-App-Meldungen bleiben verfügbar, wenn deaktiviert.",
+  "notifications.connectionAndServiceUpdatesIn":
+    "Verbindungs- und Dienst-Updates. In-App-Meldungen bleiben verfügbar, wenn deaktiviert.",
   "notifications.testNotification": "Testbenachrichtigung",
   "notifications.allowAirportNotificationsInSystem": "Erlaube ClashNova-Benachrichtigungen in den Systemeinstellungen.",
-  "notifications.systemNotificationsAreDisabledOnly": "Systembenachrichtigungen sind deaktiviert; es wird nur eine In-App-Meldung angezeigt.",
+  "notifications.systemNotificationsAreDisabledOnly":
+    "Systembenachrichtigungen sind deaktiviert; es wird nur eine In-App-Meldung angezeigt.",
   "notifications.thisIsATestNotification": "Dies ist eine Testbenachrichtigung.",
   "notifications.proxyConnected": "Proxy verbunden",
   "notifications.proxyDisconnected": "Proxy getrennt",
@@ -626,7 +692,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "error.noNodesAdded": "Aus dem eingefügten Text konnten keine Knoten gelesen werden.",
   "error.rulesNotJson": "Die Regeln sind kein gültiges JSON.",
   "error.rulesNotArray": "Die Regeln müssen ein JSON-Array sein.",
-  "error.preferencesNotSaved": "Die Einstellungen konnten nicht gespeichert werden. Sie werden beim nächsten Mal möglicherweise nicht wiederhergestellt.",
+  "error.preferencesNotSaved":
+    "Die Einstellungen konnten nicht gespeichert werden. Sie werden beim nächsten Mal möglicherweise nicht wiederhergestellt.",
   "error.requestFailed": "Anfrage fehlgeschlagen",
   "error.signInFailed": "Anmeldung fehlgeschlagen",
   "error.subscriptionLoadFailed": "Das Abonnement konnte nicht geladen werden. Versuche es erneut.",
@@ -644,13 +711,17 @@ const de: Record<keyof typeof zhCN, string> = {
   "error.windowActionFailed": "Fensteraktion fehlgeschlagen: {error}",
   "error.network": "Der Server konnte nicht erreicht werden. Prüfe deine Netzwerkverbindung und versuche es erneut.",
   "error.subscriptionTooLarge": "Das Abonnement ist größer als 2 MiB",
-  "error.subscriptionNotSingBox": "Es werden nur sing-box-JSON-Abonnements unterstützt. Konvertiere Clash YAML zuerst zu sing-box.",
+  "error.subscriptionNotSingBox":
+    "Es werden nur sing-box-JSON-Abonnements unterstützt. Konvertiere Clash YAML zuerst zu sing-box.",
   "error.subscriptionNoOutbounds": "Das Abonnement hat keine sing-box-Outbounds",
   "error.subscriptionBadTags": "Die Outbound-Tags im Abonnement sind ungültig oder doppelt",
   "error.subscriptionNoNodes": "Das Abonnement hat keine nutzbaren Knoten. Prüfe sein Format oder die Serveradressen.",
-  "error.subscriptionTagDirect": "Das Abonnement verwendet den Tag „direct“, daher kann die Direct-Regel nicht erstellt werden",
-  "error.subscriptionTagSelect": "Das Abonnement verwendet den Tag „select“, daher kann der Knotenauswähler nicht erstellt werden",
-  "error.subscriptionTagAuto": "Das Abonnement verwendet den Tag für die automatische Auswahl. Bearbeite das Abonnement.",
+  "error.subscriptionTagDirect":
+    "Das Abonnement verwendet den Tag „direct“, daher kann die Direct-Regel nicht erstellt werden",
+  "error.subscriptionTagSelect":
+    "Das Abonnement verwendet den Tag „select“, daher kann der Knotenauswähler nicht erstellt werden",
+  "error.subscriptionTagAuto":
+    "Das Abonnement verwendet den Tag für die automatische Auswahl. Bearbeite das Abonnement.",
 
   "tray.open": "Fenster anzeigen",
   "tray.system": "Systemproxy",
@@ -710,11 +781,13 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.subscriptionUrlInvalid": "Ungültige Abonnement-URL",
   "native.subscriptionUrlNeedsHttps": "Verwende eine HTTPS-Abonnement-URL. HTTP ist nur für localhost erlaubt.",
   "native.subscriptionFetchFailed": "Das Abonnement konnte nicht abgerufen werden: {error}",
-  "native.subscriptionForbidden": "Der Abonnementserver hat 403 zurückgegeben und den Download verweigert. Prüfe, ob der Link im Browser funktioniert, oder bitte den Anbieter, die Beschränkung aufzuheben.",
+  "native.subscriptionForbidden":
+    "Der Abonnementserver hat 403 zurückgegeben und den Download verweigert. Prüfe, ob der Link im Browser funktioniert, oder bitte den Anbieter, die Beschränkung aufzuheben.",
   "native.subscriptionHttpStatus": "Abonnement-HTTP-Status {status}",
   "native.subscriptionRedirectInsecure": "Das Abonnement wurde auf eine unsichere Adresse umgeleitet",
   "native.subscriptionNotUtf8": "Das Abonnement ist kein UTF-8-Text",
-  "native.subscriptionConvertFailed": "Das Abonnement konnte nicht konvertiert werden. Prüfe das Clash-YAML- oder Share-Link-Format und die Knotenprotokolle.",
+  "native.subscriptionConvertFailed":
+    "Das Abonnement konnte nicht konvertiert werden. Prüfe das Clash-YAML- oder Share-Link-Format und die Knotenprotokolle.",
   "native.subscriptionNoNodes": "Das Abonnement hat keine nutzbaren Knoten",
   "native.subscriptionListInvalid": "Ungültiges Format der Abonnementliste",
   "native.converterRunFailed": "Der Abonnement-Konverter konnte nicht ausgeführt werden: {error}",
@@ -728,8 +801,10 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.configNoMixedInbound": "Die Konfiguration hat keinen Mixed-Proxy-Inbound",
   "native.configNoNodes": "Die Konfiguration hat keine Knoten",
   "native.cachePathInvalid": "Ungültiger Cache-Pfad",
-  "native.proxyPortUnavailable": "Proxy-Port {port} ist nicht verfügbar. Prüfe, ob er belegt ist oder eine Berechtigung benötigt.",
-  "native.networkSettingsInvalid": "Die Netzwerkeinstellungsdatei ist ungültig. Speichere sie in den Einstellungen erneut.",
+  "native.proxyPortUnavailable":
+    "Proxy-Port {port} ist nicht verfügbar. Prüfe, ob er belegt ist oder eine Berechtigung benötigt.",
+  "native.networkSettingsInvalid":
+    "Die Netzwerkeinstellungsdatei ist ungültig. Speichere sie in den Einstellungen erneut.",
   "native.networkSettingsReadFailed": "Die Netzwerkeinstellungen konnten nicht gelesen werden: {error}",
   "native.disconnectToChangeNetwork": "Trenne die Verbindung, bevor du die Netzwerkeinstellungen änderst",
   "native.logEntryTooLong": "Der Protokolleintrag ist zu lang",
@@ -744,7 +819,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.coreSpawnFailed": "sing-box konnte nicht gefunden oder gestartet werden: {error}",
   "native.coreStartFailed": "sing-box konnte nicht gestartet werden: {status}",
   "native.coreListenTimeout": "sing-box hat nicht innerhalb von 5 Sekunden begonnen, am lokalen Port zu lauschen",
-  "native.egressCheckFailed": "Die Konnektivitätsprüfung des Knotens ist fehlgeschlagen: {error}. Der Systemproxy wurde nicht geändert. Prüfe das Serverprotokoll und den Schlüssel des Knotens.",
+  "native.egressCheckFailed":
+    "Die Konnektivitätsprüfung des Knotens ist fehlgeschlagen: {error}. Der Systemproxy wurde nicht geändert. Prüfe das Serverprotokoll und den Schlüssel des Knotens.",
   "native.coreExitedReconnecting": "Der Kern wurde beendet. Verbindung wird wiederhergestellt…",
   "native.reconnectFailed": "Wiederverbinden fehlgeschlagen: {status}",
   "native.coreCrashed": "Der Kern wurde unerwartet beendet: {status}",
@@ -753,17 +829,23 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.trafficSecretFailed": "Für den lokalen Endpunkt konnten keine Anmeldedaten generiert werden",
   "native.systemProxyEnabled": "Der Systemproxy ist aktiviert",
   "native.systemProxyDisabled": "Der Systemproxy ist verfügbar und derzeit deaktiviert",
-  "native.otherProxyInUse": "Ein Systemproxy oder TUN ist bereits aktiv ({detail}). Schalte ihn aus und verbinde dann erneut. Der Systemproxy wurde nicht geändert.",
-  "native.systemProxyMismatch": "Der zurückgelesene Systemproxy stimmt nicht mit den beabsichtigten Einstellungen überein",
+  "native.otherProxyInUse":
+    "Ein Systemproxy oder TUN ist bereits aktiv ({detail}). Schalte ihn aus und verbinde dann erneut. Der Systemproxy wurde nicht geändert.",
+  "native.systemProxyMismatch":
+    "Der zurückgelesene Systemproxy stimmt nicht mit den beabsichtigten Einstellungen überein",
   "native.systemProxyApplyFailed": "Der Systemproxy konnte nicht gesetzt oder überprüft werden: {error}",
   "native.systemProxyEnableFailed": "Der Systemproxy konnte nicht aktiviert werden: {error}",
-  "native.systemProxyRestoreFailed": "Der Systemproxy konnte nicht wiederhergestellt werden. Der Wiederherstellungsdatensatz wurde behalten: {error}",
+  "native.systemProxyRestoreFailed":
+    "Der Systemproxy konnte nicht wiederhergestellt werden. Der Wiederherstellungsdatensatz wurde behalten: {error}",
   "native.proxyBackupReadFailed": "Die Proxy-Wiederherstellungsdatei konnte nicht gelesen werden: {error}",
   "native.proxyBackupInvalid": "Die Proxy-Wiederherstellungsdatei ist ungültig",
-  "native.proxyBackupPathUnknown": "Es konnte nicht bestimmt werden, wo die Systemproxy-Wiederherstellungsdatei abgelegt werden soll",
-  "native.authenticatedProxyInUse": "{service} verwendet einen authentifizierten Proxy. Nutze den manuellen Proxy-Modus, um dessen Einstellungen beizubehalten.",
+  "native.proxyBackupPathUnknown":
+    "Es konnte nicht bestimmt werden, wo die Systemproxy-Wiederherstellungsdatei abgelegt werden soll",
+  "native.authenticatedProxyInUse":
+    "{service} verwendet einen authentifizierten Proxy. Nutze den manuellen Proxy-Modus, um dessen Einstellungen beizubehalten.",
   "native.noNetworkServices": "Kein konfigurierbarer Netzwerkdienst gefunden",
-  "native.desktopNeedsManualProxy": "Nutze auf diesem Desktop den manuellen Proxy-Modus. Die automatische Systemproxy-Einrichtung unterstützt GNOME.",
+  "native.desktopNeedsManualProxy":
+    "Nutze auf diesem Desktop den manuellen Proxy-Modus. Die automatische Systemproxy-Einrichtung unterstützt GNOME.",
   "native.nodeAddressInvalid": "Ungültige Knotenadresse",
   "native.nodeResolveFailed": "Der Knoten konnte nicht aufgelöst werden: {error}",
   "native.nodeConnectTimeout": "Zeitüberschreitung beim Verbinden mit dem Knoten",
@@ -773,7 +855,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.probeCoreSpawnFailed": "Der Testkern konnte nicht gestartet werden",
   "native.probeConfigRejected": "Die Knotenkonfiguration wurde abgelehnt",
   "native.probeCoreStartTimeout": "Der Testdienst hat zu lange zum Starten gebraucht",
-  "native.probeTimedOut": "Zeitüberschreitung bei Handshake oder Anfrage. Wiederhole den Test oder versuche zu verbinden.",
+  "native.probeTimedOut":
+    "Zeitüberschreitung bei Handshake oder Anfrage. Wiederhole den Test oder versuche zu verbinden.",
   "native.probeFailed": "Test fehlgeschlagen: {error}",
   "native.openUnsupported": "Dieser Link kann nicht geöffnet werden",
   "native.openFailed": "Link konnte nicht geöffnet werden: {error}",
@@ -809,18 +892,21 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.connectionsListFailed": "Die Verbindungsliste konnte nicht gelesen werden",
   "native.connectionStateUnreadable": "Der Verbindungsstatus konnte nicht gelesen werden",
   "native.connectionIdInvalid": "Ungültige Verbindungs-ID",
-  "native.connectionSessionChangedRetry": "Die Verbindungssitzung hat sich geändert. Aktualisiere und versuche es erneut.",
+  "native.connectionSessionChangedRetry":
+    "Die Verbindungssitzung hat sich geändert. Aktualisiere und versuche es erneut.",
   "native.closeConnectionFailed": "Die Anfrage zum Schließen der Verbindung ist fehlgeschlagen",
   "native.closeConnectionRejected": "Der Kern hat das Schließen der Verbindung verweigert",
   "native.shortcutInvalid": "Ungültige Tastenkombination",
   "native.shortcutNeedsModifier": "Füge Ctrl, Alt oder Command/Win in das Tastenkürzel ein",
   "native.shortcutDuplicate": "Tastenkürzel-Belegungen müssen eindeutig sein",
-  "native.shortcutUnavailable": "Tastenkürzel {shortcut} ist belegt oder wird vom System nicht unterstützt. Wähle eine andere Kombination.",
+  "native.shortcutUnavailable":
+    "Tastenkürzel {shortcut} ist belegt oder wird vom System nicht unterstützt. Wähle eine andere Kombination.",
   "native.shortcutReleaseFailed": "Das vorherige Tastenkürzel konnte nicht freigegeben werden",
   "native.shortcutsBusy": "Die Tastenkürzel-Einstellungen sind ausgelastet",
   "native.shortcutsUnreadable": "Die Tastenkürzel konnten nicht gelesen werden",
   "native.shortcutsSaveFailed": "Die Tastenkürzel konnten nicht gespeichert werden",
-  "native.shortcutsRollbackFailed": "Die Tastenkürzel konnten nicht wiederhergestellt werden. Speichere die Einstellungen erneut oder starte den Client neu.",
+  "native.shortcutsRollbackFailed":
+    "Die Tastenkürzel konnten nicht wiederhergestellt werden. Speichere die Einstellungen erneut oder starte den Client neu.",
   "native.shortcutsConfigInvalid": "Die Tastenkürzel-Konfiguration ist ungültig. Speichere die Einstellungen erneut.",
   "native.shortcutsSettingsUnreadable": "Die Tastenkürzel-Einstellungen konnten nicht gelesen werden",
   "native.settingsDirUnavailable": "Der Einstellungsordner konnte nicht gelesen werden",
@@ -832,26 +918,33 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.tunInstallInProgress": "Die Dienstinstallation läuft",
   "native.disconnectToInstallTun": "Trenne die Verbindung, bevor du den TUN-Dienst installierst oder reparierst",
   "native.disconnectToUninstallTun": "Trenne die Verbindung, bevor du den Dienst deinstallierst",
-  "native.tunServiceInstalledNotStarted": "Der Dienst wurde installiert, aber nicht gestartet. Prüfe, ob Dienstport 47653 belegt ist, und repariere dann den Dienst.",
-  "native.tunServiceOperationIncomplete": "Der TUN-Dienstvorgang wurde nicht abgeschlossen: Die Autorisierung wurde möglicherweise abgebrochen oder die Installation des Systemdiensts ist fehlgeschlagen. Versuche es erneut und bestätige im System-Autorisierungsdialog.",
+  "native.tunServiceInstalledNotStarted":
+    "Der Dienst wurde installiert, aber nicht gestartet. Prüfe, ob Dienstport 47653 belegt ist, und repariere dann den Dienst.",
+  "native.tunServiceOperationIncomplete":
+    "Der TUN-Dienstvorgang wurde nicht abgeschlossen: Die Autorisierung wurde möglicherweise abgebrochen oder die Installation des Systemdiensts ist fehlgeschlagen. Versuche es erneut und bestätige im System-Autorisierungsdialog.",
   "native.elevationFailed": "Administratorrechte konnten nicht angefordert werden: {error}",
   "native.installPathControlChars": "Der Installationspfad enthält Steuerzeichen",
   "native.installPathInvalid": "Ungültiger Installationspfad",
   "native.windowsDirNotFound": "Das Windows-Systemverzeichnis konnte nicht gefunden werden",
   "native.tunNoFinalOutbound": "TUN hat keinen Standard-Outbound",
-  "native.tunCoreStartFailed": "Der TUN-Kern konnte nicht gestartet werden. Dieses Konto darf möglicherweise keinen virtuellen Netzwerkadapter erstellen. Prüfe die Systemautorisierung oder wechsle in den Systemproxy-Modus.",
+  "native.tunCoreStartFailed":
+    "Der TUN-Kern konnte nicht gestartet werden. Dieses Konto darf möglicherweise keinen virtuellen Netzwerkadapter erstellen. Prüfe die Systemautorisierung oder wechsle in den Systemproxy-Modus.",
   "native.tunCoreNotStarted": "Der TUN-Kern wurde nicht gestartet",
   "native.tunCoreStopped": "Der TUN-Kern wurde gestoppt",
-  "native.tunStopUnconfirmed": "Die TUN-Stoppanforderung wurde nicht bestätigt. Der Dienst stoppt, nachdem sein Heartbeat abläuft; prüfe gleich deine Netzwerkverbindung: {error}",
+  "native.tunStopUnconfirmed":
+    "Die TUN-Stoppanforderung wurde nicht bestätigt. Der Dienst stoppt, nachdem sein Heartbeat abläuft; prüfe gleich deine Netzwerkverbindung: {error}",
   "native.tunServiceNotRunning": "Der TUN-Dienst läuft nicht. Installiere oder repariere ihn.",
-  "native.tunDnsOverrideFailed": "Das System-DNS konnte nicht auf den Tunnel gerichtet werden ({error}); die vorherigen Einstellungen wurden wiederhergestellt.",
+  "native.tunDnsOverrideFailed":
+    "Das System-DNS konnte nicht auf den Tunnel gerichtet werden ({error}); die vorherigen Einstellungen wurden wiederhergestellt.",
   "native.tunDnsDeviceNotReady": "Das Tunnelgerät war nicht bereit, daher blieb das System-DNS unverändert.",
   "native.tunDnsRecordCorrupt": "Der DNS-Eintrag des TUN-Diensts ist beschädigt.",
   "native.tunServiceMismatch": "Die Antwort oder Version des TUN-Diensts stimmt nicht überein",
-  "native.tunServiceOutdated": "Der TUN-Dienst wurde von einer früheren Version der App installiert. Nutze „Dienst reparieren“, um ihn zu aktualisieren.",
+  "native.tunServiceOutdated":
+    "Der TUN-Dienst wurde von einer früheren Version der App installiert. Nutze „Dienst reparieren“, um ihn zu aktualisieren.",
   "native.tunDeviceOptionInvalid": "Ungültige TUN-Geräteoption: {option}",
   "native.tunGuardBlocking": "{error} (der Kill-Switch blockiert den Netzwerkzugriff)",
-  "native.tunGuardReleaseFailed": "Der Kill-Switch konnte das Netzwerk nicht wiederherstellen. Der Dienst versucht es weiter; du kannst auch den TUN-Dienst reparieren.",
+  "native.tunGuardReleaseFailed":
+    "Der Kill-Switch konnte das Netzwerk nicht wiederherstellen. Der Dienst versucht es weiter; du kannst auch den TUN-Dienst reparieren.",
   "native.tunAuthFailed": "Die Authentifizierung des TUN-Diensts ist fehlgeschlagen. Repariere den Dienst.",
   "native.tunCredentialsInvalid": "Ungültige Dienst-Anmeldedaten",
   "native.tunRequestTooLarge": "Die TUN-Anfrage ist zu groß",
@@ -866,7 +959,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.tunConfigCheckTimeout": "Die Prüfung der TUN-Konfiguration hat das Zeitlimit überschritten",
   "native.tunConfigInvalid": "Ungültige Konfiguration",
   "native.tunConfigTooDeep": "Die Konfiguration ist zu tief verschachtelt",
-  "native.tunConfigForbiddenOption": "Abonnement-Konfigurationen dürfen nicht auf lokale Dateien zugreifen oder Erweiterungen ausführen: {option}",
+  "native.tunConfigForbiddenOption":
+    "Abonnement-Konfigurationen dürfen nicht auf lokale Dateien zugreifen oder Erweiterungen ausführen: {option}",
   "native.tunConfigUnsupportedTopLevel": "Die TUN-Konfiguration enthält nicht unterstützte Optionen auf oberster Ebene",
   "native.tunControllerMissing": "Der Controller-Endpunkt fehlt",
   "native.tunControllerAddressInvalid": "Ungültige Controller-Adresse",
@@ -884,7 +978,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "native.tunDnsPathInvalid": "Ungültiger DNS-Pfad",
   "chain.title": "Proxy-Kette",
   "chain.clear": "Leeren",
-  "chain.hint": "Leitet den Verkehr der Reihe nach über mehrere Knoten. Die Latenz summiert sich, und fällt ein Knoten aus, bricht die ganze Kette ab.",
+  "chain.hint":
+    "Leitet den Verkehr der Reihe nach über mehrere Knoten. Die Latenz summiert sich, und fällt ein Knoten aus, bricht die ganze Kette ab.",
   "chain.emptyHint": "Füge mindestens zwei Knoten hinzu (Eingang → Ausgang).",
   "chain.device": "Gerät",
   "chain.target": "Ziel",
@@ -913,15 +1008,19 @@ const de: Record<keyof typeof zhCN, string> = {
   "secnet.title": "Netzwerksicherheit",
   "secnet.subtitle": "DNS, IPv6 und Richtlinien zum Schutz der Netzwerkverbindung verwalten",
   "secnet.killSwitch": "Kill-Switch",
-  "secnet.killSwitchHint": "Verhindert, dass geschützter Datenverkehr beim Abbruch des Proxys direkt austritt; erfordert Unterstützung auf Systemebene",
+  "secnet.killSwitchHint":
+    "Verhindert, dass geschützter Datenverkehr beim Abbruch des Proxys direkt austritt; erfordert Unterstützung auf Systemebene",
   "secnet.killSwitchActive": "Kill-Switch aktiv – das Netzwerk wird gesperrt, falls der Tunnel abbricht",
-  "secnet.killSwitchInactive": "Der Kill-Switch konnte nicht aktiviert werden – neu verbinden, um diese Sitzung zu schützen",
+  "secnet.killSwitchInactive":
+    "Der Kill-Switch konnte nicht aktiviert werden – neu verbinden, um diese Sitzung zu schützen",
   "secnet.killSwitchTunOnly": "Der Kill-Switch ist nur im TUN-Modus verfügbar",
   "secnet.repair": "Netzwerkreparatur",
-  "secnet.repairHint": "Setzt den Systemproxy mit einem Klick zurück, wenn das Netzwerk nach einem Proxy-Fehler oder -Wechsel nicht mehr funktioniert",
+  "secnet.repairHint":
+    "Setzt den Systemproxy mit einem Klick zurück, wenn das Netzwerk nach einem Proxy-Fehler oder -Wechsel nicht mehr funktioniert",
   "secnet.repairOpen": "Reparieren",
   "secnet.repairTitle": "Netzwerkreparatur",
-  "secnet.repairDesc": "Die Ein-Klick-Reparatur synchronisiert den Systemproxy neu und aktualisiert die Netzwerkdiagnose, um fehlenden Internetzugang nach einem Proxy-Absturz oder Moduswechsel zu beheben.",
+  "secnet.repairDesc":
+    "Die Ein-Klick-Reparatur synchronisiert den Systemproxy neu und aktualisiert die Netzwerkdiagnose, um fehlenden Internetzugang nach einem Proxy-Absturz oder Moduswechsel zu beheben.",
   "secnet.repairRun": "Ein-Klick-Reparatur",
   "secnet.repairDesktopOnly": "Die Netzwerkreparatur ist nur in der Desktop-App verfügbar.",
   "secnet.repairRecheck": "Erneut prüfen",
@@ -947,7 +1046,13 @@ const de: Record<keyof typeof zhCN, string> = {
   "speed.start": "Test starten",
   "speed.testing": "Wird getestet…",
   "speed.retest": "Erneut testen",
-  "speed.hint": "Misst die reale Download-Bandbreite über den aktuellen Knoten (bis zu ~100 MB).",
+  "speed.hint": "Misst nacheinander die reale Download- und Upload-Bandbreite über den aktuellen Knoten.",
+  "speed.warn":
+    "Der Test lädt Daten über den aktuellen Knoten herunter und hoch; schnellere Verbindungen verbrauchen mehr.",
+  "speed.colSpeed": "Tempo",
+  "speed.colCost": "Verbrauch",
+  "speed.testingDownload": "Download wird gemessen…",
+  "speed.testingUpload": "Upload wird gemessen…",
   "check.healthHint": "Aktuelles Netzwerk und den Proxy prüfen",
   "check.start": "Prüfung starten",
   "check.again": "Erneut prüfen",
@@ -960,9 +1065,11 @@ const de: Record<keyof typeof zhCN, string> = {
   "check.dnsLeak": "DNS-Leak-Prüfung",
   "check.dnsLeakHint": "Prüft den Erfassungsmodus, nicht die tatsächlich verwendeten DNS-Server.",
   "check.ipv6Leak": "IPv6-Leak-Prüfung",
-  "check.ipv6LeakHint": "Vergleicht IPv6-Ausgänge über Betriebssystem und lokalen Proxy. Fehlende Ergebnisse können fehlendes IPv6 oder einen Testfehler bedeuten. Unterschiedliche Ausgänge sind allein kein Lecknachweis.",
+  "check.ipv6LeakHint":
+    "Vergleicht IPv6-Ausgänge über Betriebssystem und lokalen Proxy. Fehlende Ergebnisse können fehlendes IPv6 oder einen Testfehler bedeuten. Unterschiedliche Ausgänge sind allein kein Lecknachweis.",
   "check.webrtcLeak": "WebRTC-Leak-Prüfung",
-  "check.webrtcLeakHint": "Vergleicht WebRTC mit dem Proxy-Ausgang. Ein Unterschied allein beweist kein Leck. Kein Kandidat bedeutet keine Entwarnung.",
+  "check.webrtcLeakHint":
+    "Vergleicht WebRTC mit dem Proxy-Ausgang. Ein Unterschied allein beweist kein Leck. Kein Kandidat bedeutet keine Entwarnung.",
   "check.localOk": "Erreichbar",
   "check.localFail": "Kein Internetzugang",
   "check.proxyOff": "Nicht verbunden",
@@ -982,7 +1089,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "check.webrtcDifferent": "Anderer UDP-Ausgang: {ip}",
   "check.webrtcUnverified": "Öffentliche Adresse {ip}; Ausgang ungeprüft",
   "check.privacyRepair": "Zu TUN wechseln und prüfen",
-  "check.privacyRepairHint": "Der Systemproxy erfasst nicht alle DNS- und WebRTC-UDP-Anfragen. TUN verbindet neu und wiederholt die Prüfung.",
+  "check.privacyRepairHint":
+    "Der Systemproxy erfasst nicht alle DNS- und WebRTC-UDP-Anfragen. TUN verbindet neu und wiederholt die Prüfung.",
   "check.webrtcOff": "Hier nicht verfügbar",
   "check.webrtcNone": "Kein öffentlicher Kandidat; unklar",
   "check.webrtcLan": "Nur eine lokale Adresse",
@@ -1037,8 +1145,10 @@ const de: Record<keyof typeof zhCN, string> = {
   "unlock.wikipedia": "Wikipedia",
   "unlock.reddit": "Reddit",
   "native.appPolicyInvalid": "Ungültige Anwendungsrichtlinie.",
-  "native.appPolicyUnavailable": "Der Kern konnte die Änderung nicht bestätigen. Mit dem aktualisierten Client neu verbinden und erneut versuchen.",
-  "native.appPolicyRestoreFailed": "Richtlinie konnte nicht wiederhergestellt werden. Trennen, Speicher prüfen und neu verbinden.",
+  "native.appPolicyUnavailable":
+    "Der Kern konnte die Änderung nicht bestätigen. Mit dem aktualisierten Client neu verbinden und erneut versuchen.",
+  "native.appPolicyRestoreFailed":
+    "Richtlinie konnte nicht wiederhergestellt werden. Trennen, Speicher prüfen und neu verbinden.",
 
   "connections.detailTitle": "Verbindungsdetails",
   "connections.detailGeneral": "Übersicht",
@@ -1046,6 +1156,8 @@ const de: Record<keyof typeof zhCN, string> = {
   "connections.detailStatus": "Status",
   "connections.detailNetwork": "Protokoll",
   "connections.detailInbound": "Eingang",
+  "connections.detailType": "Typ",
+  "connections.closeConnection": "Verbindung schließen",
   "connections.detailSource": "Quelladresse",
   "connections.detailDestination": "Zieladresse",
   "connections.detailStarted": "Gestartet am",
@@ -1078,13 +1190,14 @@ const de: Record<keyof typeof zhCN, string> = {
   "lan.peerOffline": "Offline",
 
   "native.lanFileUnavailable": "Die Datei fehlt oder der ältere Eintrag enthält keinen lokalen Pfad.",
-  "native.lanSaveDirectoryFailed": "Dieser Ordner kann nicht gespeichert werden. Wähle einen vorhandenen beschreibbaren Ordner.",
+  "native.lanSaveDirectoryFailed":
+    "Dieser Ordner kann nicht gespeichert werden. Wähle einen vorhandenen beschreibbaren Ordner.",
   "settings.lanSaveDirectory": "Speicherort für Dateien",
-  "settings.lanSaveDirectoryHint": "Gilt für neue eingehende Übertragungen. Vorhandene Dateien werden nicht verschoben.",
+  "settings.lanSaveDirectoryHint":
+    "Gilt für neue eingehende Übertragungen. Vorhandene Dateien werden nicht verschoben.",
   "settings.lanDirectoryLoading": "Wird geladen…",
   "settings.lanDefaultDirectory": "Download-Ordner des Systems",
   "settings.lanChooseDirectory": "Ordner wählen",
   "settings.lanDirectorySaved": "Speicherort aktualisiert",
-
 };
 export default de;

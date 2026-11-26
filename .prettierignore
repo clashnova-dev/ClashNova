@@ -1,0 +1,8 @@
+# 构建产物 / 依赖 / 生成物,不格式化
+dist
+node_modules
+src-tauri/target
+src-tauri/gen
+lan-service/target
+pnpm-lock.yaml
+*.min.*

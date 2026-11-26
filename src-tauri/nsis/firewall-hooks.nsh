@@ -9,7 +9,7 @@
 ; mode serves its inbound from the privileged service's own core copy, so LAN use
 ; of TUN mode is not covered here.
 ;
-; Separately, LAN file transfer (airport-lan) runs inside the main app process
+; Separately, LAN file transfer (lan-service) runs inside the main app process
 ; (ClashNova.exe): it listens on UDP 53317 for multicast discovery and HTTP/HTTPS
 ; 53317 for transfers. Windows Firewall blocks that inbound by default too, so
 ; without an allow rule peers can neither discover nor send to this machine. We add

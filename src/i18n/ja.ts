@@ -2,7 +2,8 @@ import type zhCN from "./zh-CN.ts";
 
 const ja: Record<keyof typeof zhCN, string> = {
   "confirmation.portTitle": "ポート使用中",
-  "confirmation.portBody": "ポート {port} は以下のプロセスが使用しています。終了するとアプリや接続が中断される場合があります。ポートを解放して接続しますか？",
+  "confirmation.portBody":
+    "ポート {port} は以下のプロセスが使用しています。終了するとアプリや接続が中断される場合があります。ポートを解放して接続しますか？",
   "confirmation.portRelease": "終了して接続",
   "native.portOwnerUnknown": "ポート {port} のプロセスを特定できません。手動で終了するかポートを変更してください。",
   "native.portOwnerProtected": "ポート {port} は保護されたプロセスが使用しています。別のポートを選んでください。",
@@ -19,6 +20,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "rules.search": "内容・種類・転送先を検索",
   "rules.source": "ソース",
   "rules.edit": "ルールを編集",
+  "rules.chinaGeosite": "中国サイトを直結 (geosite)",
+  "rules.adBlock": "広告をブロック (geosite)",
   "rules.fieldType": "ルールタイプ",
   "rules.fieldContent": "ルール内容",
   "rules.fieldPolicy": "プロキシポリシー",
@@ -41,7 +44,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "rules.policyProxy": "プロキシ",
   "rules.policyReject": "ブロック",
   "common.edit": "編集",
-  "rules.editHint": "この購読自身のルーティングルール（sing-box ルール配列）を編集します。内蔵の中国/LAN 直結やアプリポリシーは含まれません。",
+  "rules.editHint":
+    "この購読自身のルーティングルール（sing-box ルール配列）を編集します。内蔵の中国/LAN 直結やアプリポリシーは含まれません。",
   "rules.type": "種類",
   "rules.content": "条件",
   "rules.target": "転送先",
@@ -58,43 +62,56 @@ const ja: Record<keyof typeof zhCN, string> = {
   "rules.pageOf": "{page} / {pages} ページ",
 
   "check.webrtcTimeout": "タイムアウト・未確認",
-  "check.reconnectConfirm": "現在の設定を再適用します。接続中は一度切断して再接続します。システム DNS や他のプロキシアプリは変更しません。",
-  "check.proxyScope": "システム／手動プロキシは対応アプリのみ対象です。DNS、IPv6、WebRTC UDP は直接接続する場合があります。TUN に切り替えて再確認してください。",
-  "check.tunScope": "TUN は DNS と IPv6 を取得し、STUN をプロキシ経由にします。直接接続ルールと除外経路は有効です。設定だけで漏えいがないとは判断できません。",
+  "check.reconnectConfirm":
+    "現在の設定を再適用します。接続中は一度切断して再接続します。システム DNS や他のプロキシアプリは変更しません。",
+  "check.proxyScope":
+    "システム／手動プロキシは対応アプリのみ対象です。DNS、IPv6、WebRTC UDP は直接接続する場合があります。TUN に切り替えて再確認してください。",
+  "check.tunScope":
+    "TUN は DNS と IPv6 を取得し、STUN をプロキシ経由にします。直接接続ルールと除外経路は有効です。設定だけで漏えいがないとは判断できません。",
   "check.dnsConfiguration": "DNS 設定",
   "check.routeExceptions": "除外経路：{count} 件",
-  "check.webviewScope": "WebRTC の結果はこのアプリの WebView のみ対象です。使用するブラウザーでも DNS と WebRTC を確認してください。タイムアウトや候補なしは安全の証明ではありません。",
+  "check.webviewScope":
+    "WebRTC の結果はこのアプリの WebView のみ対象です。使用するブラウザーでも DNS と WebRTC を確認してください。タイムアウトや候補なしは安全の証明ではありません。",
   "check.browserChecks": "ブラウザーで検証",
   "check.checkedAt": "確認日時：{time}",
   "recovery.intentWriteFailed": "接続復旧状態を保存できませんでした：{error}",
   "recovery.coreScheduled": "コアが終了しました。{seconds} 秒後に {attempt} 回目の復旧を試みます：{error}",
-  "recovery.coreExhausted": "復旧が繰り返し失敗したため、自動再試行を停止しました。ログを確認して手動で接続してください：{error}",
+  "recovery.coreExhausted":
+    "復旧が繰り返し失敗したため、自動再試行を停止しました。ログを確認して手動で接続してください：{error}",
   "recovery.cleanupBlocked": "古いコアの停止を確認できません。競合を避けるため復旧を一時停止しました：{error}",
   "recovery.supervisorFailed": "クライアントの監視を開始できませんでした：{error}",
   "recovery.restoring": "異常終了から復旧しました。再接続中…",
-  "recovery.profileUnavailable": "クライアントを再起動しましたが、復旧するサブスクリプションまたはノードがありません。手動で接続してください。",
-  "recovery.tunUnavailable": "クライアントを再起動しましたが、TUN サービスの準備ができていません。設定を確認して手動で接続してください。",
+  "recovery.profileUnavailable":
+    "クライアントを再起動しましたが、復旧するサブスクリプションまたはノードがありません。手動で接続してください。",
+  "recovery.tunUnavailable":
+    "クライアントを再起動しましたが、TUN サービスの準備ができていません。設定を確認して手動で接続してください。",
 
   "confirmation.continue": "続ける",
   "confirmation.removeTitle": "サブスクリプションを削除しますか？",
   "confirmation.removeBody": "保存済みの「{name}」と設定を削除します。再利用するには再インポートが必要です。",
-  "confirmation.activeSubscription": "使用中のサブスクリプションです。削除すると接続を切断し、現在のノードを消去します。",
+  "confirmation.activeSubscription":
+    "使用中のサブスクリプションです。削除すると接続を切断し、現在のノードを消去します。",
   "confirmation.exposeTitle": "サブスクリプション情報を共有しますか？",
-  "confirmation.exposeBody": "リンクと QR コードには接続情報が含まれます。第三者に通信量を使われる可能性があるため、信頼できる端末にのみ共有してください。",
+  "confirmation.exposeBody":
+    "リンクと QR コードには接続情報が含まれます。第三者に通信量を使われる可能性があるため、信頼できる端末にのみ共有してください。",
   "confirmation.switchTitle": "サブスクリプションを切り替えますか？",
   "confirmation.switchBody": "「{name}」に切り替えると現在の接続を切断します。",
   "confirmation.refreshTitle": "現在のサブスクリプションを更新しますか？",
   "confirmation.refreshBody": "更新すると現在の設定が置き換わり、接続が中断される場合があります。",
   "confirmation.networkTitle": "ネットワーク設定を保存しますか？",
-  "confirmation.networkBody": "プロキシポート、LAN、DNS、TUN の変更は次の接続時に反映されます。内容を確認して保存してください。",
-  "confirmation.lanWarning": "同じ LAN の端末がプロキシにアクセスできます。信頼できるネットワークでのみ有効にしてください。",
+  "confirmation.networkBody":
+    "プロキシポート、LAN、DNS、TUN の変更は次の接続時に反映されます。内容を確認して保存してください。",
+  "confirmation.lanWarning":
+    "同じ LAN の端末がプロキシにアクセスできます。信頼できるネットワークでのみ有効にしてください。",
   "confirmation.guardWarning": "キルスイッチが無効になります。トンネル切断時に直接接続する可能性があります。",
   "confirmation.routeWarning": "ルーティング除外範囲を確認してください。除外された通信は直接接続されます。",
   "confirmation.proxyTitle": "プロキシ方式を変更しますか？",
-  "confirmation.proxyBody": "システムプロキシまたは仮想アダプターを変更し、通信が一時中断する場合があります。TUN 未インストール時はシステム認証を求めます。",
+  "confirmation.proxyBody":
+    "システムプロキシまたは仮想アダプターを変更し、通信が一時中断する場合があります。TUN 未インストール時はシステム認証を求めます。",
   "confirmation.routingTitle": "ルーティングモードを変更しますか？",
   "confirmation.routingBody": "モード変更で設定を再読み込みするため、既存の接続が一時中断する場合があります。",
-  "confirmation.installBody": "TUN 仮想アダプターを管理するため、管理者認証が必要なバックグラウンドネットワークサービスをインストールします。",
+  "confirmation.installBody":
+    "TUN 仮想アダプターを管理するため、管理者認証が必要なバックグラウンドネットワークサービスをインストールします。",
   "confirmation.repairBody": "バックグラウンドサービスとプロキシコアを更新します。管理者認証が必要です。",
   "confirmation.updateTitle": "インストールして再起動しますか？",
   "confirmation.updateBody": "{version} をインストールして再起動します。現在のプロキシ接続は切断されます。",
@@ -231,8 +248,10 @@ const ja: Record<keyof typeof zhCN, string> = {
   "app.importing": "インポートしています…",
   "app.importUse": "インポートして使用",
   "deepLink.importTitle": "サブスクリプションのインポートを確認",
-  "deepLink.importBody": "ウェブページがサブスクリプションのインポートを要求しています。確認後に一度だけコードを使い、キャンセルすると破棄します。",
-  "deepLink.importUrlBody": "リンクからこのサブスクリプションのインポートが要求されました。信頼できる提供元のものだけをインポートしてください。",
+  "deepLink.importBody":
+    "ウェブページがサブスクリプションのインポートを要求しています。確認後に一度だけコードを使い、キャンセルすると破棄します。",
+  "deepLink.importUrlBody":
+    "リンクからこのサブスクリプションのインポートが要求されました。信頼できる提供元のものだけをインポートしてください。",
   "deepLink.confirmImport": "インポート",
   "deepLink.rejected": "このリンクは使用できません",
   "deepLink.importFailed": "サブスクリプションはインポートされませんでした",
@@ -289,8 +308,10 @@ const ja: Record<keyof typeof zhCN, string> = {
   "nodes.checksEvery3MinutesAnd": "3 分ごとに測定し、低遅延のノードを選びます",
   "nodes.autoSwitch": "自動切り替え",
   "nodes.testedAfterConnect": "接続後に測定します",
-  "nodes.requestTimeAfterConnectionSetup": "接続確立後のリクエスト時間です。初回接続は {delay} ms。ダウンロード帯域ではありません。",
-  "nodes.firstConnectionMsSecondTest": "初回接続 {delay} ms、2 回目の測定は未完了です。ダウンロード帯域ではありません。",
+  "nodes.requestTimeAfterConnectionSetup":
+    "接続確立後のリクエスト時間です。初回接続は {delay} ms。ダウンロード帯域ではありません。",
+  "nodes.firstConnectionMsSecondTest":
+    "初回接続 {delay} ms、2 回目の測定は未完了です。ダウンロード帯域ではありません。",
   "nodes.notSelected": "未選択",
   "nodes.test": "測定",
   "nodes.all": "すべてのノード",
@@ -307,7 +328,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "nodes.testing": "測定中…",
   "nodes.timedOut": "タイムアウト / 失敗",
   "nodes.notTested": "未測定",
-  "nodes.requestLatencyThroughTheNode": "ノード経由のリクエスト遅延です。値が小さいほど高速で、ダウンロード帯域ではありません。",
+  "nodes.requestLatencyThroughTheNode":
+    "ノード経由のリクエスト遅延です。値が小さいほど高速で、ダウンロード帯域ではありません。",
   "nodes.thisSubscriptionHasNoAvailable": "このサブスクリプションには利用できるノードがありません。",
   "nodes.manageSubscriptions": "サブスクリプションを管理",
   "nodes.searchNodes": "ノードを検索",
@@ -326,7 +348,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "nodes.notReady": "このノードはオフラインか、設定が準備できていません。",
   "nodes.customRegion": "カスタム",
 
-  "subscriptions.updatedRestartForUsage": "サブスクリプションを更新しました。使用量を読み込むには、更新後のアプリを再起動してください。",
+  "subscriptions.updatedRestartForUsage":
+    "サブスクリプションを更新しました。使用量を読み込むには、更新後のアプリを再起動してください。",
   "subscriptions.updatedAt": "更新日時",
   "subscriptions.expiresAt": "有効期限",
   "subscriptions.expired": "期限切れ",
@@ -347,14 +370,16 @@ const ja: Record<keyof typeof zhCN, string> = {
   "subscriptions.removeSubscription": "サブスクリプションを削除",
   "subscriptions.editTitle": "ファイルを編集",
   "subscriptions.editHint": "「{name}」の設定を直接編集します。保存すると即時反映されます。",
-  "subscriptions.editRemoteHint": "「{name}」の設定を編集します。この購読には更新元があり、更新するとローカルの変更は上書きされます。",
+  "subscriptions.editRemoteHint":
+    "「{name}」の設定を編集します。この購読には更新元があり、更新するとローカルの変更は上書きされます。",
   "subscriptions.editNamed": "{name} を編集",
   "subscriptions.editPaste": "クリップボードから貼り付け",
   "subscriptions.editFormat": "整形",
   "subscriptions.editExpand": "全画面",
   "subscriptions.editCollapse": "全画面を終了",
   "subscriptions.editInfoTitle": "情報を編集",
-  "subscriptions.editInfoHint": "名前の変更は即時反映されます。ソース URL を変更すると購読を再取得してノードを入れ替えます。",
+  "subscriptions.editInfoHint":
+    "名前の変更は即時反映されます。ソース URL を変更すると購読を再取得してノードを入れ替えます。",
   "subscriptions.editNodesTitle": "ノードを編集",
   "subscriptions.editNodesAdvanced": "詳細",
   "subscriptions.editNodesPaste": "複数の URI は改行で区切ってください（Base64 対応）",
@@ -363,13 +388,15 @@ const ja: Record<keyof typeof zhCN, string> = {
   "subscriptions.deleteNode": "ノードを削除",
   "subscriptions.editNodesEmpty": "ノードがありません",
   "subscriptions.editNodesCount": "ノード {count} 個",
-  "subscriptions.pasteASubscriptionUrlOr": "サブスクリプション URL を貼り付けるか、ローカルファイルをインポートします。",
+  "subscriptions.pasteASubscriptionUrlOr":
+    "サブスクリプション URL を貼り付けるか、ローカルファイルをインポートします。",
   "subscriptions.copySubscriptionUrl": "サブスクリプション URL をコピー",
   "subscriptions.shareSubscription": "サブスクリプションを共有",
   "subscriptions.shareQrHint": "スマホでこのコードをスキャンすると、このサブスクリプションを取り込めます。",
   "subscriptions.count": "{count} 件のサブスクリプション",
   "subscriptions.usedTraffic": "使用した通信量",
-  "subscriptions.restored": "サブスクリプションと選択したノードを復元しました。「接続」をクリックして開始するか、サブスクリプションで更新してください。",
+  "subscriptions.restored":
+    "サブスクリプションと選択したノードを復元しました。「接続」をクリックして開始するか、サブスクリプションで更新してください。",
   "subscriptions.nonePurchase": "有効なサブスクリプションがありません。先にプランを購入してください。",
   "subscriptions.urlCopied": "サブスクリプション URL をコピーしました。他人に教えないでください。",
   "subscriptions.addPrompt": "サブスクリプション URL を追加するか、ローカルファイルをインポートします",
@@ -379,7 +406,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "subscriptions.imported": "サブスクリプションをインポートしました",
   "subscriptions.importFirst": "先にサブスクリプションをインポートし、ノードを選択してください",
   "subscriptions.selectedNodeMissing": "選択したノードが見つかりません。サブスクリプションを更新してください。",
-  "subscriptions.noReadyNodes": "利用できるノードがありません。管理者にノードの稼働状況と設定を確認してもらってください。",
+  "subscriptions.noReadyNodes":
+    "利用できるノードがありません。管理者にノードの稼働状況と設定を確認してもらってください。",
 
   "connections.unknownPolicyHint": "プロセスを識別できないため、アプリのポリシーは設定できません。",
   "connections.caseSensitive": "大文字と小文字を区別",
@@ -434,7 +462,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "connections.noActiveConnections": "アクティブな接続はありません",
   "connections.connectToSeeNetworkRequests": "接続するとネットワークリクエストが表示されます",
   "connections.closeAllConnections": "すべての接続を閉じる",
-  "connections.activeDownloadsAndRequestsWill": "進行中のダウンロードやリクエストは中断されます。アプリケーションが自動的に再接続する場合があります。",
+  "connections.activeDownloadsAndRequestsWill":
+    "進行中のダウンロードやリクエストは中断されます。アプリケーションが自動的に再接続する場合があります。",
   "connections.unableToLoadConnectionsMake": "接続を読み込めません。更新後のアプリを再起動したか確認してください。",
   "connections.connectionMonitoringIsAvailableIn": "接続モニタリングはデスクトップアプリでのみ利用できます",
 
@@ -462,7 +491,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "logs.paused": "一時停止中",
   "logs.live": "リアルタイム",
   "logs.shown": "{count} / {total} 件",
-  "logs.windowHint": "現在のセッションの最近のログのみ表示します。完全なファイル履歴ではありません。一時停止中もファイルへの記録は続きます。",
+  "logs.windowHint":
+    "現在のセッションの最近のログのみ表示します。完全なファイル履歴ではありません。一時停止中もファイルへの記録は続きます。",
   "logs.followLatest": "最新を追跡",
   "logs.scrollBottom": "最下部へ",
   "logs.detail": "ログの詳細",
@@ -476,7 +506,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.showLiveSpeed": "リアルタイム速度を表示",
   "settings.testConcurrency": "テスト同時実行数",
   "settings.testConcurrencyHelp": "同時に遅延テストするノード数。ノードが多い場合は上げると速くなります（1～64）。",
-  "settings.showUploadAndDownloadSpeed": "トレイアイコンの横にアップロード・ダウンロード速度を表示します。Windows ではツールチップとメニューに表示します。",
+  "settings.showUploadAndDownloadSpeed":
+    "トレイアイコンの横にアップロード・ダウンロード速度を表示します。Windows ではツールチップとメニューに表示します。",
   "settings.systemProxyCheck": "システムプロキシの確認",
   "settings.checkAgain": "再確認",
   "settings.checkingSystemProxy": "システムプロキシを確認しています…",
@@ -492,7 +523,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.copyLanAddress": "LAN アドレス {address} をコピー",
   "settings.lanCopied": "アドレスをコピーしました",
   "settings.lanLoading": "LAN アドレスを取得中…",
-  "settings.allowOtherDevicesOnYour": "同じローカルネットワーク上の他のデバイスがこのプロキシを使えるようにします。信頼できるネットワークでのみ有効にしてください。",
+  "settings.allowOtherDevicesOnYour":
+    "同じローカルネットワーク上の他のデバイスがこのプロキシを使えるようにします。信頼できるネットワークでのみ有効にしてください。",
   "settings.proxyPort": "プロキシポート",
   "settings.sharedHttpAndSocksPort": "HTTP と SOCKS が共用するポート（1024〜65535）。",
   "settings.disconnectToChangeNetworkSettings": "ネットワーク設定を変更するには切断してください",
@@ -506,17 +538,22 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.networkSaved": "ネットワーク設定を保存しました。次回の接続から適用されます。",
   "settings.portInvalid": "プロキシポートは 1024〜65535 の整数で指定してください",
   "settings.tunStack": "TUN スタック",
-  "settings.tunStackHelp": "Mixed はシステムの TCP スタックとユーザー空間の UDP スタックを組み合わせ、ほとんどの環境に適しています。ファイアウォールやドライバーが原因で TUN が動作しない場合のみ、System または gVisor に切り替えてください。",
+  "settings.tunStackHelp":
+    "Mixed はシステムの TCP スタックとユーザー空間の UDP スタックを組み合わせ、ほとんどの環境に適しています。ファイアウォールやドライバーが原因で TUN が動作しない場合のみ、System または gVisor に切り替えてください。",
   "settings.tunStackMixed": "Mixed",
   "settings.tunStackSystem": "System",
   "settings.tunMtu": "TUN MTU",
-  "settings.tunMtuHelp": "仮想アダプターの最大転送単位（1280〜9000、既定は 1500）。値を大きくするとスループットは向上しますが、一部の UDP アプリケーションが不安定になることがあります。",
+  "settings.tunMtuHelp":
+    "仮想アダプターの最大転送単位（1280〜9000、既定は 1500）。値を大きくするとスループットは向上しますが、一部の UDP アプリケーションが不安定になることがあります。",
   "settings.tunStrictRoute": "厳格ルーティング",
-  "settings.tunStrictRouteHelp": "トンネルの外に通信や DNS が漏れないようにします。基本的に有効のままにしてください。Windows の一部の仮想マシンやコンテナーネットワークでは、無効にしないと動作しないことがあります。",
+  "settings.tunStrictRouteHelp":
+    "トンネルの外に通信や DNS が漏れないようにします。基本的に有効のままにしてください。Windows の一部の仮想マシンやコンテナーネットワークでは、無効にしないと動作しないことがあります。",
   "settings.tunIpv6": "IPv6 アドレスを解決",
-  "settings.tunIpv6Help": "ノードが対応する場合に IPv6 の名前解決と接続を許可します。オフの場合、TUN は IPv4 で解決し取得した IPv6 を拒否します。直接接続ルールと除外経路は別途確認してください。",
+  "settings.tunIpv6Help":
+    "ノードが対応する場合に IPv6 の名前解決と接続を許可します。オフの場合、TUN は IPv4 で解決し取得した IPv6 を拒否します。直接接続ルールと除外経路は別途確認してください。",
   "settings.tunAutoRedirect": "nftables リダイレクト",
-  "settings.tunAutoRedirectHelp": "ルーティングだけでなく nftables でリダイレクトします。より高速で、Docker のブリッジとも競合しません。このシステムに nftables が必要です。",
+  "settings.tunAutoRedirectHelp":
+    "ルーティングだけでなく nftables でリダイレクトします。より高速で、Docker のブリッジとも競合しません。このシステムに nftables が必要です。",
   "settings.tunExclude": "バイパスするアドレス",
   "settings.dnsMode": "DNS モード",
   "settings.dnsModeHelp": "Fake-IP は海外ドメインを出口で解決し安定します。実解決はノードの DoH で直接解決します。",
@@ -525,12 +562,15 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.dnsDomestic": "国内 DNS",
   "settings.dnsRemote": "リモート DNS",
   "settings.dnsLocal": "自動（AliDNS DoH）",
-  "settings.tunExcludeHelp": "指定したネットワークは仮想アダプターの対象外になります。1 行に 1 つ、最大 64 件。これらへの通信と DNS はトンネルを経由しなくなります。",
+  "settings.tunExcludeHelp":
+    "指定したネットワークは仮想アダプターの対象外になります。1 行に 1 つ、最大 64 件。これらへの通信と DNS はトンネルを経由しなくなります。",
   "settings.tunStackInvalid": "TUN スタックが無効です",
   "settings.tunMtuInvalid": "TUN MTU は 1280〜9000 の整数で指定してください",
-  "settings.tunExcludeInvalid": "バイパスするアドレスは 192.168.0.0/16 のような IP ネットワークで、最大 64 件まで指定してください",
+  "settings.tunExcludeInvalid":
+    "バイパスするアドレスは 192.168.0.0/16 のような IP ネットワークで、最大 64 件まで指定してください",
   "settings.tunKillSwitch": "キルスイッチ",
-  "settings.tunKillSwitchHelp": "トンネルが予期せず切断された際、復旧するか解除するまですべてのネットワークアクセスをブロックし、通信が直接外部に出ないようにします。バイパスするアドレスには影響しません。実験的機能で、既定はオフです。",
+  "settings.tunKillSwitchHelp":
+    "トンネルが予期せず切断された際、復旧するか解除するまですべてのネットワークアクセスをブロックし、通信が直接外部に出ないようにします。バイパスするアドレスには影響しません。実験的機能で、既定はオフです。",
   "settings.manualProxy": "手動プロキシ",
   "settings.appearanceLanguage": "外観と言語",
   "settings.localAccess": "ローカルアクセス",
@@ -558,29 +598,36 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.updateDesktopOnly": "更新の確認はデスクトップアプリで行ってください",
   "settings.viewHelp": "ヘルプを表示",
   "settings.about": "アプリについて",
-  "settings.systemProxyCannotCaptureWebrtc": "システムプロキシは WebRTC の UDP を捕捉できません。ブラウザーの UDP 送信を保護するには TUN モードを使用してください。",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "システムプロキシは WebRTC の UDP を捕捉できません。ブラウザーの UDP 送信を保護するには TUN モードを使用してください。",
 
   "tun.tunService": "TUN サービス",
   "tun.tunServiceHasNotBeen": "TUN サービスはまだ確認されていません",
   "tun.tunServiceIsAvailableIn": "TUN サービスはデスクトップアプリでのみ利用できます",
-  "tun.administratorAuthorizationIsRequiredOnce": "管理者の承認が一度だけ必要です。仮想アダプターは接続時に作成されます。",
+  "tun.administratorAuthorizationIsRequiredOnce":
+    "管理者の承認が一度だけ必要です。仮想アダプターは接続時に作成されます。",
   "tun.waitingForSystemAuthorization": "システムの承認を待っています…",
   "tun.repairService": "サービスを修復",
   "tun.authorizeInstallation": "インストールを承認",
   "tun.uninstallService": "サービスをアンインストール",
   "tun.uninstallTunService": "TUN サービスをアンインストールしますか？",
-  "tun.tunWillBeUnavailableSystem": "TUN が利用できなくなります。システムプロキシモードと手動プロキシモードは引き続き利用できます。",
+  "tun.tunWillBeUnavailableSystem":
+    "TUN が利用できなくなります。システムプロキシモードと手動プロキシモードは引き続き利用できます。",
   "tun.tunServiceInstalled": "TUN サービスをインストールしました",
   "tun.tunServiceUninstalled": "TUN サービスをアンインストールしました",
-  "tun.tunServiceInstallationDidNot": "TUN サービスのインストールが完了しませんでした。詳細は設定を開いて確認してください。",
+  "tun.tunServiceInstallationDidNot":
+    "TUN サービスのインストールが完了しませんでした。詳細は設定を開いて確認してください。",
   "tun.tunServiceRemovalDidNot": "TUN サービスの削除が完了しませんでした。詳細は設定を開いて確認してください。",
   "tun.busy": "サービスの操作がすでに実行中です",
-  "tun.serviceOutdatedNotice": "TUN サービスが最新バージョンではありません。設定の「サービスを修復」で更新してください。",
-  "tun.guardBlocking": "トンネルが切断され、キルスイッチがネットワークアクセスをブロックしています。再接続するか、解除して直接接続に戻してください。",
+  "tun.serviceOutdatedNotice":
+    "TUN サービスが最新バージョンではありません。設定の「サービスを修復」で更新してください。",
+  "tun.guardBlocking":
+    "トンネルが切断され、キルスイッチがネットワークアクセスをブロックしています。再接続するか、解除して直接接続に戻してください。",
   "tun.guardRelease": "解除してネットワークを復旧",
 
   "shortcuts.enableGlobalShortcuts": "グローバルショートカットを有効にする",
-  "shortcuts.worksWhenTheWindowIs": "ウィンドウが非表示でも動作します。割り当てをクリアすると、その操作を無効にできます。",
+  "shortcuts.worksWhenTheWindowIs":
+    "ウィンドウが非表示でも動作します。割り当てをクリアすると、その操作を無効にできます。",
   "shortcuts.pressAKeyCombination": "キーの組み合わせを押してください…",
   "shortcuts.notSet": "未設定",
   "shortcuts.clearShortcut": "ショートカットをクリア",
@@ -594,11 +641,14 @@ const ja: Record<keyof typeof zhCN, string> = {
   "shortcuts.shortcutsAreDisabled": "ショートカットは無効です",
   "shortcuts.globalShortcutsAreAvailableIn": "グローバルショートカットはデスクトップアプリでのみ利用できます",
 
-  "notifications.systemNotificationFailedCheckSystem": "システム通知に失敗しました。システムの通知設定を確認してください。",
-  "notifications.notificationSentIfItIs": "通知を送信しました。表示されない場合は、通知設定とおやすみモードを確認してください。",
+  "notifications.systemNotificationFailedCheckSystem":
+    "システム通知に失敗しました。システムの通知設定を確認してください。",
+  "notifications.notificationSentIfItIs":
+    "通知を送信しました。表示されない場合は、通知設定とおやすみモードを確認してください。",
   "notifications.dismissNotification": "通知を閉じる",
   "notifications.systemNotifications": "システム通知",
-  "notifications.connectionAndServiceUpdatesIn": "接続とサービスの更新を通知します。無効にしてもアプリ内メッセージは引き続き表示されます。",
+  "notifications.connectionAndServiceUpdatesIn":
+    "接続とサービスの更新を通知します。無効にしてもアプリ内メッセージは引き続き表示されます。",
   "notifications.testNotification": "テスト通知",
   "notifications.allowAirportNotificationsInSystem": "システム設定で ClashNova の通知を許可してください。",
   "notifications.systemNotificationsAreDisabledOnly": "システム通知は無効です。アプリ内メッセージのみ表示されます。",
@@ -644,13 +694,17 @@ const ja: Record<keyof typeof zhCN, string> = {
   "error.windowActionFailed": "ウィンドウ操作に失敗しました：{error}",
   "error.network": "サーバーに接続できませんでした。ネットワークを確認してもう一度お試しください。",
   "error.subscriptionTooLarge": "サブスクリプションが 2 MiB を超えています",
-  "error.subscriptionNotSingBox": "sing-box JSON 形式のサブスクリプションのみ対応しています。先に Clash YAML を sing-box に変換してください。",
+  "error.subscriptionNotSingBox":
+    "sing-box JSON 形式のサブスクリプションのみ対応しています。先に Clash YAML を sing-box に変換してください。",
   "error.subscriptionNoOutbounds": "サブスクリプションに sing-box の outbound がありません",
   "error.subscriptionBadTags": "サブスクリプション内の outbound タグが無効か、重複しています",
-  "error.subscriptionNoNodes": "サブスクリプションに利用できるノードがありません。形式やサーバーアドレスを確認してください。",
-  "error.subscriptionTagDirect": "サブスクリプションが \"direct\" タグを使用しているため、直接接続ルールを作成できません",
-  "error.subscriptionTagSelect": "サブスクリプションが \"select\" タグを使用しているため、ノードセレクターを作成できません",
-  "error.subscriptionTagAuto": "サブスクリプションが自動選択タグを使用しています。サブスクリプションを編集してください。",
+  "error.subscriptionNoNodes":
+    "サブスクリプションに利用できるノードがありません。形式やサーバーアドレスを確認してください。",
+  "error.subscriptionTagDirect": 'サブスクリプションが "direct" タグを使用しているため、直接接続ルールを作成できません',
+  "error.subscriptionTagSelect":
+    'サブスクリプションが "select" タグを使用しているため、ノードセレクターを作成できません',
+  "error.subscriptionTagAuto":
+    "サブスクリプションが自動選択タグを使用しています。サブスクリプションを編集してください。",
 
   "tray.open": "ウィンドウを表示",
   "tray.system": "システムプロキシ",
@@ -708,13 +762,16 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.importSubscriptionFirst": "先にサブスクリプションをインポートしてください",
   "native.signInAndImportFirst": "先にサインインしてサブスクリプションをインポートしてください",
   "native.subscriptionUrlInvalid": "サブスクリプション URL が無効です",
-  "native.subscriptionUrlNeedsHttps": "HTTPS のサブスクリプション URL を使用してください。HTTP は localhost でのみ許可されます。",
+  "native.subscriptionUrlNeedsHttps":
+    "HTTPS のサブスクリプション URL を使用してください。HTTP は localhost でのみ許可されます。",
   "native.subscriptionFetchFailed": "サブスクリプションを取得できませんでした：{error}",
-  "native.subscriptionForbidden": "サブスクリプションサーバーが 403 を返し、ダウンロードを拒否しました。リンクがブラウザーで開けるか確認するか、プロバイダーに制限の解除を依頼してください。",
+  "native.subscriptionForbidden":
+    "サブスクリプションサーバーが 403 を返し、ダウンロードを拒否しました。リンクがブラウザーで開けるか確認するか、プロバイダーに制限の解除を依頼してください。",
   "native.subscriptionHttpStatus": "サブスクリプションの HTTP ステータス {status}",
   "native.subscriptionRedirectInsecure": "サブスクリプションが安全でないアドレスにリダイレクトされました",
   "native.subscriptionNotUtf8": "サブスクリプションが UTF-8 テキストではありません",
-  "native.subscriptionConvertFailed": "サブスクリプションを変換できませんでした。Clash YAML や共有リンクの形式、ノードのプロトコルを確認してください。",
+  "native.subscriptionConvertFailed":
+    "サブスクリプションを変換できませんでした。Clash YAML や共有リンクの形式、ノードのプロトコルを確認してください。",
   "native.subscriptionNoNodes": "サブスクリプションに利用できるノードがありません",
   "native.subscriptionListInvalid": "サブスクリプションリストの形式が無効です",
   "native.converterRunFailed": "サブスクリプション変換ツールを実行できませんでした：{error}",
@@ -728,7 +785,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.configNoMixedInbound": "設定に mixed プロキシの inbound がありません",
   "native.configNoNodes": "設定にノードがありません",
   "native.cachePathInvalid": "キャッシュパスが無効です",
-  "native.proxyPortUnavailable": "プロキシポート {port} を利用できません。使用中でないか、権限が必要でないか確認してください。",
+  "native.proxyPortUnavailable":
+    "プロキシポート {port} を利用できません。使用中でないか、権限が必要でないか確認してください。",
   "native.networkSettingsInvalid": "ネットワーク設定ファイルが無効です。設定で保存し直してください。",
   "native.networkSettingsReadFailed": "ネットワーク設定を読み取れませんでした：{error}",
   "native.disconnectToChangeNetwork": "ネットワーク設定を変更する前に切断してください",
@@ -744,7 +802,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.coreSpawnFailed": "sing-box が見つからないか、起動できませんでした：{error}",
   "native.coreStartFailed": "sing-box の起動に失敗しました：{status}",
   "native.coreListenTimeout": "sing-box が 5 秒以内にローカルポートの待ち受けを開始しませんでした",
-  "native.egressCheckFailed": "ノードの接続チェックに失敗しました：{error}。システムプロキシは変更されていません。ノードのサーバープロトコルとキーを確認してください。",
+  "native.egressCheckFailed":
+    "ノードの接続チェックに失敗しました：{error}。システムプロキシは変更されていません。ノードのサーバープロトコルとキーを確認してください。",
   "native.coreExitedReconnecting": "コアが終了しました。再接続しています…",
   "native.reconnectFailed": "再接続に失敗しました：{status}",
   "native.coreCrashed": "コアが予期せず終了しました：{status}",
@@ -753,7 +812,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.trafficSecretFailed": "ローカルエンドポイントの認証情報を生成できませんでした",
   "native.systemProxyEnabled": "システムプロキシが有効です",
   "native.systemProxyDisabled": "システムプロキシは利用可能ですが、現在は無効です",
-  "native.otherProxyInUse": "システムプロキシまたは TUN がすでに有効です（{detail}）。閉じてから接続してください。システムプロキシは変更していません。",
+  "native.otherProxyInUse":
+    "システムプロキシまたは TUN がすでに有効です（{detail}）。閉じてから接続してください。システムプロキシは変更していません。",
   "native.systemProxyMismatch": "読み取ったシステムプロキシが、意図した設定と一致しません",
   "native.systemProxyApplyFailed": "システムプロキシを設定または確認できませんでした：{error}",
   "native.systemProxyEnableFailed": "システムプロキシを有効にできませんでした：{error}",
@@ -761,9 +821,11 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.proxyBackupReadFailed": "プロキシの復旧ファイルを読み取れませんでした：{error}",
   "native.proxyBackupInvalid": "プロキシの復旧ファイルが無効です",
   "native.proxyBackupPathUnknown": "システムプロキシの復旧ファイルの保存先を特定できませんでした",
-  "native.authenticatedProxyInUse": "{service} は認証付きプロキシを使用しています。その設定を維持するには手動プロキシモードを使用してください。",
+  "native.authenticatedProxyInUse":
+    "{service} は認証付きプロキシを使用しています。その設定を維持するには手動プロキシモードを使用してください。",
   "native.noNetworkServices": "設定可能なネットワークサービスが見つかりません",
-  "native.desktopNeedsManualProxy": "このデスクトップ環境では手動プロキシモードを使用してください。システムプロキシの自動設定は GNOME に対応しています。",
+  "native.desktopNeedsManualProxy":
+    "このデスクトップ環境では手動プロキシモードを使用してください。システムプロキシの自動設定は GNOME に対応しています。",
   "native.nodeAddressInvalid": "ノードアドレスが無効です",
   "native.nodeResolveFailed": "ノードの名前解決に失敗しました：{error}",
   "native.nodeConnectTimeout": "ノードへの接続がタイムアウトしました",
@@ -773,7 +835,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.probeCoreSpawnFailed": "測定用コアを起動できませんでした",
   "native.probeConfigRejected": "ノードの設定が拒否されました",
   "native.probeCoreStartTimeout": "測定サービスの起動に時間がかかりすぎました",
-  "native.probeTimedOut": "ハンドシェイクまたはリクエストがタイムアウトしました。測定を再試行するか、接続をお試しください。",
+  "native.probeTimedOut":
+    "ハンドシェイクまたはリクエストがタイムアウトしました。測定を再試行するか、接続をお試しください。",
   "native.probeFailed": "テストに失敗しました: {error}",
   "native.openUnsupported": "このリンクを開けません",
   "native.openFailed": "リンクを開けませんでした: {error}",
@@ -815,12 +878,14 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.shortcutInvalid": "ショートカットの組み合わせが無効です",
   "native.shortcutNeedsModifier": "ショートカットに Ctrl、Alt、または Command/Win を含めてください",
   "native.shortcutDuplicate": "ショートカットの割り当ては重複できません",
-  "native.shortcutUnavailable": "ショートカット {shortcut} は使用中か、システムでサポートされていません。別の組み合わせを選択してください。",
+  "native.shortcutUnavailable":
+    "ショートカット {shortcut} は使用中か、システムでサポートされていません。別の組み合わせを選択してください。",
   "native.shortcutReleaseFailed": "以前のショートカットを解除できませんでした",
   "native.shortcutsBusy": "ショートカット設定が処理中です",
   "native.shortcutsUnreadable": "ショートカットを読み取れませんでした",
   "native.shortcutsSaveFailed": "ショートカットを保存できませんでした",
-  "native.shortcutsRollbackFailed": "ショートカットを復元できませんでした。設定を保存し直すか、クライアントを再起動してください。",
+  "native.shortcutsRollbackFailed":
+    "ショートカットを復元できませんでした。設定を保存し直すか、クライアントを再起動してください。",
   "native.shortcutsConfigInvalid": "ショートカットの設定が無効です。設定を保存し直してください。",
   "native.shortcutsSettingsUnreadable": "ショートカット設定を読み取れませんでした",
   "native.settingsDirUnavailable": "設定フォルダーを読み取れませんでした",
@@ -832,26 +897,32 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.tunInstallInProgress": "サービスのインストールが進行中です",
   "native.disconnectToInstallTun": "TUN サービスをインストールまたは修復する前に切断してください",
   "native.disconnectToUninstallTun": "サービスをアンインストールする前に切断してください",
-  "native.tunServiceInstalledNotStarted": "サービスはインストールされましたが、起動しませんでした。サービスポート 47653 が使用中でないか確認してから、サービスを修復してください。",
-  "native.tunServiceOperationIncomplete": "TUN サービスの操作が完了しませんでした。承認がキャンセルされたか、システムサービスのインストールに失敗した可能性があります。もう一度試し、システムの承認ダイアログで許可してください。",
+  "native.tunServiceInstalledNotStarted":
+    "サービスはインストールされましたが、起動しませんでした。サービスポート 47653 が使用中でないか確認してから、サービスを修復してください。",
+  "native.tunServiceOperationIncomplete":
+    "TUN サービスの操作が完了しませんでした。承認がキャンセルされたか、システムサービスのインストールに失敗した可能性があります。もう一度試し、システムの承認ダイアログで許可してください。",
   "native.elevationFailed": "管理者権限を要求できませんでした：{error}",
   "native.installPathControlChars": "インストールパスに制御文字が含まれています",
   "native.installPathInvalid": "インストールパスが無効です",
   "native.windowsDirNotFound": "Windows のシステムディレクトリが見つかりませんでした",
   "native.tunNoFinalOutbound": "TUN に既定の outbound がありません",
-  "native.tunCoreStartFailed": "TUN コアの起動に失敗しました。このアカウントには仮想ネットワークアダプターの作成が許可されていない可能性があります。システムの承認を確認するか、システムプロキシモードに切り替えてください。",
+  "native.tunCoreStartFailed":
+    "TUN コアの起動に失敗しました。このアカウントには仮想ネットワークアダプターの作成が許可されていない可能性があります。システムの承認を確認するか、システムプロキシモードに切り替えてください。",
   "native.tunCoreNotStarted": "TUN コアが起動しませんでした",
   "native.tunCoreStopped": "TUN コアが停止しました",
-  "native.tunStopUnconfirmed": "TUN の停止要求が確認されませんでした。サービスはハートビートがタイムアウトした後に停止します。しばらくしてからネットワークを確認してください：{error}",
+  "native.tunStopUnconfirmed":
+    "TUN の停止要求が確認されませんでした。サービスはハートビートがタイムアウトした後に停止します。しばらくしてからネットワークを確認してください：{error}",
   "native.tunServiceNotRunning": "TUN サービスが実行されていません。インストールまたは修復してください。",
   "native.tunDnsOverrideFailed": "システム DNS をトンネルに向けられませんでした（{error}）。元の設定に戻しました。",
   "native.tunDnsDeviceNotReady": "トンネルデバイスが準備できていないため、システム DNS は変更していません。",
   "native.tunDnsRecordCorrupt": "TUN サービスの DNS 記録が壊れています。",
   "native.tunServiceMismatch": "TUN サービスの応答またはバージョンが一致しません",
-  "native.tunServiceOutdated": "TUN サービスは以前のバージョンのアプリでインストールされています。「サービスを修復」で更新してください。",
+  "native.tunServiceOutdated":
+    "TUN サービスは以前のバージョンのアプリでインストールされています。「サービスを修復」で更新してください。",
   "native.tunDeviceOptionInvalid": "TUN デバイスオプションが無効です：{option}",
   "native.tunGuardBlocking": "{error}（キルスイッチがネットワークアクセスをブロックしています）",
-  "native.tunGuardReleaseFailed": "キルスイッチがネットワークを復旧できませんでした。サービスは再試行を続けます。TUN サービスを修復することもできます。",
+  "native.tunGuardReleaseFailed":
+    "キルスイッチがネットワークを復旧できませんでした。サービスは再試行を続けます。TUN サービスを修復することもできます。",
   "native.tunAuthFailed": "TUN サービスの認証に失敗しました。サービスを修復してください。",
   "native.tunCredentialsInvalid": "サービスの認証情報が無効です",
   "native.tunRequestTooLarge": "TUN の要求が大きすぎます",
@@ -866,7 +937,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "native.tunConfigCheckTimeout": "TUN 設定のチェックがタイムアウトしました",
   "native.tunConfigInvalid": "設定が無効です",
   "native.tunConfigTooDeep": "設定のネストが深すぎます",
-  "native.tunConfigForbiddenOption": "サブスクリプション設定はローカルファイルへのアクセスや拡張操作を許可しません：{option}",
+  "native.tunConfigForbiddenOption":
+    "サブスクリプション設定はローカルファイルへのアクセスや拡張操作を許可しません：{option}",
   "native.tunConfigUnsupportedTopLevel": "TUN 設定にサポートされていないトップレベルのオプションが含まれています",
   "native.tunControllerMissing": "コントローラーのエンドポイントがありません",
   "native.tunControllerAddressInvalid": "コントローラーアドレスが無効です",
@@ -913,15 +985,18 @@ const ja: Record<keyof typeof zhCN, string> = {
   "secnet.title": "ネットワークセキュリティ",
   "secnet.subtitle": "DNS、IPv6、ネットワーク接続の保護ポリシーを管理します",
   "secnet.killSwitch": "キルスイッチ",
-  "secnet.killSwitchHint": "プロキシが切断されたときに、保護対象の通信が直接漏れるのを防ぎます。システムレベルのサポートが必要です",
+  "secnet.killSwitchHint":
+    "プロキシが切断されたときに、保護対象の通信が直接漏れるのを防ぎます。システムレベルのサポートが必要です",
   "secnet.killSwitchActive": "キルスイッチが有効です。トンネルが予期せず切断されるとネットワークを遮断します",
   "secnet.killSwitchInactive": "キルスイッチを有効にできませんでした。切断してから再接続してください",
   "secnet.killSwitchTunOnly": "キルスイッチは TUN モードでのみ利用できます",
   "secnet.repair": "ネットワーク修復",
-  "secnet.repairHint": "プロキシの異常や切り替えの後にネットワークがつながらなくなったとき、ワンクリックでシステムプロキシをリセットします",
+  "secnet.repairHint":
+    "プロキシの異常や切り替えの後にネットワークがつながらなくなったとき、ワンクリックでシステムプロキシをリセットします",
   "secnet.repairOpen": "修復",
   "secnet.repairTitle": "ネットワーク修復",
-  "secnet.repairDesc": "ワンクリック修復はシステムプロキシを再同期し、ネットワーク診断を更新します。プロキシが異常終了した後にインターネットに接続できない、モードを切り替えた後に通信できないといった問題の解決に使います。",
+  "secnet.repairDesc":
+    "ワンクリック修復はシステムプロキシを再同期し、ネットワーク診断を更新します。プロキシが異常終了した後にインターネットに接続できない、モードを切り替えた後に通信できないといった問題の解決に使います。",
   "secnet.repairRun": "ワンクリック修復",
   "secnet.repairDesktopOnly": "ネットワーク修復はデスクトップ版でのみ利用できます。",
   "secnet.repairRecheck": "再検査",
@@ -947,7 +1022,12 @@ const ja: Record<keyof typeof zhCN, string> = {
   "speed.start": "測定開始",
   "speed.testing": "測定中…",
   "speed.retest": "再測定",
-  "speed.hint": "現在のノードで実際のダウンロード帯域を測定します（最大約100MBを消費）。",
+  "speed.hint": "現在のノードでダウンロードとアップロードの帯域を順に測定します。",
+  "speed.warn": "テストは現在のノードでデータをダウンロード・アップロードします。回線が速いほど通信量が増えます。",
+  "speed.colSpeed": "実速度",
+  "speed.colCost": "消費量",
+  "speed.testingDownload": "ダウンロード測定中…",
+  "speed.testingUpload": "アップロード測定中…",
   "check.healthHint": "現在のネットワークとプロキシの状態を確認します",
   "check.start": "検査を開始",
   "check.again": "再検査",
@@ -960,9 +1040,11 @@ const ja: Record<keyof typeof zhCN, string> = {
   "check.dnsLeak": "DNS リーク検査",
   "check.dnsLeakHint": "接続モードの確認のみです。実際の DNS サーバーや漏洩は未検証です。",
   "check.ipv6Leak": "IPv6 リーク検査",
-  "check.ipv6LeakHint": "OS 経路とローカルプロキシの IPv6 出口を比較します。結果なしは IPv6 未対応や確認失敗の場合があります。出口の相違は複数出口の場合もあり、漏えいと断定できません。",
+  "check.ipv6LeakHint":
+    "OS 経路とローカルプロキシの IPv6 出口を比較します。結果なしは IPv6 未対応や確認失敗の場合があります。出口の相違は複数出口の場合もあり、漏えいと断定できません。",
   "check.webrtcLeak": "WebRTC リーク検査",
-  "check.webrtcLeakHint": "WebRTC 候補とプロキシ出口を比較します。出口の相違だけで漏洩とは断定しません。候補なしも安全を保証しません。",
+  "check.webrtcLeakHint":
+    "WebRTC 候補とプロキシ出口を比較します。出口の相違だけで漏洩とは断定しません。候補なしも安全を保証しません。",
   "check.localOk": "到達可能",
   "check.localFail": "インターネットに接続できません",
   "check.proxyOff": "未接続",
@@ -982,7 +1064,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "check.webrtcDifferent": "UDP の出口が異なります：{ip}",
   "check.webrtcUnverified": "公開アドレス {ip}、出口未確認",
   "check.privacyRepair": "TUN に切り替えて再確認",
-  "check.privacyRepairHint": "システムプロキシはすべての DNS と WebRTC UDP を捕捉できません。TUN に切り替えると再接続して確認します。",
+  "check.privacyRepairHint":
+    "システムプロキシはすべての DNS と WebRTC UDP を捕捉できません。TUN に切り替えると再接続して確認します。",
   "check.webrtcOff": "この環境では使えません",
   "check.webrtcNone": "公開候補なし、判定できません",
   "check.webrtcLan": "ローカルアドレスのみ",
@@ -1046,6 +1129,8 @@ const ja: Record<keyof typeof zhCN, string> = {
   "connections.detailStatus": "状態",
   "connections.detailNetwork": "プロトコル",
   "connections.detailInbound": "インバウンド",
+  "connections.detailType": "タイプ",
+  "connections.closeConnection": "接続を閉じる",
   "connections.detailSource": "送信元アドレス",
   "connections.detailDestination": "宛先アドレス",
   "connections.detailStarted": "開始日時",
@@ -1085,6 +1170,5 @@ const ja: Record<keyof typeof zhCN, string> = {
   "settings.lanDefaultDirectory": "システムのダウンロードフォルダー",
   "settings.lanChooseDirectory": "フォルダーを選択",
   "settings.lanDirectorySaved": "保存先を更新しました",
-
 };
 export default ja;

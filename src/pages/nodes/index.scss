@@ -1,0 +1,286 @@
+.search-box {
+  flex: 1 1 130px;
+}
+/* Fixed width so the label swap (检测全部 ↔ 停止) never resizes the button. */
+.test-btn {
+  min-width: 120px;
+  justify-content: center;
+}
+.chain-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--accent);
+}
+.chain-btn:hover {
+  border-color: var(--selected-border);
+}
+.chain-btn.active {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.chain-btn svg {
+  flex: none;
+}
+
+.chain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #18293e66;
+}
+.chain-dialog {
+  background: var(--bg);
+  width: 640px;
+  max-width: 100%;
+  height: min(82vh, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border-radius: 16px;
+  color: var(--text);
+  box-shadow: 0 24px 80px #172d5140;
+}
+.chain-groups {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.chain-groups :deep(.select-menu) {
+  flex: 0 1 170px;
+  min-width: 120px;
+}
+.chain-name {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+.chain-name:focus {
+  outline: none;
+  border-color: var(--selected-border);
+}
+.chain-gbtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--strong);
+  cursor: pointer;
+}
+.chain-gbtn:hover:not(:disabled) {
+  border-color: var(--selected-border);
+}
+.chain-gbtn.danger {
+  color: var(--danger);
+}
+.chain-gbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.chain-gbtn svg {
+  flex: none;
+}
+.chain-save {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--strong);
+}
+.chain-dialog .dialog-actions {
+  gap: 10px;
+}
+.chain-dialog .dialog-actions button:first-child {
+  margin-right: auto;
+}
+.chain-flow {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.chain-flow > span:first-child {
+  word-break: break-word;
+}
+.chain-flow .pill {
+  flex: none;
+}
+.chain-err {
+  margin: -6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+.chain-add {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.chain-add :deep(.select-menu) {
+  flex: 1;
+  min-width: 0;
+}
+.chain-test {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--strong);
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chain-test:hover:not(:disabled) {
+  border-color: var(--selected-border);
+}
+.chain-test:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.chain-test svg {
+  flex: none;
+  color: var(--accent);
+}
+.chain-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 2px 4px;
+}
+.chain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.chain-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 8px 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.chain-row.dragging {
+  opacity: 0.4;
+}
+.chain-row.over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.chain-grip {
+  flex: none;
+  display: inline-flex;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+.chain-grip:active {
+  cursor: grabbing;
+}
+.chain-role {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.chain-role.is-entry {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.chain-role.is-exit {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.chain-role.is-relay {
+  background: var(--selected);
+  color: var(--accent-text);
+}
+.chain-node {
+  flex: 1;
+  min-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+}
+.chain-proto {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--hover);
+  color: var(--muted);
+  font-size: 12px;
+}
+.chain-rm {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--danger);
+  cursor: pointer;
+}
+.chain-rm:hover {
+  background: var(--danger-bg);
+}
+/* SVGs shrink inside flex rows here (see .account svg / .ov-node svg) — pin them. */
+.chain-row svg,
+.chain-arrow svg {
+  flex: none;
+}
+.chain-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+  height: 20px;
+}
+.chain-empty {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}

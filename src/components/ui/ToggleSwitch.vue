@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// 统一的开关组件。根元素保留全局 `.toggle-switch` 类，既复用 app.css 的样式，
-// 也让父组件既有的 `:deep(.toggle-switch)` / `.xxx .toggle-switch` 覆写继续生效。
-defineProps<{ modelValue: boolean; label: string; disabled?: boolean }>();
-const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
+  // Shared toggle-switch component. The root element keeps the global `.toggle-switch` class, so it both
+  // reuses app.css styles and lets parents' existing `:deep(.toggle-switch)` / `.xxx .toggle-switch` overrides keep working.
+  defineProps<{ modelValue: boolean; label: string; disabled?: boolean }>();
+  const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
 </script>
 
 <template>

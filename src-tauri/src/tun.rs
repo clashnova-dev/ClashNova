@@ -127,6 +127,16 @@ pub fn configure(config: &mut Value, enabled: bool, settings: &TunSettings) -> R
     if !direct_domains.is_empty() {
         dns_rules.push(json!({"domain_suffix":direct_domains,"server":LOCAL_TAG}));
     }
+    // 若启用了 geosite:cn 直连规则集,把它也镜像进 DNS:国内域名走国内解析器拿真实地址,
+    // 而非 fake-IP——否则直连出口去拨 fake 地址会失败。规则集定义由前端注入 route.rule_set。
+    if config["route"]["rule_set"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|set| set["tag"] == "geosite-cn")
+    {
+        dns_rules.push(json!({"rule_set":["geosite-cn"],"server":LOCAL_TAG}));
+    }
     let dns_final = if settings.dns_mode == "remote" {
         servers.push(remote_dns_server(&settings.dns_remote, &outbound));
         "airport-remote"

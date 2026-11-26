@@ -37,6 +37,7 @@ fn main() {
             "begin_probe",
             "probe_delay",
             "probe_speed",
+            "probe_speed_up",
             "end_probe",
             "fetch_subscription",
             "fetch_subscription_details",

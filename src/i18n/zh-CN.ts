@@ -19,6 +19,8 @@ export default {
   "rules.search": "搜索规则内容、类型或去向",
   "rules.source": "来源",
   "rules.edit": "编辑规则",
+  "rules.chinaGeosite": "中国网站直连 (geosite)",
+  "rules.adBlock": "拦截广告 (geosite)",
   "rules.fieldType": "规则类型",
   "rules.fieldContent": "规则内容",
   "rules.fieldPolicy": "代理策略",
@@ -59,11 +61,14 @@ export default {
 
   "check.webrtcTimeout": "探测超时，无法确认",
   "check.reconnectConfirm": "将重新应用当前配置。已连接时会短暂断开并重新连接；这不会重置系统 DNS 或修改其它代理软件。",
-  "check.proxyScope": "系统／手动代理只处理支持代理的应用。系统 DNS、IPv6 及 WebRTC UDP 可能直接连接；如需统一接管，请使用 TUN 并复测。",
-  "check.tunScope": "TUN 配置会接管 DNS 与 IPv6，STUN 按代理路径路由。直连规则和路由例外仍有效；配置状态不等于已经验证无泄漏。",
+  "check.proxyScope":
+    "系统／手动代理只处理支持代理的应用。系统 DNS、IPv6 及 WebRTC UDP 可能直接连接；如需统一接管，请使用 TUN 并复测。",
+  "check.tunScope":
+    "TUN 配置会接管 DNS 与 IPv6，STUN 按代理路径路由。直连规则和路由例外仍有效；配置状态不等于已经验证无泄漏。",
   "check.dnsConfiguration": "DNS 配置",
   "check.routeExceptions": "路由例外：{count} 项",
-  "check.webviewScope": "WebRTC 检测仅代表此客户端内置 WebView。请在实际使用的浏览器中检查 DNS 与 WebRTC；超时或没有候选均不能证明无泄漏。",
+  "check.webviewScope":
+    "WebRTC 检测仅代表此客户端内置 WebView。请在实际使用的浏览器中检查 DNS 与 WebRTC；超时或没有候选均不能证明无泄漏。",
   "check.browserChecks": "浏览器实测",
   "check.checkedAt": "检测时间：{time}",
   "recovery.intentWriteFailed": "连接恢复状态保存失败：{error}",
@@ -247,7 +252,7 @@ export default {
   "overview.global": "全局",
   "overview.noActiveSubscription": "暂无有效订阅",
   "overview.usageIsManagedByYour": "流量由订阅服务商提供",
-  "overview.quickAccess": "快捷节点",
+  "overview.quickAccess": "常用节点",
   "overview.stopping": "停止中…",
   "overview.addASubscription": "去导入订阅",
   "overview.proxyRunning": "代理运行中",
@@ -506,17 +511,22 @@ export default {
   "settings.networkSaved": "网络设置已保存，下次连接生效",
   "settings.portInvalid": "代理端口必须为 1024–65535 的整数",
   "settings.tunStack": "TUN 协议栈",
-  "settings.tunStackHelp": "混合：系统 TCP 加用户态 UDP，适合绝大多数情况。防火墙或驱动冲突导致 TUN 不通时，再换成系统或 gVisor。",
+  "settings.tunStackHelp":
+    "混合：系统 TCP 加用户态 UDP，适合绝大多数情况。防火墙或驱动冲突导致 TUN 不通时，再换成系统或 gVisor。",
   "settings.tunStackMixed": "混合",
   "settings.tunStackSystem": "系统",
   "settings.tunMtu": "TUN MTU",
-  "settings.tunMtuHelp": "虚拟网卡的最大传输单元，范围 1280–9000，默认 1500。调大可提高吞吐，但部分 UDP 应用可能不稳定。",
+  "settings.tunMtuHelp":
+    "虚拟网卡的最大传输单元，范围 1280–9000，默认 1500。调大可提高吞吐，但部分 UDP 应用可能不稳定。",
   "settings.tunStrictRoute": "严格路由",
-  "settings.tunStrictRouteHelp": "阻止流量和 DNS 从隧道旁边漏出，建议保持开启。少数虚拟机或容器网络在 Windows 上需要关闭它才能正常工作。",
+  "settings.tunStrictRouteHelp":
+    "阻止流量和 DNS 从隧道旁边漏出，建议保持开启。少数虚拟机或容器网络在 Windows 上需要关闭它才能正常工作。",
   "settings.tunIpv6": "解析 IPv6 地址",
-  "settings.tunIpv6Help": "开启后允许 IPv6 解析与连接，需要节点支持 IPv6。关闭后 TUN 使用 IPv4 解析并拒绝被接管的 IPv6 流量；直连规则与路由例外请另行检查。",
+  "settings.tunIpv6Help":
+    "开启后允许 IPv6 解析与连接，需要节点支持 IPv6。关闭后 TUN 使用 IPv4 解析并拒绝被接管的 IPv6 流量；直连规则与路由例外请另行检查。",
   "settings.tunAutoRedirect": "nftables 重定向",
-  "settings.tunAutoRedirectHelp": "用 nftables 重定向代替纯路由：性能更好，也不与 Docker 网桥冲突。需要系统带有 nftables。",
+  "settings.tunAutoRedirectHelp":
+    "用 nftables 重定向代替纯路由：性能更好，也不与 Docker 网桥冲突。需要系统带有 nftables。",
   "settings.tunExclude": "绕过地址",
   "settings.dnsMode": "DNS 模式",
   "settings.dnsModeHelp": "Fake-IP 让出口解析外网域名,更稳;真实解析经节点 DoH 直接解析外网域名。",
@@ -530,7 +540,8 @@ export default {
   "settings.tunMtuInvalid": "TUN MTU 必须为 1280–9000 的整数",
   "settings.tunExcludeInvalid": "绕过地址必须是 IP 网段（如 192.168.0.0/16），最多 64 条",
   "settings.tunKillSwitch": "断线保护",
-  "settings.tunKillSwitchHelp": "隧道意外中断时阻断全部联网，直到重新连上或手动解除，避免流量绕过代理直连。绕过地址不受影响。实验性功能，默认关闭。",
+  "settings.tunKillSwitchHelp":
+    "隧道意外中断时阻断全部联网，直到重新连上或手动解除，避免流量绕过代理直连。绕过地址不受影响。实验性功能，默认关闭。",
   "settings.manualProxy": "手动代理",
   "settings.appearanceLanguage": "外观与语言",
   "settings.localAccess": "本地访问",
@@ -558,7 +569,8 @@ export default {
   "settings.updateDesktopOnly": "请在桌面客户端中检查更新",
   "settings.viewHelp": "查看使用帮助",
   "settings.about": "关于",
-  "settings.systemProxyCannotCaptureWebrtc": "系统代理不能接管 WebRTC UDP；需要保护浏览器 UDP 出口时，请使用 TUN 模式。",
+  "settings.systemProxyCannotCaptureWebrtc":
+    "系统代理不能接管 WebRTC UDP；需要保护浏览器 UDP 出口时，请使用 TUN 模式。",
 
   "tun.tunService": "TUN 服务",
   "tun.tunServiceHasNotBeen": "尚未检测 TUN 服务",
@@ -713,7 +725,8 @@ export default {
   "native.subscriptionUrlInvalid": "订阅地址无效",
   "native.subscriptionUrlNeedsHttps": "订阅地址需要 HTTPS，本机开发可使用 HTTP",
   "native.subscriptionFetchFailed": "订阅拉取失败：{error}",
-  "native.subscriptionForbidden": "订阅服务器返回 403，已拒绝下载。请在浏览器确认链接可用，或联系订阅提供方解除访问限制。",
+  "native.subscriptionForbidden":
+    "订阅服务器返回 403，已拒绝下载。请在浏览器确认链接可用，或联系订阅提供方解除访问限制。",
   "native.subscriptionHttpStatus": "订阅 HTTP 状态 {status}",
   "native.subscriptionRedirectInsecure": "订阅重定向到了不安全地址",
   "native.subscriptionNotUtf8": "订阅不是 UTF-8 文本",
@@ -844,13 +857,15 @@ export default {
   "native.disconnectToInstallTun": "请先断开连接再安装或修复 TUN 服务",
   "native.disconnectToUninstallTun": "请先断开连接再卸载服务",
   "native.tunServiceInstalledNotStarted": "服务已安装，但未能启动；请检查服务端口 47653 是否被占用后修复服务",
-  "native.tunServiceOperationIncomplete": "TUN 服务操作未完成：授权可能被取消，或系统服务安装失败。请重试并在系统授权窗口中确认。",
+  "native.tunServiceOperationIncomplete":
+    "TUN 服务操作未完成：授权可能被取消，或系统服务安装失败。请重试并在系统授权窗口中确认。",
   "native.elevationFailed": "无法申请管理员权限：{error}",
   "native.installPathControlChars": "安装路径包含控制字符",
   "native.installPathInvalid": "安装路径无效",
   "native.windowsDirNotFound": "无法定位 Windows 系统目录",
   "native.tunNoFinalOutbound": "TUN 缺少默认出站",
-  "native.tunCoreStartFailed": "TUN 内核启动失败；当前账号可能没有创建虚拟网卡的权限，请检查系统授权或切换系统代理模式。",
+  "native.tunCoreStartFailed":
+    "TUN 内核启动失败；当前账号可能没有创建虚拟网卡的权限，请检查系统授权或切换系统代理模式。",
   "native.tunCoreNotStarted": "TUN 内核未能启动",
   "native.tunCoreStopped": "TUN 内核已停止",
   "native.tunStopUnconfirmed": "TUN 停止请求未确认；服务将在心跳超时后停止，请稍候检查网络：{error}",
@@ -933,7 +948,8 @@ export default {
   "secnet.repairHint": "代理异常或切换后网络不通时，一键重置系统代理",
   "secnet.repairOpen": "修复",
   "secnet.repairTitle": "网络修复",
-  "secnet.repairDesc": "一键修复会重新同步系统代理并刷新网络诊断，用于解决代理异常退出后无法上网、切换模式后网络不通等问题。",
+  "secnet.repairDesc":
+    "一键修复会重新同步系统代理并刷新网络诊断，用于解决代理异常退出后无法上网、切换模式后网络不通等问题。",
   "secnet.repairRun": "一键修复",
   "secnet.repairDesktopOnly": "网络修复仅在桌面端可用。",
   "secnet.repairRecheck": "重新检测",
@@ -959,7 +975,12 @@ export default {
   "speed.start": "开始测速",
   "speed.testing": "测速中…",
   "speed.retest": "重新测速",
-  "speed.hint": "通过当前节点实测下载带宽，单次最多消耗约 100MB 流量。",
+  "speed.hint": "通过当前节点依次实测下载与上传带宽。",
+  "speed.warn": "测速会通过当前节点下载并上传数据，网速越快消耗越多，请留意流量。",
+  "speed.colSpeed": "实际网速",
+  "speed.colCost": "单节点消耗",
+  "speed.testingDownload": "正在测下载…",
+  "speed.testingUpload": "正在测上传…",
   "check.healthHint": "检查当前网络与代理状态",
   "check.start": "开始检测",
   "check.again": "重新检测",
@@ -972,9 +993,11 @@ export default {
   "check.dnsLeak": "DNS 泄漏检测",
   "check.dnsLeakHint": "当前检查接管方式，尚未检测实际 DNS 服务器，不能据此判定有无泄漏。",
   "check.ipv6Leak": "IPv6 泄漏检测",
-  "check.ipv6LeakHint": "对比系统路径与本地代理的 IPv6 探测出口。缺少结果可能是无 IPv6、代理不支持或探测失败；出口不同也可能是多出口，不能仅凭此判定泄漏。",
+  "check.ipv6LeakHint":
+    "对比系统路径与本地代理的 IPv6 探测出口。缺少结果可能是无 IPv6、代理不支持或探测失败；出口不同也可能是多出口，不能仅凭此判定泄漏。",
   "check.webrtcLeak": "WebRTC 泄漏检测",
-  "check.webrtcLeakHint": "对比 WebRTC 公网候选与代理出口；出口不同也可能是节点多出口，只有匹配非代理路径时才判定绕过。无候选不代表没有泄漏。",
+  "check.webrtcLeakHint":
+    "对比 WebRTC 公网候选与代理出口；出口不同也可能是节点多出口，只有匹配非代理路径时才判定绕过。无候选不代表没有泄漏。",
   "check.localOk": "可访问",
   "check.localFail": "无法访问",
   "check.proxyOff": "未连接",
@@ -1058,6 +1081,8 @@ export default {
   "connections.detailStatus": "状态",
   "connections.detailNetwork": "传输协议",
   "connections.detailInbound": "入站类型",
+  "connections.detailType": "类型",
+  "connections.closeConnection": "关闭连接",
   "connections.detailSource": "来源地址",
   "connections.detailDestination": "目标地址",
   "connections.detailStarted": "开始时间",
@@ -1097,5 +1122,4 @@ export default {
   "settings.lanDefaultDirectory": "系统下载目录",
   "settings.lanChooseDirectory": "选择文件夹",
   "settings.lanDirectorySaved": "文件保存位置已更新",
-
 } as const;

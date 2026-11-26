@@ -477,6 +477,20 @@ async fn probe_speed(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
+async fn probe_speed_up(
+    app: AppHandle,
+    session: String,
+    tag: String,
+) -> Result<probe::SpeedResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        probe::speed_up(session, tag, move |mbps, bytes| {
+            let _ = app.emit("probe://speed-up", serde_json::json!({"mbps": mbps, "bytes": bytes}));
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
 async fn end_probe(session: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || probe::end(&session))
         .await
@@ -1428,6 +1442,7 @@ pub fn run() {
             begin_probe,
             probe_delay,
             probe_speed,
+            probe_speed_up,
             end_probe,
             fetch_subscription,
             fetch_subscription_details,
@@ -1482,7 +1497,7 @@ pub fn run() {
                     let host = host.strip_suffix(".local").unwrap_or(&host).trim();
                     if host.is_empty() { "ClashNova".to_string() } else { host.to_string() }
                 };
-                app.manage(lan_transfer::LanTransferState::new(airport_lan::LanConfig::new(
+                app.manage(lan_transfer::LanTransferState::new(lan_service::LanConfig::new(
                     alias,
                     lan_dir,
                     save_dir,

@@ -27,7 +27,7 @@ export type TunSettings = {
   routeExclude: string[];
   /** Block the network when the tunnel drops unexpectedly, until it is back or released. */
   killSwitch: boolean;
-  /** DNS 覆写: fake-ip split (default) or real resolution through the node's DoH. */
+  /** DNS override: fake-ip split (default) or real resolution through the node's DoH. */
   dnsMode: DnsMode;
   /** Foreign DoH preset, used in remote mode. */
   dnsRemote: DnsRemote;
@@ -36,8 +36,16 @@ export type TunSettings = {
 };
 
 export const defaultTunSettings = (): TunSettings => ({
-  stack: "mixed", mtu: DEFAULT_TUN_MTU, strictRoute: true, ipv6: false, autoRedirect: false, routeExclude: [], killSwitch: false,
-  dnsMode: "fakeip", dnsRemote: "cloudflare", dnsDomestic: "local",
+  stack: "mixed",
+  mtu: DEFAULT_TUN_MTU,
+  strictRoute: true,
+  ipv6: false,
+  autoRedirect: false,
+  routeExclude: [],
+  killSwitch: false,
+  dnsMode: "fakeip",
+  dnsRemote: "cloudflare",
+  dnsDomestic: "local",
 });
 
 export type NetworkSettings = { proxyPort: number; allowLan: boolean; tun: TunSettings };
@@ -73,7 +81,8 @@ function isIpv6(address: string): boolean {
 export function isCidr(value: string): boolean {
   const slash = value.indexOf("/");
   if (slash <= 0) return false;
-  const address = value.slice(0, slash), prefix = value.slice(slash + 1);
+  const address = value.slice(0, slash),
+    prefix = value.slice(slash + 1);
   if (!/^\d{1,3}$/.test(prefix)) return false;
   if (isIpv4(address)) return Number(prefix) <= 32;
   return isIpv6(address) && Number(prefix) <= 128;
@@ -81,7 +90,14 @@ export function isCidr(value: string): boolean {
 
 /** One prefix per line (commas and spaces also separate); duplicates are dropped. */
 export function parseRouteExclude(text: string): string[] {
-  const prefixes = [...new Set(text.split(/[\s,]+/).map(item => item.trim()).filter(Boolean))];
+  const prefixes = [
+    ...new Set(
+      text
+        .split(/[\s,]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+    ),
+  ];
   if (prefixes.length > MAX_TUN_EXCLUSIONS || !prefixes.every(isCidr)) throw new Error("settings.tunExcludeInvalid");
   return prefixes;
 }

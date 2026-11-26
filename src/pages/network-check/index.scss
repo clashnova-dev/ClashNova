@@ -1,0 +1,375 @@
+.scope-note {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.dns-path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.dns-path strong {
+  font-weight: 500;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.dns-path button {
+  margin-left: auto;
+  min-height: 32px;
+  font-size: 12px;
+}
+.manual-checks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.manual-checks button {
+  min-height: 32px;
+  padding: 0 10px;
+  gap: 6px;
+  font-size: 12px;
+}
+.checked-time {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 12px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.check-item strong {
+  overflow-wrap: anywhere;
+}
+
+.check-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.check-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.check-page h3,
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.check-page h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.check-label {
+  font-size: 15px;
+  font-weight: 400;
+}
+.check-health,
+.check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.check-health button {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+}
+.check-health-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.check-speed-btn {
+  gap: 6px;
+}
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 28px;
+  margin-top: 14px;
+}
+.check-item span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.check-item strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.check-item strong.ok {
+  color: var(--success);
+}
+.check-item strong.bad {
+  color: var(--danger);
+}
+.check-split {
+  height: 1px;
+  margin: 22px 0 18px;
+  background: var(--line);
+}
+.check-row {
+  align-items: center;
+  padding: 10px 0;
+}
+.check-row .pill {
+  max-width: 46%;
+  white-space: normal;
+  text-align: right;
+}
+.check-row .pill.ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.check-row .pill.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.privacy-repair {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.privacy-repair p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.privacy-repair button {
+  flex: none;
+  min-height: 32px;
+  font-size: 12px;
+}
+.check-row .pill.bad {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.secnet {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.secnet-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 8px;
+}
+.secnet-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+.secnet-headtext h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.secnet-headtext p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.secnet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0 16px;
+}
+.secnet-field > label {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  font-size: 15px;
+  font-weight: 500;
+}
+.secnet-sub {
+  padding: 2px 0 14px;
+}
+.secnet-sub :deep(.select-menu) {
+  width: 100%;
+  min-width: 0;
+}
+.sr-label {
+  display: inline-flex;
+  align-items: center;
+}
+.sr-icon {
+  flex: none;
+  margin-right: 10px;
+  color: var(--muted);
+}
+.secnet .seg {
+  display: flex;
+}
+.secnet .seg > button {
+  flex: 1;
+}
+.secnet :focus-visible,
+.secnet-dialog :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.secnet-repair {
+  flex: none;
+  min-height: 34px;
+  padding: 0 18px;
+}
+.secnet-guard {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.secnet-guard.ok {
+  color: var(--success);
+}
+.secnet-guard.bad {
+  color: var(--danger);
+}
+.secnet-guard svg,
+.secnet-guard-na svg {
+  flex: none;
+}
+.secnet-guard-na {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.secnet-dialog {
+  width: min(420px, calc(100vw - 48px));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 22px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+}
+.secnet-dialog::backdrop {
+  background: #0b162880;
+}
+.secnet-dialog h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.secnet-dialog-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.secnet-result {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.secnet-result.ok {
+  color: var(--success);
+}
+.secnet-result.bad {
+  color: var(--danger);
+}
+.secnet-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.repair-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.repair-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.repair-list li:first-child {
+  border-top: 0;
+}
+.repair-name {
+  flex: 1;
+  font-size: 14px;
+}
+.repair-status {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+.repair-status.ok,
+.repair-status.fixed {
+  color: var(--success);
+}
+.repair-status.problem,
+.repair-status.failed {
+  color: var(--danger);
+}
+.repair-status.checking,
+.repair-status.fixing {
+  color: var(--muted);
+}
+.repair-fix {
+  flex: none;
+  min-height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .check-grid {
+    grid-template-columns: 1fr;
+  }
+  .check-health,
+  .check-row {
+    flex-wrap: wrap;
+  }
+  .check-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .check-row .pill {
+    max-width: none;
+    text-align: left;
+  }
+}
