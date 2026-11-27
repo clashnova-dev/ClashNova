@@ -49,6 +49,63 @@ impl LanTransferState {
     }
 }
 
+/// 探测本机设备类型：桌面端区分笔记本/台式（按是否有电池），其它情况默认 Desktop。
+pub fn detect_device_type() -> DeviceType {
+    #[cfg(target_os = "macos")]
+    {
+        // Mac 机型名含 "Book" 即笔记本（MacBook / MacBook Pro / MacBook Air）。
+        if let Ok(out) = std::process::Command::new("sysctl")
+            .args(["-n", "hw.model"])
+            .output()
+        {
+            if String::from_utf8_lossy(&out.stdout).contains("Book") {
+                return DeviceType::Laptop;
+            }
+        }
+        DeviceType::Desktop
+    }
+    #[cfg(target_os = "linux")]
+    {
+        // 存在电池设备即视为笔记本。
+        let has_battery = std::fs::read_dir("/sys/class/power_supply")
+            .map(|dir| {
+                dir.flatten().any(|e| {
+                    let name = e.file_name();
+                    let name = name.to_string_lossy();
+                    name.starts_with("BAT") || name.starts_with("CMB")
+                })
+            })
+            .unwrap_or(false);
+        if has_battery {
+            DeviceType::Laptop
+        } else {
+            DeviceType::Desktop
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        detect_windows_device_type()
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    {
+        DeviceType::Desktop
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn detect_windows_device_type() -> DeviceType {
+    use windows_sys::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
+    // BatteryFlag == 128 表示「无系统电池」→ 台式；否则视为笔记本。
+    let mut status: SYSTEM_POWER_STATUS = unsafe { std::mem::zeroed() };
+    if unsafe { GetSystemPowerStatus(&mut status) } != 0 {
+        if status.BatteryFlag == 128 {
+            return DeviceType::Desktop;
+        }
+        return DeviceType::Laptop;
+    }
+    DeviceType::Desktop
+}
+
 /// 把核心错误映射为前端可翻译的 i18n key。
 fn map_err(err: LanError) -> String {
     match err {
@@ -126,6 +183,20 @@ fn emit_event(app: &AppHandle, event: LanEvent) {
                 },
             );
         }
+        LanEvent::SyncRequest {
+            request_id,
+            peer_alias,
+            peer_fingerprint,
+        } => {
+            let _ = app.emit(
+                "lan://sync",
+                PairRequestView {
+                    request_id,
+                    peer_alias,
+                    peer_fingerprint,
+                },
+            );
+        }
     }
 }
 
@@ -177,9 +248,9 @@ pub async fn lan_get_local_device(
     state: State<'_, LanTransferState>,
 ) -> Result<LocalDeviceView, String> {
     let service = state.service().map_err(map_err)?;
-    let (alias, port) = {
+    let (alias, port, device_type) = {
         let config = state.config.lock().expect("lan config lock");
-        (config.alias.clone(), config.listen_port)
+        (config.alias.clone(), config.listen_port, config.device_type)
     };
     let ip = lan_service::discovery::usable_interfaces()
         .ok()
@@ -188,7 +259,7 @@ pub async fn lan_get_local_device(
     Ok(LocalDeviceView {
         alias,
         fingerprint: service.fingerprint().to_string(),
-        device_type: DeviceType::Desktop,
+        device_type,
         port,
         ip,
     })
@@ -280,6 +351,13 @@ pub async fn lan_refresh_devices(state: State<'_, LanTransferState>) -> Result<(
     svc.refresh_devices().await.map_err(map_err)
 }
 
+/// TCP 单播扫描本机子网，发现组播到不了的对端（路由挡组播 / 对端无组播权限）。
+#[tauri::command]
+pub async fn lan_scan_subnet(state: State<'_, LanTransferState>) -> Result<(), String> {
+    let svc = state.service().map_err(map_err)?;
+    svc.scan_subnet().await.map_err(map_err)
+}
+
 #[tauri::command]
 pub async fn lan_list_transfers(
     state: State<'_, LanTransferState>,
@@ -359,6 +437,36 @@ pub async fn lan_respond_pair(
         .map_err(map_err)
 }
 
+/// 从某设备拉取配置同步：对端用户确认后返回其配置 payload（不透明字符串）。
+#[tauri::command]
+pub async fn lan_sync_pull(
+    state: State<'_, LanTransferState>,
+    fingerprint: String,
+) -> Result<String, String> {
+    state
+        .service()
+        .map_err(map_err)?
+        .sync_pull(&fingerprint)
+        .await
+        .map_err(map_err)
+}
+
+/// 响应收到的拉取同步请求：接受时把采集好的本机配置 payload 传回（完成对端的 /sync 响应）。
+#[tauri::command]
+pub async fn lan_respond_sync(
+    state: State<'_, LanTransferState>,
+    request: String,
+    accept: bool,
+    payload: String,
+) -> Result<(), String> {
+    state
+        .service()
+        .map_err(map_err)?
+        .respond_sync(&request, accept, payload)
+        .await
+        .map_err(map_err)
+}
+
 /// 取某设备的会话时间线（文本+文件，按时间正序）。
 #[tauri::command]
 pub async fn lan_get_conversation(
@@ -390,7 +498,7 @@ pub async fn lan_open_path(
     path: String,
 ) -> Result<(), String> {
     let storage = state.service().map_err(map_err)?.storage().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    crate::blocking(move || {
         let path = recorded_file_path(&storage, &path)?
             .canonicalize()
             .map_err(|_| "native.lanFileUnavailable".to_string())?;
@@ -402,7 +510,6 @@ pub async fn lan_open_path(
             .map_err(|e| e.to_string())
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 /// Reveal the transferred file, or open its parent if the file has been removed.
@@ -463,7 +570,7 @@ pub async fn lan_copy_file_to_clipboard(
     path: String,
 ) -> Result<(), String> {
     let storage = state.service().map_err(map_err)?.storage().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    crate::blocking(move || {
         let file = recorded_file_path(&storage, &path)?;
         if !file.is_file() {
             return Err("native.lanFileUnavailable".to_string());
@@ -471,7 +578,6 @@ pub async fn lan_copy_file_to_clipboard(
         copy_file_clipboard(&file.to_string_lossy()).map_err(|e| e.to_string())
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 /// 读取系统剪贴板中的文件路径（右键“粘贴”即把这些文件发给对方）。

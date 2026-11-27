@@ -6,7 +6,6 @@
 // Policies are applied to real routing in buildProfileConfig, which injects a process_path_regex rule per app.
 
 export type AppPolicy = "inherit" | "proxy" | "direct" | "block";
-export const APP_POLICIES: AppPolicy[] = ["inherit", "proxy", "direct", "block"];
 
 export function isAppPolicy(value: unknown): value is AppPolicy {
   return value === "inherit" || value === "proxy" || value === "direct" || value === "block";
@@ -22,24 +21,42 @@ export function parseAppPolicies(value: unknown): Record<string, AppPolicy> {
   return out;
 }
 
+// Process paths are a small, highly repeated set — the same executables recur across every
+// connection and every poll tick — so memoize the regex-based parsing below. Bounded to guard
+// against unbounded growth in the unlikely case paths were ever unique.
+const PATH_CACHE_LIMIT = 512;
+const executablePathCache = new Map<string, string>();
+const appNameCache = new Map<string, string>();
+function memoizePath(cache: Map<string, string>, key: string, compute: () => string): string {
+  const hit = cache.get(key);
+  if (hit !== undefined) return hit;
+  const value = compute();
+  if (cache.size >= PATH_CACHE_LIMIT) cache.clear();
+  cache.set(key, value);
+  return value;
+}
+
 // Clash API appends the owning user to the path ("/path/app (user)").
 // A user id by itself is not an identified process and must not become a routing rule.
 export function processExecutablePath(value: string): string {
-  if (!value.startsWith("/") && !/^[a-z]:[\\/]/i.test(value)) return "";
-  return value.replace(/ \([^()\\/]+\)$/, "");
+  return memoizePath(executablePathCache, value, () => {
+    if (!value.startsWith("/") && !/^[a-z]:[\\/]/i.test(value)) return "";
+    return value.replace(/ \([^()\\/]+\)$/, "");
+  });
 }
 
 // Extract the app name from a process path: the .app bundle name on macOS, the executable name elsewhere.
 export function appNameFromPath(path: string): string {
-  path = processExecutablePath(path);
-  if (!path) return "";
-  const appIdx = path.indexOf(".app/");
-  if (appIdx >= 0) {
-    const seg = path.slice(0, appIdx);
-    return seg.slice(seg.lastIndexOf("/") + 1);
-  }
-  const base = path.split(/[\\/]/).pop() || path;
-  return base;
+  return memoizePath(appNameCache, path, () => {
+    const exe = processExecutablePath(path);
+    if (!exe) return "";
+    const appIdx = exe.indexOf(".app/");
+    if (appIdx >= 0) {
+      const seg = exe.slice(0, appIdx);
+      return seg.slice(seg.lastIndexOf("/") + 1);
+    }
+    return exe.split(/[\\/]/).pop() || exe;
+  });
 }
 
 // Turn an app name into a regex matching all of its process paths (covers multi-process apps, e.g. a browser's Helper subprocesses).

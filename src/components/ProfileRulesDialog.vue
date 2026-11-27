@@ -1,6 +1,6 @@
 <script setup lang="ts">
   // "Edit rules" dialog (entered from the rules page): structured add/edit/remove of the current external subscription's own route.rules.
-  // The left form (type + content + proxy policy) adds/edits; the right side lists custom rules (filterable, editable, deletable).
+  // The top row (type + content + proxy policy) adds/edits; the panel below lists custom rules (filterable, editable, deletable).
   // Only simple single-match rules are handled; complex rules are preserved as-is. Save validates and applies via saveExternalRules (replacing only route.rules).
   import { computed, ref } from "vue";
   import { Pencil, Trash2 } from "@lucide/vue";
@@ -211,30 +211,35 @@
   .re-body {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
   .re-hint {
-    grid-column: 1 / -1;
     margin: 0;
     color: var(--muted);
     font-size: 13px;
     line-height: 1.5;
   }
   .re-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1.05fr) auto;
+    gap: 12px;
+    align-items: end;
   }
   .re-field {
     display: grid;
     gap: 7px;
+    min-width: 0;
     font-size: 13px;
     font-weight: 550;
   }
   .re-field > span {
     color: var(--strong);
+  }
+  .re-field :deep(.select-menu) {
+    width: 100%;
+    min-width: 0;
   }
   .re-input {
     width: 100%;
@@ -251,6 +256,7 @@
     border-color: var(--danger);
   }
   .re-invalid {
+    grid-column: 1 / -1;
     margin: 0;
     color: var(--danger);
     font-size: 12px;
@@ -260,19 +266,23 @@
     align-items: center;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: 2px;
   }
-  .re-cancel-edit {
-    min-height: 36px;
+  .re-cancel-edit,
+  .re-add {
+    min-height: 40px;
   }
   .re-add {
-    min-height: 36px;
     padding: 0 18px;
   }
   .re-list-wrap {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 180px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
   }
   .re-filter {
     flex: none;
@@ -343,10 +353,16 @@
     background: var(--danger-bg);
   }
   .re-empty {
-    margin: 24px 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 16px;
     text-align: center;
     color: var(--muted);
     font-size: 13px;
+    line-height: 1.5;
   }
   .re-error {
     flex: none;
@@ -358,8 +374,11 @@
     font-size: 13px;
   }
   @media (max-width: 680px) {
-    .re-body {
+    .re-form {
       grid-template-columns: 1fr;
+    }
+    .re-form-actions {
+      justify-content: flex-start;
     }
   }
 </style>

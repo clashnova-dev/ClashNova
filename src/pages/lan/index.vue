@@ -1,10 +1,13 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, ref, computed, nextTick, watch, type Component } from "vue";
   import {
+    Monitor,
     Laptop,
     Smartphone,
+    Tablet,
     Server,
-    Globe,
+    Tv,
+    CircleHelp,
     RefreshCw,
     ArrowUp,
     Check,
@@ -25,12 +28,21 @@
     Settings,
     ShieldCheck,
     QrCode,
+    ChevronRight,
+    ChevronDown,
+    CircleAlert,
   } from "@lucide/vue";
-  import { renderSVG } from "uqr";
   import { useApp } from "../../composables/useApp";
   import FileTypeIcon from "../../components/FileTypeIcon.vue";
   import BaseButton from "../../components/ui/BaseButton.vue";
+  import AddDeviceDialog from "../../components/lan/AddDeviceDialog.vue";
+  import MyQrDialog from "../../components/lan/MyQrDialog.vue";
+  import SettingsDialog from "../../components/lan/SettingsDialog.vue";
+  import PairedManageDialog from "../../components/lan/PairedManageDialog.vue";
+  import PairRequestDialog from "../../components/lan/PairRequestDialog.vue";
+  import IncomingRequestDialog from "../../components/lan/IncomingRequestDialog.vue";
   import { notifications } from "../../lib/notifications";
+  import { clampIntoViewport } from "../../lib/floating";
   import type { NoticeKind } from "../../lib/notification-center";
   import type { MessageKey } from "../../i18n";
   import type {
@@ -66,10 +78,10 @@
   const pairingFp = ref("");
   const manualAddr = ref("");
   const adding = ref(false);
-  const addDialog = ref<HTMLDialogElement>();
-  const settingsDialog = ref<HTMLDialogElement>();
-  const pairedDialog = ref<HTMLDialogElement>();
-  const qrDialog = ref<HTMLDialogElement>();
+  const addDialog = ref<InstanceType<typeof AddDeviceDialog>>();
+  const settingsDialog = ref<InstanceType<typeof SettingsDialog>>();
+  const pairedDialog = ref<InstanceType<typeof PairedManageDialog>>();
+  const qrDialog = ref<InstanceType<typeof MyQrDialog>>();
   const nameInput = ref("");
   const discoverableInput = ref(true);
   const acceptInput = ref(true);
@@ -77,11 +89,11 @@
   const savingSettings = ref(false);
   const pairRequest = ref<LanPairRequest | null>(null);
   const pairQueue = ref<LanPairRequest[]>([]);
-  const pairDialog = ref<HTMLDialogElement>();
+  const pairDialog = ref<InstanceType<typeof PairRequestDialog>>();
   const responding = ref(false);
   const incoming = ref<LanIncomingRequest | null>(null);
   const incomingQueue = ref<LanIncomingRequest[]>([]);
-  const incomingDialog = ref<HTMLDialogElement>();
+  const incomingDialog = ref<InstanceType<typeof IncomingRequestDialog>>();
   const timelineEl = ref<HTMLElement>();
   const menu = ref<{ x: number; y: number; item: ChatItem } | null>(null);
   const menuEl = ref<HTMLElement>();
@@ -106,14 +118,18 @@
   const TERMINAL_STATES = new Set<LanTransferStateName>(["COMPLETED", "FAILED", "CANCELED"]);
   const isTerminal = (s: LanTransferStateName) => TERMINAL_STATES.has(s);
 
-  const DEVICE_ICONS: Partial<Record<LanDeviceType, Component>> = {
-    mobile: Smartphone,
+  // 设备类型 → 图标（参考图二）。
+  const DEVICE_ICONS: Record<LanDeviceType, Component> = {
+    desktop: Monitor,
+    laptop: Laptop,
+    phone: Smartphone,
+    tablet: Tablet,
     server: Server,
-    headless: Server,
-    web: Globe,
+    tv: Tv,
+    unknown: CircleHelp,
   };
   function deviceIcon(type: LanDeviceType | null): Component {
-    return (type && DEVICE_ICONS[type]) || Laptop;
+    return (type && DEVICE_ICONS[type]) || CircleHelp;
   }
   function fmtSize(bytes: number): string {
     const units = ["B", "KB", "MB", "GB", "TB"];
@@ -334,6 +350,8 @@
       );
       if (disposed) return;
       await b.lanRefreshDevices();
+      // TCP 单播扫描兜底：组播被路由挡住时也能发现对端。后台跑，发现即流式更新列表。
+      void b.lanScanSubnet().catch(() => {});
       if (!disposed) ready.value = true;
     } catch (error) {
       showError(error);
@@ -346,7 +364,9 @@
     if (busy.value) return;
     if (!ready.value) return load();
     try {
-      await (await bridge()).lanRefreshDevices();
+      const b = await bridge();
+      await b.lanRefreshDevices();
+      void b.lanScanSubnet().catch(() => {}); // 刷新同时跑一次单播扫描
       await reloadTrusted();
     } catch (error) {
       showError(error);
@@ -417,24 +437,39 @@
 
   function openAdd() {
     manualAddr.value = "";
-    addDialog.value?.showModal();
+    addDialog.value?.open();
   }
   function openPaired() {
     void reloadTrusted();
-    pairedDialog.value?.showModal();
+    pairedDialog.value?.open();
   }
-
-  // QR direct connect: this device's QR payload (clashnova://lan?…). Scanning it on mobile allows a unicast direct connection,
-  // with no multicast required (works even when iOS hasn't granted multicast permission). alias uses encodeURIComponent so the
-  // mobile side's Uri.queryParameters decodes it correctly.
-  const qrPayload = computed(() => {
-    const d = localDevice.value;
-    if (!d || !d.ip || !d.fingerprint) return "";
-    return `clashnova://lan?v=1&ip=${d.ip}&port=${d.port}&fp=${d.fingerprint}&alias=${encodeURIComponent(d.alias)}`;
-  });
-  const qrSvg = computed(() => (qrPayload.value ? renderSVG(qrPayload.value, { border: 2 }) : ""));
   function openQr() {
-    qrDialog.value?.showModal();
+    qrDialog.value?.open();
+  }
+  // 「添加设备」抽屉：点加号在设备栏内从底部滑出（无遮罩），含 搜索附近设备 /
+  // 我的二维码 / 手动连接。点别处（window click → closeMenu）或再点加号收起。
+  const addSheetOpen = ref(false);
+  // 设备分区折叠（已配对默认展开）。
+  const pairedOpen = ref(true);
+  const nearbyOpen = ref(true);
+  function openAddSheet() {
+    addSheetOpen.value = !addSheetOpen.value;
+  }
+  function pickSearch() {
+    addSheetOpen.value = false;
+    void refresh();
+  }
+  function pickQr() {
+    addSheetOpen.value = false;
+    openQr();
+  }
+  function pickManual() {
+    addSheetOpen.value = false;
+    openAdd();
+  }
+  function pickPaired() {
+    addSheetOpen.value = false;
+    openPaired();
   }
   function openSettings() {
     if (!settings.value) return;
@@ -442,7 +477,7 @@
     discoverableInput.value = settings.value.discoverable;
     acceptInput.value = settings.value.acceptIncoming;
     autoAcceptInput.value = settings.value.autoAcceptTrusted;
-    settingsDialog.value?.showModal();
+    settingsDialog.value?.open();
     void reloadTrusted();
   }
   async function addManual() {
@@ -559,8 +594,8 @@
     if (menu.value !== opened || !menuEl.value) return;
     const rect = menuEl.value.getBoundingClientRect(),
       gap = 8;
-    opened.x = Math.max(gap, Math.min(opened.x, window.innerWidth - rect.width - gap));
-    opened.y = Math.max(gap, Math.min(opened.y, window.innerHeight - rect.height - gap));
+    opened.x = clampIntoViewport(opened.x, rect.width, window.innerWidth, gap);
+    opened.y = clampIntoViewport(opened.y, rect.height, window.innerHeight, gap);
     menuReady.value = true;
     await nextTick();
     if (menu.value === opened)
@@ -568,6 +603,7 @@
   }
   function closeMenu() {
     menu.value = null;
+    addSheetOpen.value = false;
   }
   function onBubbleKeydown(event: KeyboardEvent, item: ChatItem) {
     if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) void openMenu(event, item);
@@ -650,6 +686,30 @@
     }
   }
 
+  // 重发失败的发出消息：按原内容（文本 / 文件源路径）重发，再移除旧失败条目
+  // （传 null 路径只删历史、不删源文件）。IM 风格。
+  async function resend(item: ChatItem) {
+    const fp = selected.value;
+    if (!fp) return;
+    if (item.text == null && !item.savePath) return;
+    try {
+      const b = await bridge();
+      // 先移除旧的失败条目，再重发。lanSendFiles 要等整段传输结束才 resolve，
+      // 若放在发送之后删除，重发期间会同时出现「旧失败 + 新传输中」两个气泡。
+      await b.lanDeleteFile(item.id, null);
+      if (!disposed) {
+        messages.value = messages.value.filter(m => !(m.id === item.id && m.direction === item.direction));
+      }
+      if (item.text != null) {
+        await b.lanSendText(fp, item.text);
+      } else if (item.savePath) {
+        await b.lanSendFiles(fp, [item.savePath]);
+      }
+    } catch (e) {
+      showError(e);
+    }
+  }
+
   async function cancelTask(id: string) {
     try {
       await (await bridge()).lanCancelTransfer(id);
@@ -672,16 +732,30 @@
     }
   }
 
+  let pairExpiry: ReturnType<typeof setTimeout> | null = null;
   watch(pairRequest, async () => {
     await nextTick();
     if (disposed) return;
-    if (pairRequest.value && !pairDialog.value?.open) pairDialog.value?.showModal();
+    if (pairExpiry) {
+      clearTimeout(pairExpiry);
+      pairExpiry = null;
+    }
+    if (pairRequest.value && !pairDialog.value?.isOpen()) pairDialog.value?.open();
     else if (!pairRequest.value) pairDialog.value?.close();
+    // 配对确认 30s 过期：超时自动拒绝并关闭（与后端 decide_pair 30s 一致）。
+    if (pairRequest.value) {
+      const expiring = pairRequest.value.requestId;
+      pairExpiry = setTimeout(() => {
+        if (!disposed && pairRequest.value?.requestId === expiring) {
+          void respondPair(false);
+        }
+      }, 30_000);
+    }
   });
   watch(incoming, async () => {
     await nextTick();
     if (disposed) return;
-    if (incoming.value && !incomingDialog.value?.open) incomingDialog.value?.showModal();
+    if (incoming.value && !incomingDialog.value?.isOpen()) incomingDialog.value?.open();
     else if (!incoming.value) incomingDialog.value?.close();
   });
   async function respondIncoming(accept: boolean) {
@@ -706,6 +780,10 @@
   });
   onBeforeUnmount(() => {
     disposed = true;
+    if (pairExpiry) {
+      clearTimeout(pairExpiry);
+      pairExpiry = null;
+    }
     unlisten.forEach(fn => fn());
     unlisten = [];
     window.removeEventListener("click", closeMenu);
@@ -749,22 +827,12 @@
             </BaseButton>
             <BaseButton
               class="icon-btn add-btn"
+              :class="{ active: addSheetOpen }"
               :title="t('lan.addDevice')"
               :aria-label="t('lan.addDevice')"
-              @click="openAdd"
+              @click.stop="openAddSheet"
             >
               <Plus :size="17" />
-            </BaseButton>
-            <BaseButton class="icon-btn" :title="t('lan.myQr')" :aria-label="t('lan.myQr')" @click="openQr">
-              <QrCode :size="16" />
-            </BaseButton>
-            <BaseButton
-              class="icon-btn"
-              :title="t('lan.pairedSection')"
-              :aria-label="t('lan.pairedSection')"
-              @click="openPaired"
-            >
-              <ShieldCheck :size="16" />
             </BaseButton>
             <BaseButton
               class="icon-btn"
@@ -778,57 +846,107 @@
         </header>
 
         <div class="sidebar-scroll">
-          <template v-if="pairedList.length">
-            <p class="group-label">
-              {{ t("lan.pairedSection") }}<span class="count">{{ pairedList.length }}</span>
-            </p>
-            <BaseButton
-              v-for="d in pairedList"
-              :key="d.fingerprint"
-              class="conv"
-              :aria-pressed="selected === d.fingerprint"
-              :class="{ active: selected === d.fingerprint, offline: !d.online }"
-              @click="selectDevice(d.fingerprint)"
+          <!-- 已配对（可折叠，默认展开） -->
+          <section class="device-group">
+            <button
+              type="button"
+              class="group-label toggle"
+              :aria-expanded="pairedOpen"
+              @click="pairedOpen = !pairedOpen"
             >
-              <span class="conv-meta"
-                ><strong :title="d.alias">{{ d.alias }}</strong
-                ><small :title="d.address"
-                  ><span class="dot" :class="{ on: d.online }" /><span>{{
-                    t(d.online ? "lan.peerOnline" : "lan.peerOffline")
-                  }}</span
-                  ><span v-if="d.online && d.address" class="peer-address"> · {{ d.address }}</span></small
-                ></span
-              >
-            </BaseButton>
-          </template>
-
-          <template v-if="discoveredUnpaired.length">
-            <p class="group-label">
-              {{ t("lan.discoveredSection") }}<span class="count">{{ discoveredUnpaired.length }}</span>
-            </p>
-            <div v-for="d in discoveredUnpaired" :key="d.fingerprint" class="conv discover">
-              <span class="conv-meta"
-                ><strong :title="d.alias">{{ d.alias }}</strong
-                ><small :title="d.address">{{ d.address }}</small></span
-              >
+              {{ t("lan.pairedSection") }}<span class="count"> · {{ pairedList.length }}</span>
+              <ChevronDown :size="14" class="caret" :class="{ collapsed: !pairedOpen }" />
+            </button>
+            <template v-if="pairedOpen">
               <BaseButton
-                class="pair-btn"
-                :aria-label="`${t('lan.pair')} · ${d.alias}`"
-                :disabled="!!pairingFp || !ready"
-                :aria-busy="pairingFp === d.fingerprint"
-                @click="pairDevice(d.fingerprint)"
+                v-for="d in pairedList"
+                :key="d.fingerprint"
+                class="conv"
+                :aria-pressed="selected === d.fingerprint"
+                :class="{ active: selected === d.fingerprint, offline: !d.online }"
+                @click="selectDevice(d.fingerprint)"
               >
-                <Link2 :size="13" />{{ t(pairingFp === d.fingerprint ? "lan.pairing" : "lan.pair") }}
+                <span class="conv-ico"><component :is="deviceIcon(d.deviceType)" :size="20" /></span>
+                <span class="conv-meta"
+                  ><strong :title="d.alias">{{ d.alias }}</strong
+                  ><small :title="d.address"
+                    ><span class="dot" :class="{ on: d.online }" /><span>{{
+                      t(d.online ? "lan.peerOnline" : "lan.peerOffline")
+                    }}</span
+                    ><span v-if="d.online && d.address" class="peer-address"> · {{ d.address }}</span></small
+                  ></span
+                >
+              </BaseButton>
+              <p v-if="!pairedList.length" class="group-empty">{{ t("lan.noPairedHint") }}</p>
+            </template>
+          </section>
+
+          <!-- 附近设备（可折叠） -->
+          <section class="device-group">
+            <button
+              type="button"
+              class="group-label toggle"
+              :aria-expanded="nearbyOpen"
+              @click="nearbyOpen = !nearbyOpen"
+            >
+              {{ t("lan.discoveredSection") }}<span class="count"> · {{ discoveredUnpaired.length }}</span>
+              <ChevronDown :size="14" class="caret" :class="{ collapsed: !nearbyOpen }" />
+            </button>
+            <template v-if="nearbyOpen">
+              <div v-for="d in discoveredUnpaired" :key="d.fingerprint" class="conv discover">
+                <span class="conv-ico"><component :is="deviceIcon(d.deviceType)" :size="20" /></span>
+                <span class="conv-meta"
+                  ><strong :title="d.alias">{{ d.alias }}</strong
+                  ><small :title="d.address">{{ d.address }}</small></span
+                >
+                <BaseButton
+                  class="pair-btn"
+                  :aria-label="`${t('lan.pair')} · ${d.alias}`"
+                  :disabled="!!pairingFp || !ready"
+                  :aria-busy="pairingFp === d.fingerprint"
+                  @click="pairDevice(d.fingerprint)"
+                >
+                  <Link2 :size="13" />{{ t(pairingFp === d.fingerprint ? "lan.pairing" : "lan.pair") }}
+                </BaseButton>
+              </div>
+              <div v-if="!discoveredUnpaired.length" class="nearby-empty" role="status">
+                <Radio :size="26" :stroke-width="1.4" />
+                <p>{{ t(busy ? "lan.searching" : "lan.nearbyEmpty") }}</p>
+              </div>
+            </template>
+          </section>
+        </div>
+
+        <!-- 添加设备抽屉：设备栏内底部滑出，无遮罩 -->
+        <Transition name="add-sheet">
+          <div v-if="addSheetOpen" class="add-sheet" @click.stop>
+            <div class="add-sheet-head">
+              <BaseButton class="icon-btn" :aria-label="t('common.close')" @click="addSheetOpen = false">
+                <X :size="16" />
               </BaseButton>
             </div>
-          </template>
-
-          <div v-if="!pairedList.length && !discoveredUnpaired.length" class="sidebar-empty" role="status">
-            <Radio :size="26" :stroke-width="1.4" />
-            <strong>{{ t(busy ? "lan.searching" : "lan.noDevices") }}</strong>
-            <p>{{ t("lan.deviceHint") }}</p>
+            <button type="button" class="add-row" @click="pickSearch">
+              <span class="add-ico"><Radio :size="16" /></span>
+              <span class="add-text">{{ t("lan.searchNearby") }}</span>
+              <ChevronRight :size="16" class="add-chev" />
+            </button>
+            <button type="button" class="add-row" @click="pickQr">
+              <span class="add-ico"><QrCode :size="16" /></span>
+              <span class="add-text">{{ t("lan.myQr") }}</span>
+              <ChevronRight :size="16" class="add-chev" />
+            </button>
+            <button type="button" class="add-row" @click="pickManual">
+              <span class="add-ico"><Link2 :size="16" /></span>
+              <span class="add-text">{{ t("lan.manualConnect") }}</span>
+              <ChevronRight :size="16" class="add-chev" />
+            </button>
+            <button type="button" class="add-row" @click="pickPaired">
+              <span class="add-ico"><ShieldCheck :size="16" /></span>
+              <span class="add-text">{{ t("lan.managePaired") }}</span>
+              <ChevronRight :size="16" class="add-chev" />
+            </button>
           </div>
-        </div>
+        </Transition>
       </aside>
 
       <!-- Right column: conversation -->
@@ -863,6 +981,16 @@
                 <span>{{ friendlyTime(item.finishedAt) }}</span>
               </div>
               <div class="row" :class="item.direction === 'send' ? 'me' : 'peer'">
+                <button
+                  v-if="item.direction === 'send' && (item.state === 'FAILED' || item.state === 'CANCELED')"
+                  type="button"
+                  class="resend-btn"
+                  :title="t('lan.resend')"
+                  :aria-label="t('lan.resend')"
+                  @click="resend(item)"
+                >
+                  <CircleAlert :size="18" />
+                </button>
                 <div
                   class="bubble"
                   :class="{ file: item.text == null }"
@@ -1044,214 +1172,35 @@
     </Teleport>
 
     <!-- Add device -->
-    <dialog
-      ref="addDialog"
-      class="incoming-dialog add-device-dialog"
-      aria-labelledby="lan-add-title"
-      @close="manualAddr = ''"
-    >
-      <form @submit.prevent="addManual">
-        <header class="incoming-heading">
-          <span class="incoming-icon"><Plus :size="22" /></span>
-          <div>
-            <h2 id="lan-add-title">{{ t("lan.addDevice") }}</h2>
-          </div>
-        </header>
-        <label class="field-label" for="lan-add-input">{{ t("lan.manualAdd") }}</label>
-        <div class="dialog-field">
-          <Link2 class="field-icon" :size="15" /><input
-            id="lan-add-input"
-            v-model="manualAddr"
-            type="text"
-            inputmode="url"
-            :placeholder="t('lan.manualPlaceholder')"
-            :disabled="adding"
-          />
-        </div>
-        <div class="incoming-actions">
-          <BaseButton :disabled="adding" @click="addDialog?.close()"> {{ t("common.cancel") }}</BaseButton><BaseButton
-            type="submit"
-            class="primary"
-            :disabled="adding || !manualAddr.trim()"
-          >
-            <Plus :size="15" />{{ t("lan.addDevice") }}
-          </BaseButton>
-        </div>
-      </form>
-    </dialog>
+    <AddDeviceDialog ref="addDialog" v-model:addr="manualAddr" :adding="adding" @submit="addManual" />
 
     <!-- My QR code: for mobile to scan and connect directly -->
-    <dialog ref="qrDialog" class="incoming-dialog qr-dialog" aria-labelledby="lan-qr-title">
-      <header class="incoming-heading">
-        <span class="incoming-icon"><QrCode :size="22" /></span>
-        <div>
-          <h2 id="lan-qr-title">{{ t("lan.myQr") }}</h2>
-        </div>
-      </header>
-      <div v-if="qrPayload" class="qr-box">
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="qr-svg" v-html="qrSvg" />
-        <div class="qr-meta">
-          <strong>{{ localDevice?.alias }}</strong><span>{{ localDevice?.ip }}:{{ localDevice?.port }}</span>
-        </div>
-        <p class="qr-hint">{{ t("lan.myQrHint") }}</p>
-      </div>
-      <p v-else class="qr-hint qr-noip">{{ t("lan.qrNoIp") }}</p>
-      <div class="incoming-actions">
-        <BaseButton class="primary" @click="qrDialog?.close()">
-          {{ t("common.done") }}
-        </BaseButton>
-      </div>
-    </dialog>
+    <MyQrDialog ref="qrDialog" :device="localDevice" />
 
     <!-- Settings -->
-    <dialog ref="settingsDialog" class="incoming-dialog" aria-labelledby="lan-settings-title">
-      <form @submit.prevent="saveSettings">
-        <header class="incoming-heading">
-          <span class="incoming-icon"><Settings :size="22" /></span>
-          <div>
-            <h2 id="lan-settings-title">{{ t("lan.settingsTitle") }}</h2>
-          </div>
-        </header>
-        <label class="field-label" for="lan-name-input">{{ t("lan.deviceName") }}</label>
-        <div class="dialog-field">
-          <input
-            id="lan-name-input"
-            v-model="nameInput"
-            type="text"
-            maxlength="64"
-            :placeholder="t('lan.deviceName')"
-            :disabled="savingSettings"
-          />
-        </div>
-        <label class="toggle-row"
-          ><span>{{ t("lan.visible") }}</span
-          ><input v-model="discoverableInput" type="checkbox" role="switch" :disabled="savingSettings" /><span
-            class="switch"
-            aria-hidden="true"
-        /></label>
-        <label class="toggle-row"
-          ><span>{{ t("lan.acceptIncoming") }}</span
-          ><input v-model="acceptInput" type="checkbox" role="switch" :disabled="savingSettings" /><span
-            class="switch"
-            aria-hidden="true"
-        /></label>
-        <label class="toggle-row"
-          ><span>{{ t("lan.autoAccept") }}</span
-          ><input
-            v-model="autoAcceptInput"
-            type="checkbox"
-            role="switch"
-            :disabled="savingSettings || !acceptInput" /><span class="switch" aria-hidden="true"
-        /></label>
-        <div class="incoming-actions">
-          <BaseButton :disabled="savingSettings" @click="settingsDialog?.close()">
-            {{ t("common.cancel") }}</BaseButton><BaseButton
-            type="submit"
-            class="primary"
-            :disabled="savingSettings || !nameInput.trim()"
-          >
-            <Check :size="15" />{{ t("lan.save") }}
-          </BaseButton>
-        </div>
-      </form>
-    </dialog>
+    <SettingsDialog
+      ref="settingsDialog"
+      v-model:name="nameInput"
+      v-model:discoverable="discoverableInput"
+      v-model:accept="acceptInput"
+      v-model:autoAccept="autoAcceptInput"
+      :saving="savingSettings"
+      @submit="saveSettings"
+    />
 
     <!-- Paired device management -->
-    <dialog ref="pairedDialog" class="incoming-dialog paired-dialog" aria-labelledby="lan-paired-title">
-      <header class="incoming-heading">
-        <span class="incoming-icon"><ShieldCheck :size="22" /></span>
-        <div>
-          <h2 id="lan-paired-title">{{ t("lan.pairedSection") }} · {{ trusted.length }}</h2>
-        </div>
-      </header>
-      <div class="paired-manage">
-        <div v-for="d in trusted" :key="d.fingerprint" class="paired-item">
-          <span class="paired-ico"><ShieldCheck :size="16" /></span>
-          <span class="paired-meta"
-            ><strong :title="d.alias">{{ d.alias }}</strong
-            ><small :title="d.fingerprint">{{ t("lan.trusted") }} · {{ d.fingerprint.slice(0, 12) }}…</small></span
-          >
-          <BaseButton
-            class="paired-unpair"
-            :title="t('lan.unpair')"
-            :aria-label="`${t('lan.unpair')} · ${d.alias}`"
-            @click="unpairDevice(d.fingerprint)"
-          >
-            <Unlink :size="14" />
-          </BaseButton>
-        </div>
-        <p v-if="!trusted.length" class="paired-empty">{{ t("lan.noPaired") }}</p>
-      </div>
-      <div class="incoming-actions">
-        <BaseButton @click="pairedDialog?.close()">{{ t("common.close") }}</BaseButton>
-      </div>
-    </dialog>
+    <PairedManageDialog ref="pairedDialog" :trusted="trusted" @unpair="unpairDevice" />
 
     <!-- Pair request -->
-    <dialog
-      ref="pairDialog"
-      class="incoming-dialog"
-      aria-labelledby="lan-pair-title"
-      @cancel.prevent="respondPair(false)"
-    >
-      <template v-if="pairRequest">
-        <header class="incoming-heading">
-          <span class="incoming-icon"><Link2 :size="22" /></span>
-          <div>
-            <h2 id="lan-pair-title">{{ t("lan.pairRequestTitle") }}</h2>
-            <p>
-              {{ t("lan.from") }} <b>{{ pairRequest.peerAlias }}</b>
-            </p>
-          </div>
-        </header>
-        <p class="pair-desc">{{ t("lan.pairDesc") }}</p>
-        <div class="incoming-actions">
-          <BaseButton :disabled="responding" @click="respondPair(false)">
-            <X :size="15" />{{ t("lan.reject") }}</BaseButton
-          ><BaseButton class="primary" :disabled="responding" @click="respondPair(true)">
-            <Check :size="15" />{{ t("lan.accept") }}
-          </BaseButton>
-        </div>
-      </template>
-    </dialog>
+    <PairRequestDialog ref="pairDialog" :request="pairRequest" :responding="responding" @respond="respondPair" />
 
     <!-- Unpaired (third-party LocalSend) fallback: confirm one at a time -->
-    <dialog
+    <IncomingRequestDialog
       ref="incomingDialog"
-      class="incoming-dialog"
-      aria-labelledby="lan-incoming-title"
-      @cancel.prevent="respondIncoming(false)"
-    >
-      <template v-if="incoming">
-        <header class="incoming-heading">
-          <span class="incoming-icon"><Radio :size="22" /></span>
-          <div>
-            <h2 id="lan-incoming-title">
-              {{ t(incoming.text != null ? "lan.incomingTextTitle" : "lan.incomingTitle") }}
-            </h2>
-            <p>
-              {{ t("lan.from") }} <b>{{ incoming.peerAlias }}</b> ·
-              {{ fmtSize(incoming.totalSize) }}
-            </p>
-          </div>
-        </header>
-        <pre v-if="incoming.text != null" class="message-text">{{ incoming.text }}</pre>
-        <ul v-else class="incoming-files">
-          <li v-for="(f, i) in incoming.files" :key="i">
-            <FileTypeIcon :name="f.name" :size="18" /><span :title="f.name">{{ f.name }}</span
-            ><small>{{ fmtSize(f.size) }}</small>
-          </li>
-        </ul>
-        <div class="incoming-actions">
-          <BaseButton :disabled="responding" @click="respondIncoming(false)">
-            <X :size="15" />{{ t("lan.reject") }}</BaseButton
-          ><BaseButton class="primary" :disabled="responding" @click="respondIncoming(true)">
-            <Check :size="15" />{{ t("lan.accept") }}
-          </BaseButton>
-        </div>
-      </template>
-    </dialog>
+      :incoming="incoming"
+      :responding="responding"
+      @respond="respondIncoming"
+    />
   </section>
 </template>
 <style scoped lang="scss" src="./index.scss"></style>

@@ -6,7 +6,7 @@ export const DEFAULT_LAN_PORT = 53317;
 /** Maximum size of a single text message (bytes); must match the core layer's text limit. */
 export const MAX_TEXT_BYTES = 65536;
 
-export type LanDeviceType = "mobile" | "desktop" | "web" | "headless" | "server";
+export type LanDeviceType = "desktop" | "laptop" | "phone" | "tablet" | "server" | "tv" | "unknown";
 
 export type LanDirection = "send" | "receive";
 

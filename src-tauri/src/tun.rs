@@ -143,7 +143,8 @@ pub fn configure(config: &mut Value, enabled: bool, settings: &TunSettings) -> R
     } else {
         servers.push(json!({"type":"fakeip","tag":"airport-fakeip","inet4_range":"198.18.0.0/15","inet6_range":"fc00::/18"}));
         // Other record types (for example PTR) retain the domestic resolver.
-        dns_rules.push(json!({"query_type":["A","AAAA"],"server":"airport-fakeip","rewrite_ttl":30}));
+        dns_rules
+            .push(json!({"query_type":["A","AAAA"],"server":"airport-fakeip","rewrite_ttl":30}));
         // Do not mix direct HTTPS/SVCB address hints with proxy-resolved fake addresses.
         // Empty metadata records let browsers use normal TLS without waiting on direct DNS.
         dns_rules.push(json!({"query_type":["HTTPS","SVCB"],"action":"predefined"}));
@@ -624,8 +625,12 @@ mod tests {
         configure(&mut c, true, &TunSettings::default()).unwrap();
         let rules = c["dns"]["rules"].as_array().unwrap();
         assert_eq!(rules[1]["domain_suffix"], json!(["cn"]));
-        assert!(rules.iter().any(|r| r["server"] == "airport-fakeip" && r["rewrite_ttl"] == 30));
-        assert!(rules.iter().any(|r| r["query_type"] == json!(["HTTPS","SVCB"]) && r["action"] == "predefined"));
+        assert!(rules
+            .iter()
+            .any(|r| r["server"] == "airport-fakeip" && r["rewrite_ttl"] == 30));
+        assert!(rules
+            .iter()
+            .any(|r| r["query_type"] == json!(["HTTPS", "SVCB"]) && r["action"] == "predefined"));
         configure(&mut c, false, &TunSettings::default()).unwrap();
         assert!(c.get("dns").is_none());
         assert!(c["route"].get("default_domain_resolver").is_none());
@@ -634,12 +639,31 @@ mod tests {
     #[ignore = "opt-in private config export for DNS regression"]
     fn export_dns_review_configs() {
         let dir = std::path::PathBuf::from(std::env::var("AIRPORT_DNS_REVIEW_DIR").unwrap());
-        let raw = std::fs::read_to_string(std::env::var("AIRPORT_DNS_REVIEW_PROFILE").unwrap()).unwrap();
+        let raw =
+            std::fs::read_to_string(std::env::var("AIRPORT_DNS_REVIEW_PROFILE").unwrap()).unwrap();
         for mode in ["fakeip", "remote", "system"] {
             let mut c: Value = serde_json::from_str(&raw).unwrap();
-            configure(&mut c, true, &TunSettings { dns_mode: if mode == "remote" { "remote".into() } else { "fakeip".into() }, ..TunSettings::default() }).unwrap();
-            if mode == "system" { configure(&mut c, false, &TunSettings::default()).unwrap(); }
-            crate::storage::write_private(&dir.join(format!("{mode}.json")), c.to_string().as_bytes()).unwrap();
+            configure(
+                &mut c,
+                true,
+                &TunSettings {
+                    dns_mode: if mode == "remote" {
+                        "remote".into()
+                    } else {
+                        "fakeip".into()
+                    },
+                    ..TunSettings::default()
+                },
+            )
+            .unwrap();
+            if mode == "system" {
+                configure(&mut c, false, &TunSettings::default()).unwrap();
+            }
+            crate::storage::write_private(
+                &dir.join(format!("{mode}.json")),
+                c.to_string().as_bytes(),
+            )
+            .unwrap();
         }
     }
 

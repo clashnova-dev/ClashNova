@@ -92,9 +92,7 @@ pub async fn get_client_setting(
     key: String,
 ) -> Result<Option<Value>, String> {
     let store = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || store.get(&key))
-        .await
-        .map_err(|e| e.to_string())?
+    crate::blocking(move || store.get(&key)).await
 }
 #[tauri::command]
 pub async fn set_client_setting(
@@ -103,9 +101,7 @@ pub async fn set_client_setting(
     value: Value,
 ) -> Result<(), String> {
     let store = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || store.set(&key, value))
-        .await
-        .map_err(|e| e.to_string())?
+    crate::blocking(move || store.set(&key, value)).await
 }
 #[cfg(test)]
 mod tests {
@@ -115,17 +111,32 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("airport-settings.json");
         let store = SettingsStore::open(path.clone());
-        store.set("mainWindow", serde_json::json!({"width":900,"height":670})).unwrap();
+        store
+            .set("mainWindow", serde_json::json!({"width":900,"height":670}))
+            .unwrap();
         store.set("notifications", Value::Bool(false)).unwrap();
         store.set("ipVisible", Value::Bool(false)).unwrap();
         store.set("ipAutoRefresh", Value::Bool(true)).unwrap();
-        store.set("session", serde_json::json!({"refreshToken":"test-only-token"})).unwrap();
+        store
+            .set(
+                "session",
+                serde_json::json!({"refreshToken":"test-only-token"}),
+            )
+            .unwrap();
         let reread = SettingsStore::open(path);
         assert_eq!(reread.get("mainWindow").unwrap().unwrap()["width"], 900);
-        assert_eq!(reread.get("notifications").unwrap(), Some(Value::Bool(false)));
-        assert_eq!(reread.get("session").unwrap().unwrap()["refreshToken"], "test-only-token");
+        assert_eq!(
+            reread.get("notifications").unwrap(),
+            Some(Value::Bool(false))
+        );
+        assert_eq!(
+            reread.get("session").unwrap().unwrap()["refreshToken"],
+            "test-only-token"
+        );
         // Empty token is an explicit logout marker, not a missing key that could reimport a legacy token.
-        reread.set("session", serde_json::json!({"refreshToken":""})).unwrap();
+        reread
+            .set("session", serde_json::json!({"refreshToken":""}))
+            .unwrap();
         assert_eq!(reread.get("session").unwrap().unwrap()["refreshToken"], "");
     }
     #[test]

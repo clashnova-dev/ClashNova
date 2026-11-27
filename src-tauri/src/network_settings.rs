@@ -176,10 +176,14 @@ impl NetworkSettings {
         let inbounds = config["inbounds"]
             .as_array_mut()
             .ok_or("native.configNoInbounds")?;
-        if !inbounds.iter().any(|item| item["type"] == "mixed") { return Err("native.configNoMixedInbound".into()); }
+        if !inbounds.iter().any(|item| item["type"] == "mixed") {
+            return Err("native.configNoMixedInbound".into());
+        }
         // Only this process may create listeners. A subscription cannot smuggle in a second
         // LAN listener or a tunnel. Native TUN configuration is added later from validated settings.
-        *inbounds = vec![serde_json::json!({"type":"mixed", "tag":"mixed-in", "listen":self.listen_address(), "listen_port":self.proxy_port})];
+        *inbounds = vec![
+            serde_json::json!({"type":"mixed", "tag":"mixed-in", "listen":self.listen_address(), "listen_port":self.proxy_port}),
+        ];
         airport_tun_service::validate_profile_options(&config)?;
         // The file is loaded and validated again on connect. Large imported rules can grow
         // past the old 2 MiB limit when pretty-printed, so persist compact JSON instead.
@@ -221,7 +225,11 @@ mod tests {
     use super::*;
     fn builtin_csv(source: &str, name: &str) -> Vec<String> {
         let declaration = format!("const {name} =");
-        let literal = source.split_once(declaration.as_str()).unwrap().1.trim_start();
+        let literal = source
+            .split_once(declaration.as_str())
+            .unwrap()
+            .1
+            .trim_start();
         let end = literal.find(';').unwrap();
         let csv: String = serde_json::from_str(&literal[..end]).unwrap();
         csv.split(',').map(str::to_owned).collect()
@@ -248,9 +256,18 @@ mod tests {
     fn compact_production_rules_survive_save_and_reconnect() {
         let source = rule_profile();
         let legacy = serde_json::to_string_pretty(&source).unwrap();
-        assert_eq!(source["route"]["rules"][1]["domain_suffix"].as_array().unwrap().len(), 500);
+        assert_eq!(
+            source["route"]["rules"][1]["domain_suffix"]
+                .as_array()
+                .unwrap()
+                .len(),
+            500
+        );
         assert_eq!(source["route"]["rules"].as_array().unwrap().len(), 2);
-        assert!(legacy.len() < 32 * 1024, "built-in rules must remain compact");
+        assert!(
+            legacy.len() < 32 * 1024,
+            "built-in rules must remain compact"
+        );
         let settings = NetworkSettings::default();
         // Existing cached config files must work without deleting or reimporting subscriptions.
         let saved = settings.apply_to_config(&legacy).unwrap();
@@ -260,23 +277,39 @@ mod tests {
             let mut runtime: Value = serde_json::from_str(&saved).unwrap();
             let endpoint = crate::tray_speed::Endpoint::new().unwrap();
             for _ in 0..3 {
-                runtime = serde_json::from_str(&settings.apply_to_config(&runtime.to_string()).unwrap()).unwrap();
+                runtime =
+                    serde_json::from_str(&settings.apply_to_config(&runtime.to_string()).unwrap())
+                        .unwrap();
                 crate::tun::configure(&mut runtime, tun, &settings.tun).unwrap();
                 if tun {
                     let rules = runtime["dns"]["rules"].as_array().unwrap();
-                    let domestic = rules.iter().find(|rule| rule["domain_suffix"].is_array()).unwrap();
-                    assert_eq!(domestic["domain_suffix"], source["route"]["rules"][1]["domain_suffix"]);
+                    let domestic = rules
+                        .iter()
+                        .find(|rule| rule["domain_suffix"].is_array())
+                        .unwrap();
+                    assert_eq!(
+                        domestic["domain_suffix"],
+                        source["route"]["rules"][1]["domain_suffix"]
+                    );
                 }
                 endpoint.configure(&mut runtime);
                 let request = airport_tun_service::Request {
-                    id: "0".repeat(32), time: 1,
+                    id: "0".repeat(32),
+                    time: 1,
                     action: airport_tun_service::Action::Start {
-                        config: runtime.clone(), session: "1".repeat(32),
+                        config: runtime.clone(),
+                        session: "1".repeat(32),
                     },
                 };
                 let mut frame = Vec::new();
                 // Preserve the installed service's existing 4 MiB protocol budget.
-                airport_tun_service::write_message(&mut frame, &[7;32], b"airport/request/v1", &request).unwrap();
+                airport_tun_service::write_message(
+                    &mut frame,
+                    &[7; 32],
+                    b"airport/request/v1",
+                    &request,
+                )
+                .unwrap();
                 assert!(frame.len() <= airport_tun_service::MAX_FRAME + 4);
             }
         }
@@ -297,7 +330,10 @@ mod tests {
         assert!(!saved.contains('\n'));
         assert_eq!(settings.apply_to_config(&saved).unwrap(), saved);
         let restored: Value = serde_json::from_str(&saved).unwrap();
-        assert_eq!(restored["route"]["rules"][1]["domain_suffix"], source["route"]["rules"][1]["domain_suffix"]);
+        assert_eq!(
+            restored["route"]["rules"][1]["domain_suffix"],
+            source["route"]["rules"][1]["domain_suffix"]
+        );
     }
 
     #[test]
@@ -338,7 +374,7 @@ mod tests {
     }
     #[test]
     fn ordinary_proxy_profiles_cannot_load_local_key_files() {
-        let raw=r#"{"inbounds":[{"type":"mixed"}],"outbounds":[{"type":"trojan","tls":{"key_path":"/tmp/private.key"}}]}"#;
+        let raw = r#"{"inbounds":[{"type":"mixed"}],"outbounds":[{"type":"trojan","tls":{"key_path":"/tmp/private.key"}}]}"#;
         assert!(NetworkSettings::default().apply_to_config(raw).is_err());
     }
     #[test]

@@ -31,9 +31,6 @@ export const RULE_SETS = {
   ads: geosite("category-ads-all"),
 } as const;
 
-/** Tag of the geosite domain rule set (used for DNS-side mirroring: domestic domains resolve through domestic resolvers). */
-export const GEOSITE_CN_TAG = RULE_SETS.geositeCn.tag;
-
 export type RuleSetToggles = { chinaGeosite: boolean; adBlock: boolean };
 
 /**

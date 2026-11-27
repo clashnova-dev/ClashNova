@@ -18,8 +18,9 @@ export const useChainStore = defineStore("chain", () => {
   const chainError = ref<Text>("");
 
   const chainActive = computed(() => chain.value.length >= 2);
-  const chainNames = computed(() => chain.value.map(id => nodes.value.find(n => n.id === id)?.name || id));
-  const chainSummary = computed(() => chainNames.value.join(" → "));
+  const chainSummary = computed(() =>
+    chain.value.map(id => nodes.value.find(n => n.id === id)?.name || id).join(" → ")
+  );
 
   // Create or update a chain-group preset; returns the group id.
   function saveChainGroup(name: string, groupNodes: string[], id?: string): string {
@@ -50,7 +51,6 @@ export const useChainStore = defineStore("chain", () => {
     chainDelay,
     chainError,
     chainActive,
-    chainNames,
     chainSummary,
     saveChainGroup,
     deleteChainGroup,

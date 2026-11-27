@@ -211,9 +211,11 @@ impl Storage {
         use rusqlite::OptionalExtension;
         self.with_conn(|conn| {
             Ok(conn
-                .query_row("SELECT value FROM lan_settings WHERE key=?1", [key], |row| {
-                    row.get(0)
-                })
+                .query_row(
+                    "SELECT value FROM lan_settings WHERE key=?1",
+                    [key],
+                    |row| row.get(0),
+                )
                 .optional()?)
         })
     }

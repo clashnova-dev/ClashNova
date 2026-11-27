@@ -54,6 +54,12 @@ pub trait AcceptPolicy: Send + Sync {
     async fn decide_pair(&self, _sender: &DeviceInfo) -> bool {
         false
     }
+
+    /// 跨端配置同步「拉取」授权：对端请求拉取本机配置时提示用户确认，接受则返回
+    /// 配置 payload（Some），拒绝/超时返回 None。默认不支持（返回 None）。
+    async fn decide_sync(&self, _sender: &DeviceInfo) -> Option<String> {
+        None
+    }
 }
 
 /// 显式配对端点（自有扩展，LocalSend 规范外）。
@@ -207,6 +213,7 @@ impl Receiver {
             .route(&format!("{API_PREFIX}/cancel"), post(cancel))
             .route(&format!("{API_PREFIX}/register"), post(register))
             .route(PAIR_PATH, post(pair))
+            .route(crate::messages::SYNC_PATH, post(receive_sync))
             .route(&format!("{API_PREFIX}/info"), get(info))
             .with_state(state);
 
@@ -320,6 +327,25 @@ async fn pair(
     }
 }
 
+/// POST /sync：对端请求拉取本机配置。以 mTLS 验证过的指纹为准，提示用户确认；
+/// 接受则返回配置 payload（200），拒绝/超时 403。不写信任表（不用配对）。
+async fn receive_sync(
+    State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    VerifiedPeer(peer_fp): VerifiedPeer,
+    Json(req): Json<crate::messages::SyncRequest>,
+) -> Response {
+    let info = with_verified_fp(req.info, peer_fp);
+    if info.fingerprint.is_empty() || info.fingerprint.len() > 256 || info.alias.len() > 256 {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    note_peer(&state, &info, peer.ip());
+    match state.policy.decide_sync(&info).await {
+        Some(payload) => Json(crate::messages::SyncResponse { payload }).into_response(),
+        None => StatusCode::FORBIDDEN.into_response(),
+    }
+}
+
 /// POST /register：对端登记自己的设备信息；记录之并返回本机信息。
 async fn register(
     State(state): State<AppState>,
@@ -353,7 +379,10 @@ async fn prepare_upload(
     VerifiedPeer(peer_fp): VerifiedPeer,
     Json(req): Json<PrepareUploadRequest>,
 ) -> Response {
-    let PrepareUploadRequest { info, files: req_files } = req;
+    let PrepareUploadRequest {
+        info,
+        files: req_files,
+    } = req;
     // 发送方身份以 mTLS 验证过的证书指纹为准，不采信请求体自报的 info.fingerprint。
     let info = with_verified_fp(info, peer_fp);
     if req_files
@@ -919,7 +948,9 @@ mod tests {
         .unwrap();
         let base = format!("http://{}", receiver.local_addr());
 
-        send_file(&base, &sender_info(), &src, None, None).await.unwrap();
+        send_file(&base, &sender_info(), &src, None, None)
+            .await
+            .unwrap();
 
         let got = tokio::fs::read(save_dir.join("source.bin")).await.unwrap();
         assert_eq!(got, payload);
@@ -1063,7 +1094,9 @@ mod tests {
         .unwrap();
         let base = format!("http://{}", receiver.local_addr());
 
-        assert!(send_file(&base, &sender_info(), &src, None, None).await.is_err());
+        assert!(send_file(&base, &sender_info(), &src, None, None)
+            .await
+            .is_err());
         receiver.shutdown().await;
     }
 

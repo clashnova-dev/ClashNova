@@ -55,9 +55,20 @@ export type PrivacyEvidence = {
   directIp?: string;
   ipv6Ip: string;
   proxyIpv6Ip?: string;
+  tunIpv6?: boolean;
+  ipv6Reachable?: boolean;
+  dnsMode?: string;
+  dnsAnswers?: string[];
+  dnsResolver?: string;
 };
 export function ipv6Assessment(native: PrivacyEvidence): { text: Text; tone: PrivacyTone } {
-  if (!isPublicIp(native.ipv6Ip)) return { text: "check.ipv6None", tone: "idle" };
+  if (!isPublicIp(native.ipv6Ip)) {
+    if (!native.connected && native.ipv6Reachable === false) return { text: "check.ipv6LocalNone", tone: "idle" };
+    if (native.mode === "tun" && native.tunIpv6 === false && native.ipv6Reachable === false)
+      return { text: "check.ipv6Closed", tone: "idle" };
+    if (isPublicIp(native.proxyIpv6Ip || "")) return { text: "check.ipv6ViaProxy", tone: "idle" };
+    return { text: "check.ipv6NoExit", tone: "idle" };
+  }
   if (!native.connected) return { text: "check.ipv6Present", tone: "idle" };
   if (
     native.proxy === "ok" &&
@@ -66,6 +77,27 @@ export function ipv6Assessment(native: PrivacyEvidence): { text: Text; tone: Pri
   )
     return { text: "check.ipv6Through", tone: "ok" };
   return { text: "check.ipv6Bypass", tone: "warn" };
+}
+export function dnsLeakAssessment(native: PrivacyEvidence): { text: Text; tone: PrivacyTone } {
+  if (!native.connected) return { text: "check.dnsLeakNeedConnection", tone: "idle" };
+  if (native.mode === "tun" && native.dnsMode === "fakeip") {
+    const answers = native.dnsAnswers || [];
+    const pub = answers.find(isPublicIp);
+    if (pub) return { text: { key: "check.dnsTunPublic", values: { ip: pub } }, tone: "bad" };
+    if (answers.length) return { text: "check.dnsTunCaptured", tone: "ok" };
+    return { text: "check.dnsLeakTun", tone: "warn" };
+  }
+  if (native.mode === "tun" && native.dnsMode === "remote") {
+    const resolver = native.dnsResolver || "";
+    if (resolver && normalizeIp(resolver) === normalizeIp(native.exitIp)) return { text: "check.dnsExitMatch", tone: "ok" };
+    return { text: { key: "check.dnsExitDiff", values: { ip: resolver } }, tone: "warn" };
+  }
+  const resolver = native.dnsResolver || "";
+  const direct = native.directIp || "";
+  if (resolver && direct && normalizeIp(resolver) === normalizeIp(direct))
+    return { text: { key: "check.dnsSystemSeen", values: { ip: resolver } }, tone: "bad" };
+  if (resolver) return { text: { key: "check.dnsSystemSeen", values: { ip: resolver } }, tone: "warn" };
+  return { text: "check.dnsLeakSystem", tone: "warn" };
 }
 export function webrtcAssessment(rtc: RtcObservation, native?: PrivacyEvidence): { text: Text; tone: PrivacyTone } {
   if (rtc.kind === "off") return { text: "check.webrtcOff", tone: "idle" };

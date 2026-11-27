@@ -353,7 +353,11 @@ pub struct SpeedResult {
 ///
 /// 下载源为一组免鉴权的公开大文件,按序回退。计时窗口 10s,消耗随实测网速放大 ≈ 网速 × 10s
 /// (见测速弹窗的消耗表);MAX_BYTES(2GiB)仅作安全上限,约 1.7Gbps 以内均由窗口主导。
-pub fn speed<F: Fn(f64, u64)>(id: String, tag: String, on_progress: F) -> Result<SpeedResult, String> {
+pub fn speed<F: Fn(f64, u64)>(
+    id: String,
+    tag: String,
+    on_progress: F,
+) -> Result<SpeedResult, String> {
     // 多源回退。Cloudflare(全球 anycast)最准,通时首选;被机场/CDN 封则毫秒级落下一个。次选
     // dl.google.com——同为全球边缘(就近接入故测量准),且为非「测速」域名、机场基本不封,是被封
     // 时的主力;单区的 OVH/Hetzner 大文件仅作最后兜底(跨洲链路会低估真实速度,排在全球边缘源之后)。
@@ -627,7 +631,7 @@ mod tests {
     use super::*;
     #[test]
     fn probes_refuse_subscriptions_that_reference_local_files() {
-        let raw=r#"{"outbounds":[{"type":"trojan","tag":"qa","server":"example.invalid","server_port":443,"tls":{"key_path":"/tmp/private.key"}}]}"#;
+        let raw = r#"{"outbounds":[{"type":"trojan","tag":"qa","server":"example.invalid","server_port":443,"tls":{"key_path":"/tmp/private.key"}}]}"#;
         assert!(isolated_config(raw, &[("qa".into(), 2080)]).is_err());
     }
     #[test]
@@ -785,8 +789,14 @@ mod tests {
         assert_eq!(cfg["inbounds"][0]["listen"], "127.0.0.1");
         assert!(cfg.get("experimental").is_none());
         assert_eq!(cfg["dns"]["servers"][0]["type"], "local");
-        assert_eq!(cfg["route"]["default_domain_resolver"]["server"], "probe-dns");
-        assert_eq!(cfg["route"]["default_domain_resolver"]["strategy"], "prefer_ipv4");
+        assert_eq!(
+            cfg["route"]["default_domain_resolver"]["server"],
+            "probe-dns"
+        );
+        assert_eq!(
+            cfg["route"]["default_domain_resolver"]["strategy"],
+            "prefer_ipv4"
+        );
     }
     #[test]
     fn rejects_unknown_and_empty_targets() {

@@ -1,4 +1,5 @@
 import type { Locale } from "../i18n";
+import type { ChainGroup } from "../types/chain";
 
 export type Preferences = {
   version: 1;
@@ -21,7 +22,7 @@ export type Preferences = {
   // Ordered node ids (entry → exit) forming the applied proxy chain, keyed by profile.
   chains: Record<string, string[]>;
   // Saved proxy-chain presets, keyed by profile.
-  chainGroups: Record<string, { id: string; name: string; nodes: string[] }[]>;
+  chainGroups: Record<string, ChainGroup[]>;
 };
 
 export const preferencesKey = "airport.preferences.v1";
@@ -51,7 +52,7 @@ export function parsePreferences(raw: string | null): Preferences | null {
           key,
           (list as unknown[])
             .filter(
-              (g): g is { id: string; name: string; nodes: string[] } =>
+              (g): g is ChainGroup =>
                 !!g &&
                 typeof (g as { id: unknown }).id === "string" &&
                 typeof (g as { name: unknown }).name === "string" &&
@@ -64,7 +65,7 @@ export function parsePreferences(raw: string | null): Preferences | null {
               nodes: g.nodes.filter(n => typeof n === "string" && n.length <= 512).slice(0, 16),
             })),
         ])
-    ) as Record<string, { id: string; name: string; nodes: string[] }[]>;
+    ) as Record<string, ChainGroup[]>;
     return {
       version: 1,
       locale: (["zh-CN", "en", "ja", "ko", "de", "fr", "ru"] as Locale[]).includes(value.locale)

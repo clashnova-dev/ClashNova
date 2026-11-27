@@ -156,6 +156,18 @@ impl Reclaimer {
     }
 }
 
+// Shared precondition for the port-reclaim commands: the core must be idle (not mid-connect) and a
+// subscription must be imported before touching the proxy port.
+fn idle_core_guard(core: &Core) -> Result<(), String> {
+    if !matches!(core.phase, Phase::Idle | Phase::Failed) {
+        return Err("native.connectionBusy".into());
+    }
+    if core.config_path.is_none() {
+        return Err("native.importSubscriptionFirst".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn inspect_proxy_port(
     core: State<'_, Arc<Mutex<Core>>>,
@@ -163,14 +175,9 @@ pub async fn inspect_proxy_port(
 ) -> Result<Option<Conflict>, String> {
     let core = core.inner().clone();
     let reclaimer = reclaimer.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    crate::blocking(move || {
         let core = core.lock().map_err(|_| "native.connectionBusy")?;
-        if !matches!(core.phase, Phase::Idle | Phase::Failed) {
-            return Err("native.connectionBusy".into());
-        }
-        if core.config_path.is_none() {
-            return Err("native.importSubscriptionFirst".into());
-        }
+        idle_core_guard(&core)?;
         let conflict = reclaimer.inspect(core.network.proxy_port, core.network.listen_address())?;
         if conflict.is_some() {
             if let Some(detail) = crate::proxy_conflict::detail(core.network.proxy_port) {
@@ -183,7 +190,6 @@ pub async fn inspect_proxy_port(
         Ok(conflict)
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -194,14 +200,9 @@ pub async fn release_proxy_port(
 ) -> Result<(), String> {
     let core = core.inner().clone();
     let reclaimer = reclaimer.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    crate::blocking(move || {
         let mut core = core.lock().map_err(|_| "native.connectionBusy")?;
-        if !matches!(core.phase, Phase::Idle | Phase::Failed) {
-            return Err("native.connectionBusy".into());
-        }
-        if core.config_path.is_none() {
-            return Err("native.importSubscriptionFirst".into());
-        }
+        idle_core_guard(&core)?;
         let stopped = reclaimer.release(
             core.network.proxy_port,
             core.network.listen_address(),
@@ -214,7 +215,6 @@ pub async fn release_proxy_port(
         Ok(())
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 pub(crate) fn is_own_core(name: &str) -> bool {

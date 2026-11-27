@@ -302,8 +302,7 @@ where
 {
     type Stream = TlsStream<TcpStream>;
     type Service = WithPeerFingerprint<S>;
-    type Future =
-        Pin<Box<dyn Future<Output = io::Result<(Self::Stream, Self::Service)>> + Send>>;
+    type Future = Pin<Box<dyn Future<Output = io::Result<(Self::Stream, Self::Service)>> + Send>>;
 
     fn accept(&self, stream: TcpStream, service: S) -> Self::Future {
         let inner = self.inner.clone();

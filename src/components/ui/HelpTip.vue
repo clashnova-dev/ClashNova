@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { nextTick, ref, useId } from "vue";
   import { CircleHelp } from "@lucide/vue";
+  import { clampIntoViewport } from "../../lib/floating";
 
   // A "?" after a label that shows its explanation on hover or keyboard focus.
   defineProps<{ text: string; inline?: boolean }>();
@@ -19,10 +20,7 @@
       box = bubble.value?.getBoundingClientRect();
     if (!icon || !box) return;
     const margin = 8;
-    const left = Math.min(
-      Math.max(margin, icon.left + icon.width / 2 - box.width / 2),
-      window.innerWidth - box.width - margin
-    );
+    const left = clampIntoViewport(icon.left + icon.width / 2 - box.width / 2, box.width, window.innerWidth, margin);
     const fitsBelow = icon.bottom + 6 + box.height <= window.innerHeight - margin;
     position.value = {
       left: `${Math.round(left)}px`,

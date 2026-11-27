@@ -1,7 +1,5 @@
 import { parsePreferences, type Preferences } from "./preferences.ts";
 
-/** Private fixed-name settings file; retains the existing plugin-store file for migration. */
-export const settingsStoreFile = "airport-settings.json";
 export const preferencesStoreKey = "preferences";
 export const networkSettingsStoreKey = "networkSettings";
 export const networkSecurityStoreKey = "networkSecurity";

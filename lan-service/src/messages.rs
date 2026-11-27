@@ -26,6 +26,23 @@ pub struct TextRequest {
     pub text: String,
 }
 
+/// 跨端配置同步「拉取」端点（自有扩展，LocalSend 规范外）。
+pub const SYNC_PATH: &str = "/api/clashnova/v1/sync";
+
+/// 拉取方发给被拉取方的请求：只带自身信息；被拉取方用户确认后在响应体返回配置 payload。
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncRequest {
+    pub info: DeviceInfo,
+}
+
+/// 被拉取方确认后返回的配置载荷（对传输层不透明；由应用层采集/应用）。
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncResponse {
+    pub payload: String,
+}
+
 pub fn validate_text(text: &str) -> Result<()> {
     if text.trim().is_empty() || text.len() > TEXT_LIMIT || text.contains('\0') {
         return Err(LanError::InvalidText);
@@ -247,8 +264,12 @@ mod tests {
         let (rx, storage, fp, id) = receiver(Arc::new(CountingPolicy(calls.clone()))).await;
         let base = format!("https://{}", rx.local_addr());
         let req = request("hello\n<script>literal</script> 中文 😀");
-        send_text(&base, &req, Some(fp.clone()), Some(&id)).await.unwrap();
-        send_text(&base, &req, Some(fp.clone()), Some(&id)).await.unwrap();
+        send_text(&base, &req, Some(fp.clone()), Some(&id))
+            .await
+            .unwrap();
+        send_text(&base, &req, Some(fp.clone()), Some(&id))
+            .await
+            .unwrap();
         let rows = storage.list_history(200).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].text.as_deref(), Some(req.text.as_str()));
@@ -346,9 +367,9 @@ mod tests {
             let base = base.clone();
             let fp = fp.clone();
             let id = id.clone();
-            jobs.push(tokio::spawn(
-                async move { send_text(&base, &req, Some(fp), Some(&id)).await },
-            ));
+            jobs.push(tokio::spawn(async move {
+                send_text(&base, &req, Some(fp), Some(&id)).await
+            }));
         }
         tokio::time::timeout(Duration::from_secs(3), async {
             while calls.load(Ordering::SeqCst) != 4 {
@@ -380,7 +401,13 @@ mod tests {
     async fn rejected_text_is_not_recorded_and_legacy_peer_reports_unsupported() {
         let (rx, storage, fp, id) = receiver(Arc::new(RejectAll)).await;
         assert!(matches!(
-            send_text(&format!("https://{}", rx.local_addr()), &request("hello"), Some(fp), Some(&id)).await,
+            send_text(
+                &format!("https://{}", rx.local_addr()),
+                &request("hello"),
+                Some(fp),
+                Some(&id)
+            )
+            .await,
             Err(LanError::Rejected)
         ));
         assert!(storage.list_history(200).unwrap().is_empty());
@@ -398,7 +425,13 @@ mod tests {
         .await
         .unwrap();
         assert!(matches!(
-            send_text(&format!("http://{}", rx.local_addr()), &request("hello"), None, None).await,
+            send_text(
+                &format!("http://{}", rx.local_addr()),
+                &request("hello"),
+                None,
+                None
+            )
+            .await,
             Err(LanError::TextUnsupported)
         ));
         rx.shutdown().await;

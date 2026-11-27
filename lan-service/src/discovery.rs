@@ -64,20 +64,33 @@ pub fn usable_interfaces() -> Result<Vec<LocalInterface>> {
 fn is_virtual_iface(name: &str) -> bool {
     let n = name.to_ascii_lowercase();
     const VIRTUAL_PREFIXES: &[&str] = &[
-        "utun",      // macOS WireGuard/sing-box TUN、VPN
-        "tun",       // 通用 TUN
-        "tap",       // 通用 TAP
-        "awdl",      // Apple Wireless Direct Link
-        "llw",       // Apple low-latency WLAN
-        "gif", "stf", // macOS 隧道
-        "bridge",    // 桥接（含 Docker/虚拟机桥）
-        "vmnet", "vnic", // VMware/虚拟机
+        "utun", // macOS WireGuard/sing-box TUN、VPN
+        "tun",  // 通用 TUN
+        "tap",  // 通用 TAP
+        "awdl", // Apple Wireless Direct Link
+        "llw",  // Apple low-latency WLAN
+        "gif",
+        "stf",    // macOS 隧道
+        "bridge", // 桥接（含 Docker/虚拟机桥）
+        "vmnet",
+        "vnic",      // VMware/虚拟机
         "vboxnet",   // VirtualBox host-only
         "wg",        // WireGuard
         "zt",        // ZeroTier
         "tailscale", // Tailscale
-        "docker", "veth", // 容器
-        "sing",      // sing-box 命名的 TUN（部分平台）
+        "docker",
+        "veth", // 容器
+        "sing", // sing-box 命名的 TUN（部分平台）
+        // Windows 友好名（if_addrs 在 Windows 返回适配器友好名，含空格）：
+        // 排除常见虚拟/VPN/VM 适配器，避免在它们的 /24 上做无谓扫描、或把探测
+        // 流量打进隧道（Windows 虚拟网卡多，是耗能/卡顿的来源之一）。
+        "wintun",    // WinTun（sing-box / WireGuard 在 Windows 的 TUN）
+        "wireguard", // "WireGuard Tunnel"
+        "openvpn",   // OpenVPN
+        "vmware",    // "VMware Network Adapter VMnetX"
+        "virtualbox",
+        "hyper-v", // "Hyper-V Virtual Ethernet Adapter"
+        "wsl",     // "vEthernet (WSL)" 由 veth 命中，这里兜底
     ];
     VIRTUAL_PREFIXES.iter().any(|p| n.starts_with(p))
 }

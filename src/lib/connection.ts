@@ -10,5 +10,3 @@ export function reduce(from: Phase, event: ConnEvent): Phase {
   if (!next) throw new Error(`Invalid connection transition: ${from} + ${event}`);
   return next;
 }
-
-export const phases = vectors.states;

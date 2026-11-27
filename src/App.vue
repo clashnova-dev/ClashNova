@@ -9,6 +9,7 @@
 <script setup lang="ts">
   import { onMounted, onUnmounted } from "vue";
   import { useApp } from "./composables/useApp";
+  import { useLanSyncResponder } from "./composables/useLanSyncResponder";
   import Layout from "./layout/index.vue";
   import AppDialogs from "./components/AppDialogs.vue";
   import LoginView from "./pages/login/index.vue";
@@ -16,8 +17,11 @@
   import ConfirmationHost from "./components/ui/ConfirmationHost.vue";
 
   const { enableLogin, access, localMode, locale, bootstrap, teardown } = useApp();
+  useLanSyncResponder();
   onMounted(() => {
-    void bootstrap();
+    // Last-resort guard: bootstrap handles its own step failures, but never let an unexpected
+    // rejection become a silent unhandled promise — the event listeners it sets up are essential.
+    bootstrap().catch(error => console.error("bootstrap failed", error));
     // On launch the window takes keyboard focus, which Chromium shows as a :focus-visible ring on
     // the first nav item. Drop that initial focus so there's no stray blue outline before any input.
     requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur?.());

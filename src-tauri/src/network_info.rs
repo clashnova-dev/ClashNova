@@ -132,11 +132,17 @@ pub async fn get_exit_info(state: State<'_, Arc<Mutex<Core>>>) -> Result<ExitInf
     Ok(result)
 }
 
-pub(crate) async fn query_exit_info(proxy_port: Option<u16>) -> Result<ExitInfo, String> {
-    let mut builder = reqwest::Client::builder()
+/// Base reqwest builder shared by this module's probes: never use the OS proxy, never follow
+/// redirects, and bound every request by `timeout`. Callers add their own proxy and call build().
+fn base_client_builder(timeout: Duration) -> reqwest::ClientBuilder {
+    reqwest::Client::builder()
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(8));
+        .timeout(timeout)
+}
+
+pub(crate) async fn query_exit_info(proxy_port: Option<u16>) -> Result<ExitInfo, String> {
+    let mut builder = base_client_builder(Duration::from_secs(8));
     if let Some(port) = proxy_port {
         builder = builder.proxy(
             reqwest::Proxy::all(format!("http://127.0.0.1:{port}"))
@@ -188,10 +194,7 @@ fn auto_selection_client() -> Result<&'static reqwest::Client, &'static str> {
     if let Some(client) = CLIENT.get() {
         return Ok(client);
     }
-    let client = reqwest::Client::builder()
-        .no_proxy()
-        .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(3))
+    let client = base_client_builder(Duration::from_secs(3))
         .build()
         .map_err(|_| "native.autoNodeClientFailed")?;
     Ok(CLIENT.get_or_init(|| client))
@@ -234,6 +237,34 @@ pub async fn get_auto_selection(
     }
     Ok((!tag.is_empty()).then_some(AutoSelection { tag, delay }))
 }
+
+/// Hot-switch the exit node on the running core through the Clash API selector, so the
+/// connection is never torn down (existing connections keep flowing; new ones use the new
+/// node). Only valid while connected. The caller falls back to a full profile re-apply for
+/// anything that changes outbound topology or routing (the auto URLTest group, multi-hop
+/// chains, route mode) — those cannot be expressed by the selector's default alone. `tag`
+/// must already be a member of the "select" selector group built into the running config.
+#[tauri::command]
+pub async fn select_node(state: State<'_, Arc<Mutex<Core>>>, tag: String) -> Result<(), String> {
+    let (endpoint, _) = current(state.inner())?;
+    let Some(endpoint) = endpoint else {
+        return Err("native.nodeSwitchNotConnected".into());
+    };
+    let client = auto_selection_client()?;
+    // reqwest has no "json" feature here, so serialize the body ourselves (serde_json escapes the tag).
+    let body = serde_json::json!({ "name": tag }).to_string();
+    endpoint
+        .request(client, reqwest::Method::PUT, "/proxies/select")
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .send()
+        .await
+        .map_err(|_| "native.nodeSwitchFailed")?
+        .error_for_status()
+        .map_err(|_| "native.nodeSwitchFailed")?;
+    Ok(())
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkCheck {
@@ -251,10 +282,7 @@ pub struct NetworkCheck {
 
 /// One trace request. `no_proxy` skips the operating-system proxy; an explicit port is this app's proxy.
 async fn trace(proxy_port: Option<u16>, url: &str) -> (bool, String) {
-    let mut builder = reqwest::Client::builder()
-        .no_proxy()
-        .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(5));
+    let mut builder = base_client_builder(Duration::from_secs(5));
     if let Some(port) = proxy_port {
         let Ok(proxy) = reqwest::Proxy::all(format!("http://127.0.0.1:{port}")) else {
             return (false, String::new());
@@ -319,12 +347,20 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
     // Capture identity as well as settings: reconnecting to another node must invalidate
     // in-flight observations, even when the new connection uses the same local port.
     let snapshot = || -> Result<_, String> {
-        let core = state.inner().try_lock().map_err(|_| "native.connectionStateBusy")?;
+        let core = state
+            .inner()
+            .try_lock()
+            .map_err(|_| "native.connectionStateBusy")?;
         if !matches!(core.phase, Phase::Idle | Phase::Failed | Phase::Connected) {
             return Err("native.connectionStateBusy".into());
         }
-        Ok((core.phase, core.mode.clone(), core.network.tun.ipv6,
-            core.network.proxy_port, core.traffic_endpoint.clone()))
+        Ok((
+            core.phase,
+            core.mode.clone(),
+            core.network.tun.ipv6,
+            core.network.proxy_port,
+            core.traffic_endpoint.clone(),
+        ))
     };
     let before = snapshot()?;
     let (phase, mode, tun_ipv6, port, _) = before.clone();
@@ -336,7 +372,9 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
         async {
             if connected && port > 0 {
                 trace(Some(port), "https://ipv6.cloudflare.com/cdn-cgi/trace").await
-            } else { (false, String::new()) }
+            } else {
+                (false, String::new())
+            }
         },
         dns_resolves(),
     );
@@ -345,7 +383,9 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
     }
     let proxy_ipv6_ip = if proxy_v6.0 && proxy_v6.1.contains(':') {
         proxy_v6.1
-    } else { String::new() };
+    } else {
+        String::new()
+    };
     let ipv6_ip = if v6.0 && v6.1.contains(':') {
         v6.1
     } else {
@@ -359,8 +399,16 @@ pub async fn network_check(state: State<'_, Arc<Mutex<Core>>>) -> Result<Network
         "fail"
     };
     // A failed proxy probe must never present the direct IP as a successful proxy exit.
-    let exit_ip = if connected { proxied.1 } else { direct.1.clone() };
-    let direct_ip = if mode != "tun" { direct.1 } else { String::new() };
+    let exit_ip = if connected {
+        proxied.1
+    } else {
+        direct.1.clone()
+    };
+    let direct_ip = if mode != "tun" {
+        direct.1
+    } else {
+        String::new()
+    };
     Ok(NetworkCheck {
         local_ok: direct.0,
         proxy: proxy.into(),
@@ -380,14 +428,24 @@ mod tests {
     use super::*;
     #[tokio::test(flavor = "current_thread")]
     async fn trace_rejects_success_status_without_valid_ip() {
-        for body in ["<html>captive portal</html>", "ip=invalid\n", "ip=8.8.8.8\nloc=US\n"] {
+        for body in [
+            "<html>captive portal</html>",
+            "ip=invalid\n",
+            "ip=8.8.8.8\nloc=US\n",
+        ] {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             let address = listener.local_addr().unwrap();
-            let response = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body);
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
             let server = std::thread::spawn(move || {
                 use std::io::{Read, Write};
                 let (mut stream, _) = listener.accept().unwrap();
-                stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
                 let mut request = [0; 2048];
                 stream.read(&mut request).unwrap();
                 stream.write_all(response.as_bytes()).unwrap();

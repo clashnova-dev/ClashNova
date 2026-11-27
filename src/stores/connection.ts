@@ -27,7 +27,7 @@ import {
 } from "../lib/settings-store";
 import { defaultNetworkSecurity, parseNetworkSecurity } from "../lib/network-security";
 import { liveAppPolicyRules, parseAppPolicies, type AppPolicy } from "../lib/app-policies";
-import { parseSingBoxProfile } from "../lib/profiles";
+import { parseProfileConfig, parseSingBoxProfile } from "../lib/profiles";
 import { msg } from "../i18n";
 import { builtinRouteRules } from "../lib/routing-rules";
 import { ruleSetConfig } from "../lib/rule-sets";
@@ -310,8 +310,7 @@ export const useConnectionStore = defineStore(
     }
 
     function buildProfileConfig() {
-      const cfg: any =
-        profileKind.value === "external" ? parseSingBoxProfile(rawProfile.value).config : JSON.parse(rawProfile.value);
+      const cfg: any = parseProfileConfig(rawProfile.value, profileKind.value === "external");
       // External profiles may expose a local Clash API or other experimental listener.
       delete cfg.experimental;
       delete cfg.services;
@@ -368,6 +367,22 @@ export const useConnectionStore = defineStore(
       logs.value = await client.logs();
     }
 
+    // Flip the exit node on the already-running core via the Clash API selector, keeping the
+    // connection alive (existing flows continue, new ones use the new node). Eligible only when
+    // connected to a concrete node with no active multi-hop chain — switching to the auto URLTest
+    // group or changing a chain alters outbound topology, which the selector default cannot express.
+    // Returns true on success; callers fall back to a full re-apply (restart) otherwise.
+    async function tryHotSwitchNode(): Promise<boolean> {
+      if (!connected.value || selectedNode.value === AUTOMATIC_NODE_ID || chainActive.value) return false;
+      const client = await bridge();
+      const external = profileKind.value === "external";
+      await client.selectNode(outboundTag(selectedNode.value, external));
+      // Mirror the choice to the on-disk config so a core restart (crash recovery) keeps this node.
+      // Fire-and-forget: the live switch already took effect, so this must not block the UI.
+      void client.saveProfile(buildProfileConfig()).catch(() => {});
+      return true;
+    }
+
     async function applySelectedNode() {
       if (!rawProfile.value || !selectedNode.value) {
         message.value = "subscriptions.importFirst";
@@ -379,7 +394,14 @@ export const useConnectionStore = defineStore(
           : nodes.value.find(n => n.id === selectedNode.value);
       if (!node) return;
       try {
-        await reapplyProfile();
+        let hotSwitched = false;
+        try {
+          hotSwitched = await tryHotSwitchNode();
+        } catch {
+          // Hot-switch unavailable or rejected (core busy, unknown tag): fall back to a full restart.
+          hotSwitched = false;
+        }
+        if (!hotSwitched) await reapplyProfile();
         message.value = msg("nodes.switchedTo", { name: node.name });
         addActivity(msg("log.nodeSwitched", { name: node.name }));
       } catch (error) {
@@ -611,6 +633,22 @@ export const useConnectionStore = defineStore(
     const bootstrap = async () => {
       startContextGuard();
       const apiBridge = await bridge();
+      // Register the core's state/progress push channels first, each guarded, so a failure in any
+      // later init step cannot leave the UI without live state updates — it would otherwise freeze
+      // on a stale "connected"/intermediate phase and never reflect drops, reconnects or recovery.
+      try {
+        if (apiBridge.onState) stopListen = await apiBridge.onState(applySnapshot);
+      } catch (error) {
+        addActivity(msg("log.stateReadFailed", { error: String(error) }));
+      }
+      try {
+        if (apiBridge.onProgress)
+          stopProgressListen = await apiBridge.onProgress(stage => {
+            connectionProgress.value = stage;
+          });
+      } catch {
+        /* The progress bar is cosmetic; its listener failing must not abort bootstrap. */
+      }
       void watchWindowSize().catch(() => {
         /* The window still works without size memory. */
       });
@@ -626,71 +664,93 @@ export const useConnectionStore = defineStore(
       if (defaultServer) baseUrl.value = defaultServer;
       // The tray starts with fallback text; give it the real labels as soon as the language is known.
       void syncTray();
-      if (isNative) {
-        try {
-          installedVersion.value = await (await import("@tauri-apps/api/app")).getVersion();
-        } catch {
-          /* The app version remains visible from the bundle metadata fallback. */
-        }
-      }
-      try {
-        const nativeNetwork = await apiBridge.loadNetworkSettings();
-        const chosen = await rememberStored(
-          settingsStore,
-          networkSettingsStoreKey,
-          nativeNetwork,
-          storedNetwork,
-          preferenceStoreStatus
-        );
-        applyNetworkSettings(sameNetwork(chosen, nativeNetwork) ? chosen : await apiBridge.saveNetworkSettings(chosen));
-        networkLoaded.value = true;
-      } catch (error) {
-        networkError.value = String(error);
-      }
-      networkSecurity.value = await rememberStored(
-        settingsStore,
-        networkSecurityStoreKey,
-        defaultNetworkSecurity(),
-        parseNetworkSecurity,
-        preferenceStoreStatus
-      );
-      appPolicies.value = await rememberStored(
-        settingsStore,
-        appPoliciesStoreKey,
-        {} as Record<string, AppPolicy>,
-        parseAppPolicies,
-        preferenceStoreStatus
-      );
-      if (isNative) {
-        try {
-          autostartEnabled.value = await (await import("@tauri-apps/plugin-autostart")).isEnabled();
-          autostartReady.value = true;
-        } catch (error) {
-          autostartError.value = String(error);
-        }
-      } else {
-        autostartError.value = "settings.autostartDesktopOnly";
-      }
-      applySnapshot(await apiBridge.state());
-      logs.value = await apiBridge.logs();
-      try {
-        const nativeList = await loadExternalSubscriptions(apiBridge, settingsStore, preferenceStoreStatus);
-        const profiles = nativeList.filter(
-          (item: any): item is ExternalProfile =>
-            typeof item?.id === "string" &&
-            typeof item?.name === "string" &&
-            typeof item?.url === "string" &&
-            typeof item?.raw === "string" &&
-            typeof item?.updatedAt === "string"
-        );
-        externalProfiles.value = profiles;
-        if (JSON.stringify(profiles) !== JSON.stringify(nativeList))
-          await apiBridge.saveSubscriptions(JSON.stringify(profiles));
-      } catch (error) {
-        message.value = msg("error.subscriptionListFailed", {
-          error: String(error),
-        });
-      }
+      // These reads don't share the preference file, so they overlap the settings chain below.
+      // Settings themselves stay in order: parallel saves of that file can drop a key.
+      await Promise.all([
+        (async () => {
+          if (!isNative) return;
+          try {
+            installedVersion.value = await (await import("@tauri-apps/api/app")).getVersion();
+          } catch {
+            /* The app version remains visible from the bundle metadata fallback. */
+          }
+        })(),
+        (async () => {
+          if (isNative) {
+            try {
+              autostartEnabled.value = await (await import("@tauri-apps/plugin-autostart")).isEnabled();
+              autostartReady.value = true;
+            } catch (error) {
+              autostartError.value = String(error);
+            }
+          } else {
+            autostartError.value = "settings.autostartDesktopOnly";
+          }
+        })(),
+        (async () => {
+          try {
+            applySnapshot(await apiBridge.state());
+            logs.value = await apiBridge.logs();
+          } catch (error) {
+            addActivity(msg("log.stateReadFailed", { error: String(error) }));
+          }
+        })(),
+        (async () => {
+          try {
+            const nativeNetwork = await apiBridge.loadNetworkSettings();
+            const chosen = await rememberStored(
+              settingsStore,
+              networkSettingsStoreKey,
+              nativeNetwork,
+              storedNetwork,
+              preferenceStoreStatus
+            );
+            applyNetworkSettings(
+              sameNetwork(chosen, nativeNetwork) ? chosen : await apiBridge.saveNetworkSettings(chosen)
+            );
+            networkLoaded.value = true;
+          } catch (error) {
+            networkError.value = String(error);
+          }
+          try {
+            networkSecurity.value = await rememberStored(
+              settingsStore,
+              networkSecurityStoreKey,
+              defaultNetworkSecurity(),
+              parseNetworkSecurity,
+              preferenceStoreStatus
+            );
+            appPolicies.value = await rememberStored(
+              settingsStore,
+              appPoliciesStoreKey,
+              {} as Record<string, AppPolicy>,
+              parseAppPolicies,
+              preferenceStoreStatus
+            );
+          } catch (error) {
+            // Fall back to the in-memory defaults; a stored-preference read failure must not abort boot.
+            message.value = core.failure(error, "error.preferencesNotSaved");
+          }
+          try {
+            const nativeList = await loadExternalSubscriptions(apiBridge, settingsStore, preferenceStoreStatus);
+            const profiles = nativeList.filter(
+              (item: any): item is ExternalProfile =>
+                typeof item?.id === "string" &&
+                typeof item?.name === "string" &&
+                typeof item?.url === "string" &&
+                typeof item?.raw === "string" &&
+                typeof item?.updatedAt === "string"
+            );
+            externalProfiles.value = profiles;
+            if (JSON.stringify(profiles) !== JSON.stringify(nativeList))
+              await apiBridge.saveSubscriptions(JSON.stringify(profiles));
+          } catch (error) {
+            message.value = msg("error.subscriptionListFailed", {
+              error: String(error),
+            });
+          }
+        })(),
+      ]);
       try {
         // Migrate an existing installation with saved subscriptions once; explicit logout stays logged out.
         const profile = hadStoredPrefs
@@ -704,55 +764,70 @@ export const useConnectionStore = defineStore(
       } catch (error) {
         message.value = msg("error.restoreFailed", { error: String(error) });
       }
-      await restoreSession();
-      await revealAfterBoot();
+      try {
+        await restoreSession();
+      } catch (error) {
+        addActivity(msg("log.stateReadFailed", { error: String(error) }));
+      }
+      try {
+        await revealAfterBoot();
+      } catch {
+        /* Revealing the window on boot is best-effort. */
+      }
       void refreshProxyDiagnostics();
       cacheReady = true;
       persistPreferences();
       addActivity("log.clientStarted");
-      if (apiBridge.onState) stopListen = await apiBridge.onState(applySnapshot);
-      if (apiBridge.onProgress)
-        stopProgressListen = await apiBridge.onProgress(stage => {
-          connectionProgress.value = stage;
-        });
+      // onState / onProgress are registered at the top of bootstrap (above), so they survive any
+      // failure in the init steps in between.
       if (isNative) {
-        const { listen } = await import("@tauri-apps/api/event");
-        stopTrayListen = await listen<string>("tray://action", event => {
-          void trayAction(event.payload);
-        });
-        const { getCurrent, onOpenUrl, register } = await import("@tauri-apps/plugin-deep-link");
-        if (currentPlatform === "windows" || currentPlatform === "linux")
-          for (const scheme of ["clashnova", "clash", "clashmeta"]) await register(scheme).catch(() => {});
-        stopDeepLink = await onOpenUrl(urls => {
-          void acceptDeepLinks(urls);
-        });
-        void acceptDeepLinks(await getCurrent());
-        await syncTray();
-        try {
-          const { invoke } = await import("@tauri-apps/api/core");
-          await restoreCrashConnection({
-            requested: () => invoke<boolean>("take_crash_recovery"),
-            canConnect: () => Boolean(rawProfile.value && selectedNode.value && !connected.value && !busy.value),
-            tun: connectionMode.value === "tun",
-            tunReady: async () => (await refreshTunService()).ready,
-            connect: async () => {
-              busy.value = true;
-              try {
-                await apiBridge.saveProfile(buildProfileConfig());
-                applySnapshot(await apiBridge.connect(connectionMode.value));
-                addActivity(msg("log.connectionState", { state: msg(label.value) }));
-              } finally {
-                busy.value = false;
-              }
-            },
-            report: key => {
-              message.value = key;
-              addActivity(key);
-            },
+        // Restoring the tunnel should not wait on tray labels or scheme registration.
+        const recovery = (async () => {
+          // Held across the lease wait, so a tray click cannot start a second tunnel beside recovery.
+          busy.value = true;
+          try {
+            const { invoke } = await import("@tauri-apps/api/core");
+            await restoreCrashConnection({
+              requested: () => invoke<boolean>("take_crash_recovery"),
+              canConnect: () => Boolean(rawProfile.value && selectedNode.value && !connected.value && !busy.value),
+              tun: connectionMode.value === "tun",
+              tunReady: async () => (await refreshTunService()).ready,
+              connect: async () => {
+                busy.value = true;
+                try {
+                  await apiBridge.saveProfile(buildProfileConfig());
+                  applySnapshot(await apiBridge.connect(connectionMode.value));
+                  addActivity(msg("log.connectionState", { state: msg(label.value) }));
+                } finally {
+                  busy.value = false;
+                }
+              },
+              report: key => {
+                message.value = key;
+                addActivity(key);
+              },
+            });
+          } catch (error) {
+            await reconcileConnectionError(error);
+          } finally {
+            busy.value = false;
+          }
+        })();
+        const shell = (async () => {
+          const { listen } = await import("@tauri-apps/api/event");
+          stopTrayListen = await listen<string>("tray://action", event => {
+            void trayAction(event.payload);
           });
-        } catch (error) {
-          await reconcileConnectionError(error);
-        }
+          const { getCurrent, onOpenUrl, register } = await import("@tauri-apps/plugin-deep-link");
+          if (currentPlatform === "windows" || currentPlatform === "linux")
+            for (const scheme of ["clashnova", "clash", "clashmeta"]) await register(scheme).catch(() => {});
+          stopDeepLink = await onOpenUrl(urls => {
+            void acceptDeepLinks(urls);
+          });
+          void acceptDeepLinks(await getCurrent());
+          await syncTray();
+        })();
+        await Promise.all([recovery, shell]);
       }
     };
 
@@ -777,7 +852,6 @@ export const useConnectionStore = defineStore(
       chains,
       chainGroupsByProfile,
       bridge,
-      browserBridge,
       applySnapshot,
       persistSetting,
       cachedNode,
@@ -785,15 +859,10 @@ export const useConnectionStore = defineStore(
       cachedChainGroups,
       dropSelectedNode,
       persistPreferences,
-      syncTray,
-      trayAction,
       applyChain,
       buildProfileConfig,
       reconcileConnectionError,
-      reapplyProfile,
-      applySelectedNode,
       commitChain,
-      updateMode,
       setConnectionMode,
       setRouteMode,
       setRuleToggle,

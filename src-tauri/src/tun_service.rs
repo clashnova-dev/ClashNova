@@ -8,7 +8,7 @@ use std::{
     io::Read,
     path::{Path, PathBuf},
     process::Command,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Condvar, Mutex, OnceLock},
     thread,
     time::{Duration, Instant},
 };
@@ -159,8 +159,14 @@ fn elevated(helper: &Path, action: &str, manifest: Option<&Path>) -> Result<()> 
         let mut cmd = Command::new(
             PathBuf::from(root).join("System32/WindowsPowerShell/v1.0/powershell.exe"),
         );
-        crate::hide_console(&mut cmd)
-            .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script]);
+        crate::hide_console(&mut cmd).args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            &script,
+        ]);
         cmd
     };
     let result = command
@@ -361,6 +367,48 @@ impl ServiceProcess {
 pub fn release_guard(path: &Path) -> Result<()> {
     credentials(path)?.call(Action::Release).map(|_| ())
 }
+
+/// Opened after the boot-time Release has been applied. `Action::Release` disarms whatever
+/// session is current, so a TUN connect has to wait: otherwise a slow boot Release can land
+/// after this process has already armed the kill switch and silently turn protection off.
+#[derive(Clone)]
+pub struct StartupGate {
+    done: Arc<(Mutex<bool>, Condvar)>,
+}
+struct GateSignal(Arc<(Mutex<bool>, Condvar)>);
+impl Drop for GateSignal {
+    fn drop(&mut self) {
+        let (lock, cv) = &*self.0;
+        let mut done = lock.lock().unwrap_or_else(|poison| poison.into_inner());
+        *done = true;
+        cv.notify_all();
+    }
+}
+impl StartupGate {
+    fn pair() -> (Self, GateSignal) {
+        let done = Arc::new((Mutex::new(false), Condvar::new()));
+        (Self { done: done.clone() }, GateSignal(done))
+    }
+    pub fn start(path: PathBuf) -> Self {
+        let (gate, signal) = Self::pair();
+        // If the thread cannot be spawned, dropping the closure drops the signal and the gate
+        // opens. Connecting must not wait forever for a release that never started.
+        let _ = thread::Builder::new()
+            .name("tun-startup-release".into())
+            .spawn(move || {
+                let _signal = signal;
+                let _ = release_guard(&path);
+            });
+        gate
+    }
+    pub fn wait(&self) {
+        let (lock, cv) = &*self.done;
+        let mut done = lock.lock().unwrap_or_else(|poison| poison.into_inner());
+        while !*done {
+            done = cv.wait(done).unwrap_or_else(|poison| poison.into_inner());
+        }
+    }
+}
 /// Before restoring a connection after a GUI crash, let the orphaned session's lease expire.
 /// Missing/offline helpers cannot own a session; the normal connect path still validates them.
 pub fn await_previous_session(path: &Path) -> Result<()> {
@@ -368,10 +416,12 @@ pub fn await_previous_session(path: &Path) -> Result<()> {
     let deadline = Instant::now() + Duration::from_secs(LEASE_SECONDS + 3);
     loop {
         match credentials.exchange(Action::Status, Timeouts::HEARTBEAT) {
-            Ok(response) if response.running => {},
+            Ok(response) if response.running => {}
             Ok(_) | Err(_) => return Ok(()),
         }
-        if Instant::now() >= deadline { return Err("native.tunSessionExists".into()); }
+        if Instant::now() >= deadline {
+            return Err("native.tunSessionExists".into());
+        }
         thread::sleep(Duration::from_millis(500));
     }
 }
@@ -391,9 +441,31 @@ impl Drop for ServiceProcess {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
     #[test]
     fn installer_quotes_paths() {
         assert_eq!(shell_quote("a'b $(whoami)").unwrap(), "'a'\\''b $(whoami)'");
         assert!(shell_quote("x\ny").is_err());
+    }
+    #[test]
+    fn startup_release_gate_blocks_until_the_release_finishes_and_then_stays_open() {
+        let (gate, signal) = StartupGate::pair();
+        let waiting = gate.clone();
+        let entered = Arc::new(AtomicBool::new(false));
+        let flag = entered.clone();
+        let blocked = thread::spawn(move || {
+            flag.store(true, Ordering::SeqCst);
+            waiting.wait();
+        });
+        while !entered.load(Ordering::SeqCst) {
+            thread::sleep(Duration::from_millis(1));
+        }
+        thread::sleep(Duration::from_millis(20));
+        assert!(!blocked.is_finished());
+        drop(signal);
+        blocked.join().unwrap();
+        let started = Instant::now();
+        gate.wait();
+        assert!(started.elapsed() < Duration::from_millis(50));
     }
 }

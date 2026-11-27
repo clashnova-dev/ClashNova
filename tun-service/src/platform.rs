@@ -84,8 +84,18 @@ pub fn open_lan_port(port: u16) -> Result<()> {
     let localport = format!("localport={port}");
     for protocol in ["protocol=tcp", "protocol=udp"] {
         run(Command::new("netsh.exe").args([
-            "advfirewall", "firewall", "add", "rule", name.as_str(), "dir=in", "action=allow",
-            protocol, localport.as_str(), "remoteip=localsubnet", "profile=any", "enable=yes",
+            "advfirewall",
+            "firewall",
+            "add",
+            "rule",
+            name.as_str(),
+            "dir=in",
+            "action=allow",
+            protocol,
+            localport.as_str(),
+            "remoteip=localsubnet",
+            "profile=any",
+            "enable=yes",
         ]))?;
     }
     Ok(())
@@ -239,8 +249,10 @@ pub fn stop_existing() -> Result<()> {
         }
         Init::OpenRc => {
             if Path::new("/etc/init.d/airport-tun").exists() {
-                let _ = run(Command::new(tool(&["/sbin/rc-service", "/usr/sbin/rc-service"])?)
-                    .args(["airport-tun", "stop"]));
+                let _ = run(
+                    Command::new(tool(&["/sbin/rc-service", "/usr/sbin/rc-service"])?)
+                        .args(["airport-tun", "stop"]),
+                );
             }
         }
     }
@@ -286,11 +298,22 @@ depend() {
 	need net
 }
 "#;
-            crate::secure_write(Path::new("/etc/init.d/airport-tun"), script.as_bytes(), 0o755)?;
-            run(Command::new(tool(&["/sbin/rc-update", "/usr/sbin/rc-update"])?)
-                .args(["add", "airport-tun", "default"]))?;
-            run(Command::new(tool(&["/sbin/rc-service", "/usr/sbin/rc-service"])?)
-                .args(["airport-tun", "restart"]))
+            crate::secure_write(
+                Path::new("/etc/init.d/airport-tun"),
+                script.as_bytes(),
+                0o755,
+            )?;
+            run(
+                Command::new(tool(&["/sbin/rc-update", "/usr/sbin/rc-update"])?).args([
+                    "add",
+                    "airport-tun",
+                    "default",
+                ]),
+            )?;
+            run(
+                Command::new(tool(&["/sbin/rc-service", "/usr/sbin/rc-service"])?)
+                    .args(["airport-tun", "restart"]),
+            )
         }
     }
 }
@@ -308,8 +331,13 @@ pub fn uninstall() -> Result<()> {
             run(Command::new("/usr/bin/systemctl").arg("daemon-reload"))?;
         }
         Init::OpenRc => {
-            let _ = run(Command::new(tool(&["/sbin/rc-update", "/usr/sbin/rc-update"])?)
-                .args(["del", "airport-tun", "default"]));
+            let _ = run(
+                Command::new(tool(&["/sbin/rc-update", "/usr/sbin/rc-update"])?).args([
+                    "del",
+                    "airport-tun",
+                    "default",
+                ]),
+            );
             if Path::new("/etc/init.d/airport-tun").exists() {
                 std::fs::remove_file("/etc/init.d/airport-tun").map_err(|e| e.to_string())?;
             }

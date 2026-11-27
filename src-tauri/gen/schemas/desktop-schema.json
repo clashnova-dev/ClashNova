@@ -2397,6 +2397,12 @@
           "markdownDescription": "Enables the lan_respond_pair command without any pre-configured scope."
         },
         {
+          "description": "Enables the lan_respond_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lan-respond-sync",
+          "markdownDescription": "Enables the lan_respond_sync command without any pre-configured scope."
+        },
+        {
           "description": "Enables the lan_resume_transfer command without any pre-configured scope.",
           "type": "string",
           "const": "allow-lan-resume-transfer",
@@ -2407,6 +2413,12 @@
           "type": "string",
           "const": "allow-lan-reveal-path",
           "markdownDescription": "Enables the lan_reveal_path command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lan_scan_subnet command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lan-scan-subnet",
+          "markdownDescription": "Enables the lan_scan_subnet command without any pre-configured scope."
         },
         {
           "description": "Enables the lan_send_files command without any pre-configured scope.",
@@ -2431,6 +2443,12 @@
           "type": "string",
           "const": "allow-lan-stop",
           "markdownDescription": "Enables the lan_stop command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lan_sync_pull command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lan-sync-pull",
+          "markdownDescription": "Enables the lan_sync_pull command without any pre-configured scope."
         },
         {
           "description": "Enables the lan_unpair command without any pre-configured scope.",
@@ -2545,6 +2563,12 @@
           "type": "string",
           "const": "allow-save-subscriptions",
           "markdownDescription": "Enables the save_subscriptions command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the select_node command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-select-node",
+          "markdownDescription": "Enables the select_node command without any pre-configured scope."
         },
         {
           "description": "Enables the send_desktop_notification command without any pre-configured scope.",
@@ -2841,6 +2865,12 @@
           "markdownDescription": "Denies the lan_respond_pair command without any pre-configured scope."
         },
         {
+          "description": "Denies the lan_respond_sync command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lan-respond-sync",
+          "markdownDescription": "Denies the lan_respond_sync command without any pre-configured scope."
+        },
+        {
           "description": "Denies the lan_resume_transfer command without any pre-configured scope.",
           "type": "string",
           "const": "deny-lan-resume-transfer",
@@ -2851,6 +2881,12 @@
           "type": "string",
           "const": "deny-lan-reveal-path",
           "markdownDescription": "Denies the lan_reveal_path command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lan_scan_subnet command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lan-scan-subnet",
+          "markdownDescription": "Denies the lan_scan_subnet command without any pre-configured scope."
         },
         {
           "description": "Denies the lan_send_files command without any pre-configured scope.",
@@ -2875,6 +2911,12 @@
           "type": "string",
           "const": "deny-lan-stop",
           "markdownDescription": "Denies the lan_stop command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lan_sync_pull command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lan-sync-pull",
+          "markdownDescription": "Denies the lan_sync_pull command without any pre-configured scope."
         },
         {
           "description": "Denies the lan_unpair command without any pre-configured scope.",
@@ -2989,6 +3031,12 @@
           "type": "string",
           "const": "deny-save-subscriptions",
           "markdownDescription": "Denies the save_subscriptions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the select_node command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-select-node",
+          "markdownDescription": "Denies the select_node command without any pre-configured scope."
         },
         {
           "description": "Denies the send_desktop_notification command without any pre-configured scope.",

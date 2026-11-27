@@ -112,11 +112,6 @@ export const useUiStore = defineStore(
       if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MiB`;
       return `${(n / 1024 ** 3).toFixed(2)} GiB`;
     }
-    const trafficLabel = computed(() => {
-      const s = activeSub.value;
-      if (!s) return "—";
-      return `${fmt(s.usedChargedBytes)} / ${fmt(s.limitBytes)}`;
-    });
     const airportUsage = computed<SubscriptionUsage | undefined>(() =>
       activeSub.value
         ? {
@@ -129,15 +124,6 @@ export const useUiStore = defineStore(
           }
         : undefined
     );
-    const usagePercent = computed(() =>
-      activeSub.value?.limitBytes
-        ? Math.min(100, Math.round((activeSub.value.usedChargedBytes / activeSub.value.limitBytes) * 100))
-        : 0
-    );
-    const remainingTraffic = computed(() =>
-      activeSub.value ? fmt(Math.max(0, activeSub.value.limitBytes - activeSub.value.usedChargedBytes)) : "—"
-    );
-
     const automaticNodeName = computed(
       () =>
         nodes.value.find(
@@ -246,21 +232,15 @@ export const useUiStore = defineStore(
 
     return {
       theme,
-      colorScheme,
-      applyTheme,
       tab,
       mainContent,
       navigation,
       title,
       label,
       fmt,
-      trafficLabel,
       airportUsage,
-      usagePercent,
-      remainingTraffic,
       automaticNodeName,
       selectedNodeName,
-      selectedNodeInfo,
       selectedRegionLabel,
       selectedLatencyText,
       phaseTone,

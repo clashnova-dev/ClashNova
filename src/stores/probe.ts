@@ -2,7 +2,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { ref, watch, computed } from "vue";
 import { msg, type Text } from "../i18n";
 import { isNative } from "../lib/platform";
-import { parseSingBoxProfile } from "../lib/profiles";
+import { parseProfileConfig, parseSingBoxProfile } from "../lib/profiles";
 import { sortByLatency } from "../lib/node-order";
 import { AUTOMATIC_NODE_ID, outboundTag } from "../lib/automatic-selection";
 import { useCoreStore } from "./core";
@@ -260,7 +260,7 @@ export const useProbeStore = defineStore(
       let session: string | null = null;
       let client: Bridge | null = null;
       try {
-        const cfg: any = external ? parseSingBoxProfile(rawProfile.value).config : JSON.parse(rawProfile.value);
+        const cfg: any = parseProfileConfig(rawProfile.value, external);
         const tags = ids.map(tagFor);
         const byTag = new Map<string, any>((cfg.outbounds ?? []).map((o: any) => [o.tag, o]));
         if (!tags.every(tag => byTag.has(tag))) throw new Error("native.probeNodeNotFound");
@@ -398,7 +398,6 @@ export const useProbeStore = defineStore(
       probeCancelling,
       automaticSelection,
       sortedNodes,
-      refreshAutomaticSelection,
       delayTone,
       latencyTone,
       latencyLabel,

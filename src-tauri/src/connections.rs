@@ -163,37 +163,129 @@ async fn sample(client: &reqwest::Client, endpoint: &Endpoint) -> Result<Frame, 
     }
     serde_json::from_slice(&bytes).map_err(|_| "native.connectionsDataInvalid".into())
 }
+struct WatchSide {
+    ticket: u64,
+    on: bool,
+}
+impl Default for WatchSide {
+    fn default() -> Self {
+        Self {
+            ticket: 0,
+            on: false,
+        }
+    }
+}
+#[derive(Default)]
+pub struct Interest {
+    summary: Mutex<WatchSide>,
+    details: Mutex<WatchSide>,
+}
+impl Interest {
+    fn set(&self, kind: &str, on: bool, ticket: u64) -> Result<(), String> {
+        let side = match kind {
+            "summary" => &self.summary,
+            "details" => &self.details,
+            _ => return Err("native.connectionWatchInvalid".into()),
+        };
+        let mut side = side.lock().unwrap_or_else(|poison| poison.into_inner());
+        // A slow older request must not undo a newer one (page hidden, then shown again).
+        if ticket >= side.ticket {
+            side.ticket = ticket;
+            side.on = on;
+        }
+        Ok(())
+    }
+    fn wants(&self) -> bool {
+        let summary = self
+            .summary
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner())
+            .on;
+        let details = self
+            .details
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner())
+            .on;
+        summary || details
+    }
+}
+fn window_visible(app: &tauri::AppHandle) -> bool {
+    match app.get_webview_window("main") {
+        Some(window) => window.is_visible().unwrap_or(true),
+        // No window yet: don't spend a connection poll on a hidden launch.
+        None => false,
+    }
+}
 pub fn start(app: tauri::AppHandle, core: Arc<Mutex<Core>>) {
     let monitor = Arc::new(Mutex::new(Monitor::default()));
+    let interest = Arc::new(Interest::default());
     app.manage(monitor.clone());
+    app.manage(interest.clone());
     tauri::async_runtime::spawn(async move {
         let Ok(client) = client() else {
             return;
         };
         loop {
-            if let Ok(current) = endpoint(&core) {
-                monitor.lock().unwrap().switch(current.clone());
-                if let Some(ref current) = current {
-                    let result = sample(&client, current).await;
-                    // A response from an old core must never overwrite the new session.
-                    if endpoint(&core).ok().flatten().as_ref() == Some(current) {
-                        let mut state = monitor.lock().unwrap();
-                        match result {
-                            Ok(frame) => state.accept(frame, Instant::now()),
-                            Err(error) => {
-                                state.snapshot.error = Some(error);
-                                for row in &mut state.snapshot.active {
-                                    row.upload_speed = 0;
-                                    row.download_speed = 0;
+            // The full connection list is large. Read it only while a visible page asked for it.
+            if interest.wants() && window_visible(&app) {
+                if let Ok(current) = endpoint(&core) {
+                    monitor.lock().unwrap().switch(current.clone());
+                    if let Some(ref current) = current {
+                        let result = sample(&client, current).await;
+                        // A response from an old core must never overwrite the new session.
+                        if endpoint(&core).ok().flatten().as_ref() == Some(current) {
+                            let mut state = monitor.lock().unwrap();
+                            match result {
+                                Ok(frame) => state.accept(frame, Instant::now()),
+                                Err(error) => {
+                                    state.snapshot.error = Some(error);
+                                    for row in &mut state.snapshot.active {
+                                        row.upload_speed = 0;
+                                        row.download_speed = 0;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            } else {
+                tokio::time::sleep(Duration::from_millis(250)).await;
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     });
+}
+#[derive(Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Traffic {
+    upload_total: u64,
+    download_total: u64,
+    upload_speed: u64,
+    download_speed: u64,
+}
+fn traffic_of(snapshot: &Snapshot) -> Traffic {
+    Traffic {
+        upload_total: snapshot.upload_total,
+        download_total: snapshot.download_total,
+        upload_speed: snapshot.active.iter().map(|row| row.upload_speed).sum(),
+        download_speed: snapshot.active.iter().map(|row| row.download_speed).sum(),
+    }
+}
+#[tauri::command]
+pub fn connection_traffic(state: State<Arc<Mutex<Monitor>>>) -> Result<Traffic, String> {
+    state
+        .lock()
+        .map(|monitor| traffic_of(&monitor.snapshot))
+        .map_err(|_| "native.connectionsListFailed".into())
+}
+#[tauri::command]
+pub fn set_connection_watch(
+    state: State<Arc<Interest>>,
+    kind: String,
+    on: bool,
+    ticket: u64,
+) -> Result<(), String> {
+    state.set(&kind, on, ticket)
 }
 #[tauri::command]
 pub fn list_connections(state: State<Arc<Mutex<Monitor>>>) -> Result<Snapshot, String> {
@@ -203,18 +295,33 @@ pub fn list_connections(state: State<Arc<Mutex<Monitor>>>) -> Result<Snapshot, S
         .map_err(|_| "native.connectionsListFailed".into())
 }
 #[tauri::command]
-pub async fn application_icon(state: State<'_, Arc<Mutex<Monitor>>>, app: String) -> Result<Option<Vec<u8>>, String> {
+pub async fn application_icon(
+    state: State<'_, Arc<Mutex<Monitor>>>,
+    app: String,
+) -> Result<Option<Vec<u8>>, String> {
     let path = {
         let monitor = state.lock().map_err(|_| "native.connectionsListFailed")?;
-        monitor.snapshot.active.iter().chain(monitor.snapshot.closed.iter())
+        monitor
+            .snapshot
+            .active
+            .iter()
+            .chain(monitor.snapshot.closed.iter())
             .map(|row| &row.metadata.process_path)
-            .find(|path| **path == app).cloned()
+            .find(|path| **path == app)
+            .cloned()
     };
-    let Some(path) = path else { return Ok(None); };
+    let Some(path) = path else {
+        return Ok(None);
+    };
     tauri::async_runtime::spawn_blocking(move || {
-        let raw = path.rsplit_once(" (").filter(|(_, user)| user.ends_with(')') && !user.contains(['/', '\\'])).map_or(path.as_str(), |(exe, _)| exe);
+        let raw = path
+            .rsplit_once(" (")
+            .filter(|(_, user)| user.ends_with(')') && !user.contains(['/', '\\']))
+            .map_or(path.as_str(), |(exe, _)| exe);
         crate::app_icons::load(raw)
-    }).await.map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 fn valid_id(id: &str) -> bool {
@@ -302,12 +409,58 @@ mod tests {
         assert_eq!(m.snapshot.active[0].metadata.destination_port, "443");
         assert_eq!(m.snapshot.active[0].metadata.inbound, "mixed");
         assert_eq!(m.snapshot.download_total, 2048);
+        let traffic = traffic_of(&m.snapshot);
+        assert_eq!(traffic.download_total, 2048);
+        assert_eq!(traffic.upload_total, 1024);
         let frame =
             serde_json::from_str(r#"{"uploadTotal":1024,"downloadTotal":2048,"connections":null}"#)
                 .unwrap();
         m.accept(frame, Instant::now());
         assert!(m.snapshot.active.is_empty());
         assert_eq!(m.snapshot.closed.len(), 1);
+    }
+    #[test]
+    fn traffic_summary_sums_live_rates() {
+        let mut monitor = Monitor::default();
+        let now = Instant::now();
+        let row = |id: &str, up: u64, down: u64| Connection {
+            id: id.into(),
+            upload: up,
+            download: down,
+            ..Connection::default()
+        };
+        monitor.accept(
+            Frame {
+                upload_total: 0,
+                download_total: 0,
+                connections: Some(vec![row("a", 0, 0), row("b", 0, 0)]),
+            },
+            now,
+        );
+        monitor.accept(
+            Frame {
+                upload_total: 110,
+                download_total: 250,
+                connections: Some(vec![row("a", 100, 200), row("b", 10, 50)]),
+            },
+            now + Duration::from_secs(1),
+        );
+        let traffic = traffic_of(&monitor.snapshot);
+        assert_eq!(traffic.upload_speed, 110);
+        assert_eq!(traffic.download_speed, 250);
+        assert_eq!(traffic.upload_total, 110);
+        assert_eq!(traffic.download_total, 250);
+    }
+    #[test]
+    fn a_stale_connection_watch_cannot_turn_sampling_back_on() {
+        let interest = Interest::default();
+        interest.set("summary", true, 1).unwrap();
+        interest.set("summary", false, 2).unwrap();
+        interest.set("summary", true, 1).unwrap();
+        assert!(!interest.wants());
+        interest.set("details", true, 1).unwrap();
+        assert!(interest.wants());
+        assert!(interest.set("other", true, 3).is_err());
     }
     #[test]
     fn reject_injected_paths() {

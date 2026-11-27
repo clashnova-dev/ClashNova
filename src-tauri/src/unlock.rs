@@ -20,14 +20,39 @@ const CACHE_MAX: usize = 200;
 const BODY_LIMIT: usize = 512 * 1024;
 const UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 /// Public Disney+ web client id (the site's own "disney&browser&1.0.0" token), not a user session.
-const DISNEY_TOKEN: &str = "ZGlzbmV5JmJyb3dzZXImMS4wLjA.Cu56AgSfBTDag5NiRA81oLHkDZfu5L3CKadnefEAY84";
+const DISNEY_TOKEN: &str =
+    "ZGlzbmV5JmJyb3dzZXImMS4wLjA.Cu56AgSfBTDag5NiRA81oLHkDZfu5L3CKadnefEAY84";
 const DISNEY_BODY: &str = r#"{"deviceFamily":"browser","applicationRuntime":"chrome","deviceProfile":"windows","attributes":{}}"#;
 
 const SERVICES: &[&str] = &[
-    "chatgpt", "claude", "gemini", "copilot", "perplexity", "metaai",
-    "netflix", "disney", "youtube", "prime", "max", "paramount", "peacock", "hulu", "dazn", "abema", "bahamut",
-    "bilibili", "bbc", "iqiyi", "kktv", "viu", "mytvsuper", "spotify", "tiktok",
-    "apple", "wikipedia", "reddit",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "copilot",
+    "perplexity",
+    "metaai",
+    "netflix",
+    "disney",
+    "youtube",
+    "prime",
+    "max",
+    "paramount",
+    "peacock",
+    "hulu",
+    "dazn",
+    "abema",
+    "bahamut",
+    "bilibili",
+    "bbc",
+    "iqiyi",
+    "kktv",
+    "viu",
+    "mytvsuper",
+    "spotify",
+    "tiktok",
+    "apple",
+    "wikipedia",
+    "reddit",
 ];
 const DAZN_BODY: &str = r#"{"Version":"2","LandingPageKey":"generic","Languages":"en","Platform":"web","Manufacturer":"","PromoCode":"","PlatformAttributes":{}}"#;
 
@@ -78,7 +103,11 @@ struct Gate {
 
 fn gate() -> &'static Mutex<Gate> {
     static GATE: OnceLock<Mutex<Gate>> = OnceLock::new();
-    GATE.get_or_init(|| Mutex::new(Gate { stop: Arc::new(AtomicBool::new(false)) }))
+    GATE.get_or_init(|| {
+        Mutex::new(Gate {
+            stop: Arc::new(AtomicBool::new(false)),
+        })
+    })
 }
 
 fn cache() -> &'static Mutex<HashMap<(String, String), Entry>> {
@@ -117,15 +146,29 @@ fn proxied(port: u16) -> Result<reqwest::Client, String> {
 /// Two- or three-letter region token. A longer word such as "title" or "INTL" is rejected.
 fn alpha2(value: &str) -> String {
     let chars: Vec<char> = value.chars().take(4).collect();
-    let letters = chars.iter().take_while(|ch| ch.is_ascii_alphabetic()).count();
-    if !(2..=3).contains(&letters) || chars.get(letters).is_some_and(|ch| ch.is_ascii_alphanumeric()) {
+    let letters = chars
+        .iter()
+        .take_while(|ch| ch.is_ascii_alphabetic())
+        .count();
+    if !(2..=3).contains(&letters)
+        || chars
+            .get(letters)
+            .is_some_and(|ch| ch.is_ascii_alphanumeric())
+    {
         return String::new();
     }
-    chars[..letters].iter().collect::<String>().to_ascii_uppercase()
+    chars[..letters]
+        .iter()
+        .collect::<String>()
+        .to_ascii_uppercase()
 }
 
 fn code(value: &str) -> String {
-    value.chars().filter(|ch| ch.is_ascii_alphanumeric() || *ch == '_' || *ch == '-').take(32).collect()
+    value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric() || *ch == '_' || *ch == '-')
+        .take(32)
+        .collect()
 }
 
 fn clip(value: &str, max: usize) -> String {
@@ -140,7 +183,12 @@ fn judge(status: &'static str, region: &str, error_code: &str) -> Judgement {
         "unreachable" => ("unreachable", "unlock.unreachable"),
         _ => ("unknown", "unlock.unknown"),
     };
-    Judgement { status, region: alpha2(region), message, error_code: code(error_code) }
+    Judgement {
+        status,
+        region: alpha2(region),
+        message,
+        error_code: code(error_code),
+    }
 }
 
 fn json_string(body: &str, key: &str) -> String {
@@ -149,16 +197,30 @@ fn json_string(body: &str, key: &str) -> String {
 
 fn json_token(body: &str, key: &str, max: usize) -> String {
     let pattern = format!("\"{key}\"");
-    let Some(pos) = body.find(&pattern) else { return String::new() };
-    let Some(rest) = body[pos + pattern.len()..].trim_start().strip_prefix(':') else { return String::new() };
-    let Some(rest) = rest.trim_start().strip_prefix('"') else { return String::new() };
-    rest.split('"').next().unwrap_or("").chars().take(max).collect()
+    let Some(pos) = body.find(&pattern) else {
+        return String::new();
+    };
+    let Some(rest) = body[pos + pattern.len()..].trim_start().strip_prefix(':') else {
+        return String::new();
+    };
+    let Some(rest) = rest.trim_start().strip_prefix('"') else {
+        return String::new();
+    };
+    rest.split('"')
+        .next()
+        .unwrap_or("")
+        .chars()
+        .take(max)
+        .collect()
 }
 
 fn json_bool(body: &str, key: &str) -> Option<bool> {
     let pattern = format!("\"{key}\"");
     let pos = body.find(&pattern)?;
-    let rest = body[pos + pattern.len()..].trim_start().strip_prefix(':')?.trim_start();
+    let rest = body[pos + pattern.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
     if rest.starts_with("true") {
         Some(true)
     } else if rest.starts_with("false") {
@@ -171,8 +233,13 @@ fn json_bool(body: &str, key: &str) -> Option<bool> {
 fn json_int(body: &str, key: &str) -> Option<i64> {
     let pattern = format!("\"{key}\"");
     let pos = body.find(&pattern)?;
-    let rest = body[pos + pattern.len()..].trim_start().strip_prefix(':')?.trim_start();
-    let end = rest.find(|ch: char| ch != '-' && !ch.is_ascii_digit()).unwrap_or(rest.len());
+    let rest = body[pos + pattern.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
+    let end = rest
+        .find(|ch: char| ch != '-' && !ch.is_ascii_digit())
+        .unwrap_or(rest.len());
     rest[..end].parse().ok()
 }
 
@@ -193,18 +260,24 @@ fn netflix_region(body: &str) -> String {
 }
 
 fn spotify_region(url: &str) -> String {
-    let Some(rest) = url.split("spotify.com/").nth(1) else { return String::new() };
+    let Some(rest) = url.split("spotify.com/").nth(1) else {
+        return String::new();
+    };
     alpha2(rest.split('/').next().unwrap_or(""))
 }
 
 fn challenge(body: &str) -> bool {
     let lower = body.to_ascii_lowercase();
-    lower.contains("just a moment") || lower.contains("cf-browser-verification") || lower.contains("cf-challenge")
+    lower.contains("just a moment")
+        || lower.contains("cf-browser-verification")
+        || lower.contains("cf-challenge")
 }
 
 fn has_any(body: &str, markers: &[&str]) -> bool {
     let lower = body.to_ascii_lowercase();
-    markers.iter().any(|marker| lower.contains(&marker.to_ascii_lowercase()))
+    markers
+        .iter()
+        .any(|marker| lower.contains(&marker.to_ascii_lowercase()))
 }
 
 fn judge_page(page: &Fetched, ok: &[&str], blocked: &[&str]) -> Judgement {
@@ -234,8 +307,15 @@ fn judge_gemini(page: &Fetched) -> Judgement {
         return judge("unknown", "", "challenge");
     }
     let url = page.url.to_ascii_lowercase();
-    if url.contains("unsupported") || url.contains("google.cn") || page.body.contains("www.google.cn") {
-        let region = if url.contains("google.cn") || page.body.contains("www.google.cn") { "CN" } else { "" };
+    if url.contains("unsupported")
+        || url.contains("google.cn")
+        || page.body.contains("www.google.cn")
+    {
+        let region = if url.contains("google.cn") || page.body.contains("www.google.cn") {
+            "CN"
+        } else {
+            ""
+        };
         return judge("region_blocked", region, "region");
     }
     if page.body.contains("45631641,null,true") {
@@ -257,7 +337,10 @@ fn judge_chatgpt(web: &Fetched, app: &Fetched) -> Judgement {
     if challenge(&web.body) || challenge(&app.body) {
         return judge("unknown", "", "challenge");
     }
-    let web_blocked = web.body.to_ascii_lowercase().contains("unsupported_country");
+    let web_blocked = web
+        .body
+        .to_ascii_lowercase()
+        .contains("unsupported_country");
     let app_blocked = app.body.to_ascii_lowercase().contains("vpn");
     match (web_blocked, app_blocked) {
         (true, true) => judge("region_blocked", "", "region"),
@@ -278,7 +361,10 @@ fn judge_claude(page: &Fetched) -> Judgement {
     if url.contains("app-unavailable-in-region") {
         return judge("region_blocked", "", "region");
     }
-    if url == "https://claude.ai" || url == "https://claude.ai/" || url.starts_with("https://claude.ai/") {
+    if url == "https://claude.ai"
+        || url == "https://claude.ai/"
+        || url.starts_with("https://claude.ai/")
+    {
         return judge("available", "", "");
     }
     judge("unknown", "", "page")
@@ -314,17 +400,25 @@ fn judge_netflix(first: &Fetched, second: &Fetched) -> Judgement {
     }
     let region = {
         let found = netflix_region(&first.body);
-        if found.is_empty() { netflix_region(&second.body) } else { found }
+        if found.is_empty() {
+            netflix_region(&second.body)
+        } else {
+            found
+        }
     };
     let blocked = |page: &Fetched| page.body.contains("Oh no!");
     if blocked(first) && blocked(second) {
         return judge("partial", &region, "catalog");
     }
-    let offered = |page: &Fetched| !blocked(page) && (page.body.contains("countryName") || page.body.contains("netflix.watch"));
+    let offered = |page: &Fetched| {
+        !blocked(page) && (page.body.contains("countryName") || page.body.contains("netflix.watch"))
+    };
     if offered(first) || offered(second) {
         return judge("available", &region, "");
     }
-    if (first.status == 403 || first.status == 451) && (second.status == 403 || second.status == 451) {
+    if (first.status == 403 || first.status == 451)
+        && (second.status == 403 || second.status == 451)
+    {
         return judge("region_blocked", &region, "region");
     }
     judge("unknown", "", "page")
@@ -362,7 +456,13 @@ fn judge_tiktok(page: &Fetched) -> Judgement {
     if page.fail == "timeout" || page.fail == "connect" {
         return judge("unreachable", "", page.fail);
     }
-    if has_any(&page.body, &["not available in your country", "not available in your region"]) {
+    if has_any(
+        &page.body,
+        &[
+            "not available in your country",
+            "not available in your region",
+        ],
+    ) {
         return judge("region_blocked", "", "region");
     }
     let region = alpha2(&json_string(&page.body, "region"));
@@ -408,7 +508,11 @@ fn judge_prime(page: &Fetched) -> Judgement {
     if challenge(&page.body) {
         return judge("unknown", "", "challenge");
     }
-    if page.body.to_ascii_lowercase().contains("isservicerestricted") {
+    if page
+        .body
+        .to_ascii_lowercase()
+        .contains("isservicerestricted")
+    {
         return judge("region_blocked", "", "region");
     }
     let region = alpha2(&json_string(&page.body, "currentTerritory"));
@@ -425,7 +529,13 @@ fn judge_max(page: &Fetched) -> Judgement {
     if challenge(&page.body) {
         return judge("unknown", "", "challenge");
     }
-    if has_any(&page.body, &["not available in your region", "isn't available in your region"]) {
+    if has_any(
+        &page.body,
+        &[
+            "not available in your region",
+            "isn't available in your region",
+        ],
+    ) {
         return judge("region_blocked", "", "region");
     }
     let mut region = after_marker(&page.body, "countryCode=");
@@ -452,7 +562,11 @@ fn judge_paramount(page: &Fetched) -> Judgement {
     if page.status != 200 {
         return judge("unknown", "", "page");
     }
-    let region = if segment.is_empty() { "US".to_string() } else { alpha2(&segment) };
+    let region = if segment.is_empty() {
+        "US".to_string()
+    } else {
+        alpha2(&segment)
+    };
     if region.is_empty() {
         return judge("unknown", "", "page");
     }
@@ -496,7 +610,11 @@ fn judge_dazn(page: &Fetched) -> Judgement {
     if failed(page) {
         return judge("unreachable", "", page.fail);
     }
-    if page.body.to_ascii_lowercase().contains("security policy has been breached") {
+    if page
+        .body
+        .to_ascii_lowercase()
+        .contains("security policy has been breached")
+    {
         return judge("region_blocked", "", "region");
     }
     let region = alpha2(&json_string(&page.body, "GeolocatedCountry"));
@@ -528,14 +646,18 @@ fn judge_bahamut(device: &Fetched, token: Option<&Fetched>, home: Option<&Fetche
     if failed(device) {
         return judge("unreachable", "", device.fail);
     }
-    let Some(token) = token else { return judge("unknown", "", "page") };
+    let Some(token) = token else {
+        return judge("unknown", "", "page");
+    };
     if failed(token) {
         return judge("unknown", "", "partial-response");
     }
     if !token.body.contains("animeSn") {
         return judge("region_blocked", "", "region");
     }
-    let Some(home) = home else { return judge("unknown", "", "page") };
+    let Some(home) = home else {
+        return judge("unknown", "", "page");
+    };
     if failed(home) {
         return judge("unknown", "", "partial-response");
     }
@@ -575,7 +697,11 @@ fn judge_iqiyi(page: &Fetched) -> Judgement {
         return judge("unknown", "", "page");
     }
     let upper = raw.to_ascii_uppercase();
-    let region = if upper == "NTW" { "TW".to_string() } else { alpha2(&upper) };
+    let region = if upper == "NTW" {
+        "TW".to_string()
+    } else {
+        alpha2(&upper)
+    };
     if region.is_empty() {
         return judge("unknown", "", "page");
     }
@@ -689,7 +815,10 @@ fn judge_meta(page: &Fetched) -> Judgement {
 }
 
 fn trace_region(body: &str) -> String {
-    body.lines().find_map(|line| line.strip_prefix("loc=")).map(alpha2).unwrap_or_default()
+    body.lines()
+        .find_map(|line| line.strip_prefix("loc="))
+        .map(alpha2)
+        .unwrap_or_default()
 }
 
 fn apply_exit_region(item: &mut UnlockItem, exit_region: &str) {
@@ -702,7 +831,12 @@ fn cache_key(port: u16, node: &str, service: &str) -> (String, String) {
     (format!("{port}:{node}"), service.to_string())
 }
 
-fn cache_get(map: &HashMap<(String, String), Entry>, key: &(String, String), now: Instant, refresh: bool) -> Option<UnlockItem> {
+fn cache_get(
+    map: &HashMap<(String, String), Entry>,
+    key: &(String, String),
+    now: Instant,
+    refresh: bool,
+) -> Option<UnlockItem> {
     if refresh {
         return None;
     }
@@ -713,7 +847,12 @@ fn cache_get(map: &HashMap<(String, String), Entry>, key: &(String, String), now
     Some(entry.item.clone())
 }
 
-fn cache_put(map: &mut HashMap<(String, String), Entry>, key: (String, String), item: UnlockItem, now: Instant) {
+fn cache_put(
+    map: &mut HashMap<(String, String), Entry>,
+    key: (String, String),
+    item: UnlockItem,
+    now: Instant,
+) {
     if item.status == "unreachable" {
         return;
     }
@@ -721,7 +860,11 @@ fn cache_put(map: &mut HashMap<(String, String), Entry>, key: (String, String), 
     if map.len() <= CACHE_MAX {
         return;
     }
-    if let Some(oldest) = map.iter().min_by_key(|(_, entry)| entry.at).map(|(key, _)| key.clone()) {
+    if let Some(oldest) = map
+        .iter()
+        .min_by_key(|(_, entry)| entry.at)
+        .map(|(key, _)| key.clone())
+    {
         map.remove(&oldest);
     }
 }
@@ -730,10 +873,17 @@ fn known_services(requested: &[String]) -> Vec<String> {
     let wanted: Vec<String> = if requested.is_empty() {
         SERVICES.iter().map(|id| (*id).to_string()).collect()
     } else {
-        requested.iter().filter(|id| SERVICES.contains(&id.as_str())).cloned().collect()
+        requested
+            .iter()
+            .filter(|id| SERVICES.contains(&id.as_str()))
+            .cloned()
+            .collect()
     };
     let mut seen = std::collections::HashSet::new();
-    wanted.into_iter().filter(|id| seen.insert(id.clone())).collect()
+    wanted
+        .into_iter()
+        .filter(|id| seen.insert(id.clone()))
+        .collect()
 }
 
 async fn read_body(mut response: reqwest::Response) -> Result<String, ()> {
@@ -768,21 +918,35 @@ fn response_headers(response: &reqwest::Response) -> String {
     out
 }
 
-async fn fetch(client: &reqwest::Client, url: &str, json: Option<&str>, auth: Option<&str>, timeout: Duration) -> Fetched {
-    let mut request = if json.is_some() { client.post(url) } else { client.get(url) };
+async fn fetch(
+    client: &reqwest::Client,
+    url: &str,
+    json: Option<&str>,
+    auth: Option<&str>,
+    timeout: Duration,
+) -> Fetched {
+    let mut request = if json.is_some() {
+        client.post(url)
+    } else {
+        client.get(url)
+    };
     request = request
         .timeout(timeout)
         .header("user-agent", UA)
         .header("accept-language", "en-US,en;q=0.9")
         .header("accept", "text/html,application/json;q=0.9,*/*;q=0.8");
     if url.contains("indazn.com") {
-        request = request.header("origin", "https://www.dazn.com").header("referer", "https://www.dazn.com/");
+        request = request
+            .header("origin", "https://www.dazn.com")
+            .header("referer", "https://www.dazn.com/");
     }
     if let Some(token) = auth {
         request = request.header("authorization", format!("Bearer {token}"));
     }
     if let Some(raw) = json {
-        request = request.header("content-type", "application/json").body(raw.to_string());
+        request = request
+            .header("content-type", "application/json")
+            .body(raw.to_string());
     }
     match request.send().await {
         Ok(response) => {
@@ -790,14 +954,24 @@ async fn fetch(client: &reqwest::Client, url: &str, json: Option<&str>, auth: Op
             let url = response.url().to_string();
             let headers = response_headers(&response);
             let body = read_body(response).await.unwrap_or_default();
-            Fetched { status, url, body, headers, fail: "" }
+            Fetched {
+                status,
+                url,
+                body,
+                headers,
+                fail: "",
+            }
         }
         Err(err) => Fetched {
             status: 0,
             url: url.to_string(),
             body: String::new(),
             headers: String::new(),
-            fail: if err.is_timeout() { "timeout" } else { "connect" },
+            fail: if err.is_timeout() {
+                "timeout"
+            } else {
+                "connect"
+            },
         },
     }
 }
@@ -807,16 +981,29 @@ fn failed(page: &Fetched) -> bool {
 }
 
 fn slash_field(url: &str, index: usize) -> String {
-    url.split('?').next().unwrap_or(url).split('/').nth(index).unwrap_or("").to_string()
+    url.split('?')
+        .next()
+        .unwrap_or(url)
+        .split('/')
+        .nth(index)
+        .unwrap_or("")
+        .to_string()
 }
 
 fn after_marker(body: &str, marker: &str) -> String {
-    body.find(marker).map(|pos| alpha2(&body[pos + marker.len()..])).unwrap_or_default()
+    body.find(marker)
+        .map(|pos| alpha2(&body[pos + marker.len()..]))
+        .unwrap_or_default()
 }
 
 fn cookie_token(headers: &str, key: &str) -> String {
     let pattern = format!("{key}=");
-    let Some(pos) = headers.to_ascii_lowercase().find(&pattern.to_ascii_lowercase()) else { return String::new() };
+    let Some(pos) = headers
+        .to_ascii_lowercase()
+        .find(&pattern.to_ascii_lowercase())
+    else {
+        return String::new();
+    };
     headers[pos + pattern.len()..]
         .split(|ch: char| ch == ';' || ch == '\n' || ch == ' ' || ch == ',')
         .next()
@@ -935,7 +1122,11 @@ async fn run_chunk(client: &reqwest::Client, node_id: &str, ids: &[String]) -> V
             vec![x, y]
         }
         [a, b, c] => {
-            let (x, y, z) = tokio::join!(probe(client, node_id, a), probe(client, node_id, b), probe(client, node_id, c));
+            let (x, y, z) = tokio::join!(
+                probe(client, node_id, a),
+                probe(client, node_id, b),
+                probe(client, node_id, c)
+            );
             vec![x, y, z]
         }
         [a, b, c, d] => {
@@ -952,7 +1143,14 @@ async fn run_chunk(client: &reqwest::Client, node_id: &str, ids: &[String]) -> V
 }
 
 async fn exit_region(client: &reqwest::Client) -> String {
-    let page = fetch(client, "https://www.cloudflare.com/cdn-cgi/trace", None, None, Duration::from_secs(4)).await;
+    let page = fetch(
+        client,
+        "https://www.cloudflare.com/cdn-cgi/trace",
+        None,
+        None,
+        Duration::from_secs(4),
+    )
+    .await;
     if !page.fail.is_empty() {
         return String::new();
     }
@@ -961,7 +1159,12 @@ async fn exit_region(client: &reqwest::Client) -> String {
 
 fn remember(port: u16, node_id: &str, item: &UnlockItem) {
     let mut map = cache().lock().unwrap_or_else(|err| err.into_inner());
-    cache_put(&mut map, cache_key(port, node_id, &item.service_id), item.clone(), Instant::now());
+    cache_put(
+        &mut map,
+        cache_key(port, node_id, &item.service_id),
+        item.clone(),
+        Instant::now(),
+    );
 }
 
 #[tauri::command]
@@ -973,9 +1176,17 @@ pub fn unlock_cancel() {
 
 /// Every request uses the connected local proxy. Nothing here falls back to a direct client.
 #[tauri::command]
-pub async fn unlock_check(state: State<'_, Arc<Mutex<Core>>>, node_id: String, services: Vec<String>, refresh: bool) -> Result<UnlockReport, String> {
+pub async fn unlock_check(
+    state: State<'_, Arc<Mutex<Core>>>,
+    node_id: String,
+    services: Vec<String>,
+    refresh: bool,
+) -> Result<UnlockReport, String> {
     let port = {
-        let core = state.inner().try_lock().map_err(|_| "native.connectionStateBusy")?;
+        let core = state
+            .inner()
+            .try_lock()
+            .map_err(|_| "native.connectionStateBusy")?;
         if core.phase != Phase::Connected || core.network.proxy_port == 0 {
             return Err("unlock.needConnection".into());
         }
@@ -1003,7 +1214,10 @@ pub async fn unlock_check(state: State<'_, Arc<Mutex<Core>>>, node_id: String, s
     if !cancelled {
         if let Some(first) = chunks.next() {
             let client_for_region = client.clone();
-            let (batch, region) = tokio::join!(run_chunk(&client, &node_id, first), exit_region(&client_for_region));
+            let (batch, region) = tokio::join!(
+                run_chunk(&client, &node_id, first),
+                exit_region(&client_for_region)
+            );
             exit = region;
             for mut hit in batch {
                 apply_exit_region(&mut hit, &exit);
@@ -1033,7 +1247,11 @@ pub async fn unlock_check(state: State<'_, Arc<Mutex<Core>>>, node_id: String, s
             ordered.push(hit.clone());
         }
     }
-    Ok(UnlockReport { node_id, cancelled, items: ordered })
+    Ok(UnlockReport {
+        node_id,
+        cancelled,
+        items: ordered,
+    })
 }
 
 #[cfg(test)]
@@ -1041,13 +1259,31 @@ mod tests {
     use super::*;
 
     fn page(status: u16, url: &str, body: &str) -> Fetched {
-        Fetched { status, url: url.into(), body: body.into(), headers: String::new(), fail: "" }
+        Fetched {
+            status,
+            url: url.into(),
+            body: body.into(),
+            headers: String::new(),
+            fail: "",
+        }
     }
     fn headed(status: u16, url: &str, body: &str, headers: &str) -> Fetched {
-        Fetched { status, url: url.into(), body: body.into(), headers: headers.into(), fail: "" }
+        Fetched {
+            status,
+            url: url.into(),
+            body: body.into(),
+            headers: headers.into(),
+            fail: "",
+        }
     }
     fn down(kind: &'static str) -> Fetched {
-        Fetched { status: 0, url: String::new(), body: String::new(), headers: String::new(), fail: kind }
+        Fetched {
+            status: 0,
+            url: String::new(),
+            body: String::new(),
+            headers: String::new(),
+            fail: kind,
+        }
     }
 
     #[test]
@@ -1058,54 +1294,142 @@ mod tests {
 
     #[test]
     fn netflix_distinguishes_a_full_catalog_from_a_limited_one() {
-        let full = page(200, "https://www.netflix.com/title/81280792", r#"{"id":"SG","countryName":"Singapore"} netflix.watch"#);
-        let missing = page(200, "https://www.netflix.com/title/70143836", "Oh no! This title is not available");
+        let full = page(
+            200,
+            "https://www.netflix.com/title/81280792",
+            r#"{"id":"SG","countryName":"Singapore"} netflix.watch"#,
+        );
+        let missing = page(
+            200,
+            "https://www.netflix.com/title/70143836",
+            "Oh no! This title is not available",
+        );
         let open = judge_netflix(&full, &missing);
         assert_eq!(open.status, "available");
         assert_eq!(open.region, "SG");
         let limited = judge_netflix(&missing, &missing);
         assert_eq!(limited.status, "partial");
-        assert_eq!(judge_netflix(&down("timeout"), &down("connect")).status, "unreachable");
-        assert_eq!(judge_netflix(&page(200, "", "login wall"), &page(200, "", "login wall")).status, "unknown");
+        assert_eq!(
+            judge_netflix(&down("timeout"), &down("connect")).status,
+            "unreachable"
+        );
+        assert_eq!(
+            judge_netflix(&page(200, "", "login wall"), &page(200, "", "login wall")).status,
+            "unknown"
+        );
     }
 
     #[test]
     fn youtube_requires_an_explicit_premium_or_region_signal() {
-        let yes = judge_youtube(&page(200, "https://www.youtube.com/premium", r#"ad-free "INNERTUBE_CONTEXT_GL":"US""#));
+        let yes = judge_youtube(&page(
+            200,
+            "https://www.youtube.com/premium",
+            r#"ad-free "INNERTUBE_CONTEXT_GL":"US""#,
+        ));
         assert_eq!(yes.status, "available");
         assert_eq!(yes.region, "US");
-        assert_eq!(judge_youtube(&page(200, "", "Premium is not available in your country")).status, "region_blocked");
-        assert_eq!(judge_youtube(&page(200, "https://www.google.cn", "www.google.cn")).region, "CN");
+        assert_eq!(
+            judge_youtube(&page(200, "", "Premium is not available in your country")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_youtube(&page(200, "https://www.google.cn", "www.google.cn")).region,
+            "CN"
+        );
         assert_eq!(judge_youtube(&down("timeout")).status, "unreachable");
-        assert_eq!(judge_youtube(&page(200, "", "Just a moment")).status, "unknown");
+        assert_eq!(
+            judge_youtube(&page(200, "", "Just a moment")).status,
+            "unknown"
+        );
     }
 
     #[test]
     fn bilibili_uses_the_playback_code() {
-        assert_eq!(judge_bilibili(&page(200, "", r#"{"code":0}"#)).status, "available");
-        assert_eq!(judge_bilibili(&page(200, "", r#"{"code": -10403}"#)).status, "region_blocked");
-        assert_eq!(judge_bilibili(&page(200, "", r#"{"code":-400}"#)).status, "unknown");
+        assert_eq!(
+            judge_bilibili(&page(200, "", r#"{"code":0}"#)).status,
+            "available"
+        );
+        assert_eq!(
+            judge_bilibili(&page(200, "", r#"{"code": -10403}"#)).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_bilibili(&page(200, "", r#"{"code":-400}"#)).status,
+            "unknown"
+        );
         assert_eq!(judge_bilibili(&down("connect")).status, "unreachable");
     }
 
     #[test]
     fn spotify_tiktok_and_gemini_need_a_clear_signal() {
-        assert_eq!(judge_spotify(&page(200, "https://www.spotify.com/hk-en/", "spotify")).status, "available");
-        assert_eq!(judge_spotify(&page(200, "https://www.spotify.com/hk-en/", "spotify")).region, "HK");
-        assert_eq!(judge_spotify(&page(200, "https://www.spotify.com/", "not available in your country")).status, "region_blocked");
-        assert_eq!(judge_tiktok(&page(200, "https://www.tiktok.com/", r#"{"region":"JP"}"#)).status, "available");
+        assert_eq!(
+            judge_spotify(&page(200, "https://www.spotify.com/hk-en/", "spotify")).status,
+            "available"
+        );
+        assert_eq!(
+            judge_spotify(&page(200, "https://www.spotify.com/hk-en/", "spotify")).region,
+            "HK"
+        );
+        assert_eq!(
+            judge_spotify(&page(
+                200,
+                "https://www.spotify.com/",
+                "not available in your country"
+            ))
+            .status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_tiktok(&page(200, "https://www.tiktok.com/", r#"{"region":"JP"}"#)).status,
+            "available"
+        );
         assert_eq!(judge_tiktok(&page(200, "", "welcome")).status, "unknown");
-        assert_eq!(judge_gemini(&page(302, "https://gemini.google.com/unsupported", "")).status, "region_blocked");
-        assert_eq!(judge_page(&page(200, "", "Just a moment chatgpt"), &["chatgpt"], &["unsupported_country"]).status, "unknown");
-        assert_eq!(judge_page(&page(200, "", "Welcome to ChatGPT"), &["chatgpt"], &["unsupported_country"]).status, "available");
-        assert_eq!(judge_page(&page(403, "", "unsupported_country"), &["chatgpt"], &["unsupported_country"]).status, "region_blocked");
+        assert_eq!(
+            judge_gemini(&page(302, "https://gemini.google.com/unsupported", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_page(
+                &page(200, "", "Just a moment chatgpt"),
+                &["chatgpt"],
+                &["unsupported_country"]
+            )
+            .status,
+            "unknown"
+        );
+        assert_eq!(
+            judge_page(
+                &page(200, "", "Welcome to ChatGPT"),
+                &["chatgpt"],
+                &["unsupported_country"]
+            )
+            .status,
+            "available"
+        );
+        assert_eq!(
+            judge_page(
+                &page(403, "", "unsupported_country"),
+                &["chatgpt"],
+                &["unsupported_country"]
+            )
+            .status,
+            "region_blocked"
+        );
     }
 
     #[test]
     fn disney_uses_the_location_flag_and_does_not_guess() {
         let device = page(200, "", r#"{"assertion":"abc"}"#);
-        let open = page(200, "https://www.disneyplus.com/", r#"{"countryCode":"JP","inSupportedLocation":true}"#);
-        let soon = page(200, "https://www.disneyplus.com/", r#"{"countryCode":"IN","inSupportedLocation":false}"#);
+        let open = page(
+            200,
+            "https://www.disneyplus.com/",
+            r#"{"countryCode":"JP","inSupportedLocation":true}"#,
+        );
+        let soon = page(
+            200,
+            "https://www.disneyplus.com/",
+            r#"{"countryCode":"IN","inSupportedLocation":false}"#,
+        );
         let banned = page(403, "", "403 ERROR");
         assert_eq!(judge_disney(&device, Some(&open)).status, "available");
         assert_eq!(judge_disney(&device, Some(&open)).region, "JP");
@@ -1133,10 +1457,19 @@ mod tests {
         assert_eq!(cache_get(&map, &key, now, false).unwrap().region, "SG");
         assert!(cache_get(&map, &key, now, true).is_none());
         assert!(cache_get(&map, &key, now + CACHE_TTL + Duration::from_secs(1), false).is_none());
-        let failed = UnlockItem { status: "unreachable".into(), ..cache_get(&map, &key, now, false).unwrap_or_else(|| UnlockItem {
-            service_id: "netflix".into(), node_id: "node-1".into(), status: "unreachable".into(), region: String::new(),
-            latency_ms: 0, message: "unlock.unreachable".into(), error_code: String::new(), tested_at: 0,
-        }) };
+        let failed = UnlockItem {
+            status: "unreachable".into(),
+            ..cache_get(&map, &key, now, false).unwrap_or_else(|| UnlockItem {
+                service_id: "netflix".into(),
+                node_id: "node-1".into(),
+                status: "unreachable".into(),
+                region: String::new(),
+                latency_ms: 0,
+                message: "unlock.unreachable".into(),
+                error_code: String::new(),
+                tested_at: 0,
+            })
+        };
         cache_put(&mut map, ("other".into(), "netflix".into()), failed, now);
         assert!(map.get(&("other".into(), "netflix".into())).is_none());
     }
@@ -1144,8 +1477,14 @@ mod tests {
     #[test]
     fn the_exit_region_fills_only_a_response_that_came_back() {
         let mut item = UnlockItem {
-            service_id: "claude".into(), node_id: "n".into(), status: "available".into(), region: String::new(),
-            latency_ms: 1, message: "unlock.available".into(), error_code: String::new(), tested_at: 0,
+            service_id: "claude".into(),
+            node_id: "n".into(),
+            status: "available".into(),
+            region: String::new(),
+            latency_ms: 1,
+            message: "unlock.available".into(),
+            error_code: String::new(),
+            tested_at: 0,
         };
         apply_exit_region(&mut item, "de");
         assert_eq!(item.region, "DE");
@@ -1154,7 +1493,10 @@ mod tests {
         apply_exit_region(&mut item, "DE");
         assert!(item.region.is_empty());
         assert_eq!(trace_region("ip=203.0.113.8\nloc=SG\n"), "SG");
-        assert!(known_services(&vec!["netflix".into(), "nope".into(), "netflix".into()]) == vec!["netflix".to_string()]);
+        assert!(
+            known_services(&vec!["netflix".into(), "nope".into(), "netflix".into()])
+                == vec!["netflix".to_string()]
+        );
     }
 
     #[test]
@@ -1165,66 +1507,220 @@ mod tests {
         assert!(alpha2("title").is_empty());
         assert!(alpha2("INTL").is_empty());
 
-        let clean = page(200, "https://api.openai.com/compliance/cookie_requirements", "requirements");
+        let clean = page(
+            200,
+            "https://api.openai.com/compliance/cookie_requirements",
+            "requirements",
+        );
         let app = page(200, "https://ios.chat.openai.com/", "chat");
         assert_eq!(judge_chatgpt(&clean, &app).status, "available");
-        assert_eq!(judge_chatgpt(&page(200, "", "unsupported_country"), &page(200, "", "VPN")).status, "region_blocked");
-        assert_eq!(judge_chatgpt(&page(200, "", "ok"), &page(200, "", "use a VPN")).status, "partial");
-        assert_eq!(judge_chatgpt(&page(200, "", "unsupported_country"), &app).status, "partial");
-        assert_eq!(judge_chatgpt(&down("timeout"), &down("connect")).status, "unreachable");
+        assert_eq!(
+            judge_chatgpt(&page(200, "", "unsupported_country"), &page(200, "", "VPN")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_chatgpt(&page(200, "", "ok"), &page(200, "", "use a VPN")).status,
+            "partial"
+        );
+        assert_eq!(
+            judge_chatgpt(&page(200, "", "unsupported_country"), &app).status,
+            "partial"
+        );
+        assert_eq!(
+            judge_chatgpt(&down("timeout"), &down("connect")).status,
+            "unreachable"
+        );
         assert_eq!(judge_chatgpt(&down("timeout"), &app).status, "unknown");
 
-        assert_eq!(judge_claude(&page(200, "https://claude.ai/login", "")).status, "available");
-        assert_eq!(judge_claude(&page(200, "https://www.anthropic.com/app-unavailable-in-region", "")).status, "region_blocked");
-        assert_eq!(judge_claude(&page(200, "https://www.anthropic.com/", "")).status, "unknown");
-        let gemini = page(200, "https://gemini.google.com/", r#"45631641,null,true ,2,1,200,"USA""#);
+        assert_eq!(
+            judge_claude(&page(200, "https://claude.ai/login", "")).status,
+            "available"
+        );
+        assert_eq!(
+            judge_claude(&page(
+                200,
+                "https://www.anthropic.com/app-unavailable-in-region",
+                ""
+            ))
+            .status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_claude(&page(200, "https://www.anthropic.com/", "")).status,
+            "unknown"
+        );
+        let gemini = page(
+            200,
+            "https://gemini.google.com/",
+            r#"45631641,null,true ,2,1,200,"USA""#,
+        );
         assert_eq!(judge_gemini(&gemini).status, "available");
         assert_eq!(judge_gemini(&gemini).region, "USA");
-        assert_eq!(judge_gemini(&page(200, "https://gemini.google.com/", "Welcome to Gemini")).status, "region_blocked");
-        assert_eq!(judge_gemini(&page(200, "https://gemini.google.com/", "Just a moment")).status, "unknown");
+        assert_eq!(
+            judge_gemini(&page(
+                200,
+                "https://gemini.google.com/",
+                "Welcome to Gemini"
+            ))
+            .status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_gemini(&page(200, "https://gemini.google.com/", "Just a moment")).status,
+            "unknown"
+        );
 
-        assert_eq!(judge_prime(&page(200, "", r#"{"currentTerritory":"JP"}"#)).region, "JP");
-        assert_eq!(judge_prime(&page(200, "", r#"{"isServiceRestricted":true}"#)).status, "region_blocked");
+        assert_eq!(
+            judge_prime(&page(200, "", r#"{"currentTerritory":"JP"}"#)).region,
+            "JP"
+        );
+        assert_eq!(
+            judge_prime(&page(200, "", r#"{"isServiceRestricted":true}"#)).status,
+            "region_blocked"
+        );
         assert_eq!(judge_prime(&page(200, "", "prime")).status, "unknown");
-        assert_eq!(judge_max(&page(200, "https://www.max.com/", "countryCode=SG")).region, "SG");
+        assert_eq!(
+            judge_max(&page(200, "https://www.max.com/", "countryCode=SG")).region,
+            "SG"
+        );
         assert_eq!(judge_max(&page(200, "", "welcome")).status, "unknown");
-        assert_eq!(judge_paramount(&page(200, "https://www.paramountplus.com/", "")).region, "US");
-        assert_eq!(judge_paramount(&page(200, "https://www.paramountplus.com/ca/", "")).region, "CA");
-        assert_eq!(judge_paramount(&page(200, "https://www.paramountplus.com/intl", "")).status, "region_blocked");
-        assert_eq!(judge_peacock(&page(200, "https://www.peacocktv.com/", "")).status, "available");
-        assert_eq!(judge_peacock(&page(200, "https://www.peacocktv.com/unavailable", "")).status, "region_blocked");
-        assert_eq!(judge_hulu(&page(200, "https://id.hulu.jp/", "")).region, "JP");
-        assert_eq!(judge_hulu(&page(200, "https://id.hulu.jp/restrict", "")).status, "region_blocked");
-        assert_eq!(judge_dazn(&page(200, "", r#"{"isAllowed":true,"GeolocatedCountry":"DE"}"#)).status, "available");
-        assert_eq!(judge_dazn(&page(200, "", "Security policy has been breached")).status, "region_blocked");
-        assert_eq!(judge_abema(&page(200, "", r#"{"isoCountryCode":"JP"}"#)).status, "available");
-        assert_eq!(judge_abema(&page(200, "", r#"{"isoCountryCode":"TW"}"#)).status, "partial");
+        assert_eq!(
+            judge_paramount(&page(200, "https://www.paramountplus.com/", "")).region,
+            "US"
+        );
+        assert_eq!(
+            judge_paramount(&page(200, "https://www.paramountplus.com/ca/", "")).region,
+            "CA"
+        );
+        assert_eq!(
+            judge_paramount(&page(200, "https://www.paramountplus.com/intl", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_peacock(&page(200, "https://www.peacocktv.com/", "")).status,
+            "available"
+        );
+        assert_eq!(
+            judge_peacock(&page(200, "https://www.peacocktv.com/unavailable", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_hulu(&page(200, "https://id.hulu.jp/", "")).region,
+            "JP"
+        );
+        assert_eq!(
+            judge_hulu(&page(200, "https://id.hulu.jp/restrict", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_dazn(&page(
+                200,
+                "",
+                r#"{"isAllowed":true,"GeolocatedCountry":"DE"}"#
+            ))
+            .status,
+            "available"
+        );
+        assert_eq!(
+            judge_dazn(&page(200, "", "Security policy has been breached")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_abema(&page(200, "", r#"{"isoCountryCode":"JP"}"#)).status,
+            "available"
+        );
+        assert_eq!(
+            judge_abema(&page(200, "", r#"{"isoCountryCode":"TW"}"#)).status,
+            "partial"
+        );
         assert_eq!(judge_abema(&page(200, "", "{}")).status, "region_blocked");
         let device = page(200, "", r#"{"deviceid":"abc"}"#);
         let token = page(200, "", r#"{"animeSn":37783}"#);
         let home = page(200, "", r#"data-geo="TW""#);
-        assert_eq!(judge_bahamut(&device, Some(&token), Some(&home)).region, "TW");
-        assert_eq!(judge_bahamut(&device, Some(&page(200, "", "no")), None).status, "region_blocked");
+        assert_eq!(
+            judge_bahamut(&device, Some(&token), Some(&home)).region,
+            "TW"
+        );
+        assert_eq!(
+            judge_bahamut(&device, Some(&page(200, "", "no")), None).status,
+            "region_blocked"
+        );
         assert_eq!(judge_bbc(&page(200, "", "vs-hls-push-uk")).region, "GB");
-        assert_eq!(judge_bbc(&page(200, "", "geolocation")).status, "region_blocked");
-        assert_eq!(judge_iqiyi(&headed(200, "https://www.iq.com/", "", "mod=ntw; Path=/")).region, "TW");
-        assert_eq!(judge_iqiyi(&page(200, "https://www.iq.com/", "welcome")).status, "unknown");
-        assert_eq!(judge_kktv(&page(200, "", r#"{"country":"TW"}"#)).status, "available");
-        assert_eq!(judge_kktv(&page(200, "", r#"{"country":"JP"}"#)).status, "region_blocked");
-        assert_eq!(judge_viu(&page(200, "https://www.viu.com/ott/hk/zh", "")).region, "HK");
-        assert_eq!(judge_viu(&page(200, "https://www.viu.com/ott/NO-SERVICE", "")).status, "region_blocked");
-        assert_eq!(judge_mytvsuper(&page(200, "", r#"{"country_code":"HK"}"#)).status, "available");
-        assert_eq!(judge_mytvsuper(&page(200, "", r#"{"country_code":"SG"}"#)).status, "region_blocked");
+        assert_eq!(
+            judge_bbc(&page(200, "", "geolocation")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_iqiyi(&headed(200, "https://www.iq.com/", "", "mod=ntw; Path=/")).region,
+            "TW"
+        );
+        assert_eq!(
+            judge_iqiyi(&page(200, "https://www.iq.com/", "welcome")).status,
+            "unknown"
+        );
+        assert_eq!(
+            judge_kktv(&page(200, "", r#"{"country":"TW"}"#)).status,
+            "available"
+        );
+        assert_eq!(
+            judge_kktv(&page(200, "", r#"{"country":"JP"}"#)).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_viu(&page(200, "https://www.viu.com/ott/hk/zh", "")).region,
+            "HK"
+        );
+        assert_eq!(
+            judge_viu(&page(200, "https://www.viu.com/ott/NO-SERVICE", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_mytvsuper(&page(200, "", r#"{"country_code":"HK"}"#)).status,
+            "available"
+        );
+        assert_eq!(
+            judge_mytvsuper(&page(200, "", r#"{"country_code":"SG"}"#)).status,
+            "region_blocked"
+        );
         assert_eq!(judge_apple(&page(200, "", "US")).region, "US");
         assert_eq!(judge_apple(&page(200, "", "<html>")).status, "unknown");
-        assert_eq!(judge_wikipedia(&page(200, "", "Edit Wikipedia")).status, "available");
-        assert_eq!(judge_wikipedia(&page(200, "", "You are Banned")).status, "region_blocked");
-        assert_eq!(judge_reddit(&page(200, "https://www.reddit.com/", "")).status, "available");
-        assert_eq!(judge_reddit(&page(403, "https://www.reddit.com/", "")).status, "region_blocked");
-        assert_eq!(judge_reddit(&page(200, "https://www.reddit.com/", "Just a moment")).status, "unknown");
-        assert_eq!(judge_meta(&page(200, "", r#"KadabraRootContainer "code":"en_US""#)).region, "US");
-        assert_eq!(judge_meta(&page(200, "", "AbraGeoBlockedErrorRoot")).status, "region_blocked");
+        assert_eq!(
+            judge_wikipedia(&page(200, "", "Edit Wikipedia")).status,
+            "available"
+        );
+        assert_eq!(
+            judge_wikipedia(&page(200, "", "You are Banned")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_reddit(&page(200, "https://www.reddit.com/", "")).status,
+            "available"
+        );
+        assert_eq!(
+            judge_reddit(&page(403, "https://www.reddit.com/", "")).status,
+            "region_blocked"
+        );
+        assert_eq!(
+            judge_reddit(&page(200, "https://www.reddit.com/", "Just a moment")).status,
+            "unknown"
+        );
+        assert_eq!(
+            judge_meta(&page(200, "", r#"KadabraRootContainer "code":"en_US""#)).region,
+            "US"
+        );
+        assert_eq!(
+            judge_meta(&page(200, "", "AbraGeoBlockedErrorRoot")).status,
+            "region_blocked"
+        );
         assert_eq!(judge_meta(&page(200, "", "meta")).status, "unknown");
-        assert_eq!(judge_page(&page(200, "", "Welcome to Copilot"), &["copilot"], &["not available in your region"]).status, "available");
+        assert_eq!(
+            judge_page(
+                &page(200, "", "Welcome to Copilot"),
+                &["copilot"],
+                &["not available in your region"]
+            )
+            .status,
+            "available"
+        );
     }
 }

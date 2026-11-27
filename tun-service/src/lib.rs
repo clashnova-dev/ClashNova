@@ -364,7 +364,10 @@ pub fn validate_profile_options(config: &Value) -> Result<()> {
                                 // Entering another network namespace is a path lookup as root.
                                 | "netns"
                         )
-                        || (key == "path" && parent != "transport" && !(parent == "servers" && map.get("type").and_then(Value::as_str) == Some("https")))
+                        || (key == "path"
+                            && parent != "transport"
+                            && !(parent == "servers"
+                                && map.get("type").and_then(Value::as_str) == Some("https")))
                     {
                         return Err(msg(
                             "native.tunConfigForbiddenOption",
@@ -557,16 +560,13 @@ mod tests {
             serde_json::json!([{"type":"local","tag":"x","format":"binary","path":"/etc/shadow"}]);
         assert!(safe_config(c.clone()).is_err());
         // 非白名单主机拒绝。
-        c["route"]["rule_set"] =
-            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://evil.example/x.srs"}]);
+        c["route"]["rule_set"] = serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://evil.example/x.srs"}]);
         assert!(safe_config(c.clone()).is_err());
         // jsDelivr 主机但非 SagerNet 路径(可托管任意仓库)拒绝。
-        c["route"]["rule_set"] =
-            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://cdn.jsdelivr.net/gh/evil/repo@x/y.srs"}]);
+        c["route"]["rule_set"] = serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"https://cdn.jsdelivr.net/gh/evil/repo@x/y.srs"}]);
         assert!(safe_config(c.clone()).is_err());
         // 非 https 拒绝。
-        c["route"]["rule_set"] =
-            serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"http://cdn.jsdelivr.net/x.srs"}]);
+        c["route"]["rule_set"] = serde_json::json!([{"type":"remote","tag":"x","format":"binary","url":"http://cdn.jsdelivr.net/x.srs"}]);
         assert!(safe_config(c.clone()).is_err());
         // 规则 matcher 里混入对象想夹带 local path,拒绝。
         c["route"]["rule_set"] = serde_json::json!([]);
@@ -576,7 +576,10 @@ mod tests {
     #[test]
     fn accepts_live_app_slots_without_granting_file_or_listener_access() {
         let mut c = config();
-        c["outbounds"].as_array_mut().unwrap().push(serde_json::json!({"type":"selector","tag":"select","outbounds":["direct"]}));
+        c["outbounds"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({"type":"selector","tag":"select","outbounds":["direct"]}));
         c["route"] = serde_json::json!({"find_process":true,"rules":[
             {"inbound":["clashnova-app-block"],"process_path_regex":["^$"],"action":"reject"},
             {"inbound":["clashnova-app-proxy"],"process_path_regex":["^$"],"outbound":"select"},
@@ -594,7 +597,9 @@ mod tests {
             serde_json::json!({"dns":{"servers":[{"type":"hosts","path":"/etc/hosts"}]}}),
             serde_json::json!({"tls":{"acme":{"data_directory":"/tmp/data"}}}),
             serde_json::json!({"command":"not-to-be-executed"}),
-        ] { assert!(validate_profile_options(&value).is_err()); }
+        ] {
+            assert!(validate_profile_options(&value).is_err());
+        }
         assert!(validate_profile_options(&serde_json::json!({"transport":{"type":"ws","path":"/proxy"},"dns":{"servers":[{"type":"https","path":"/dns-query"}]},"route":{"rules":[{"process_path":["/Applications/QA.app/Contents/MacOS/QA"]}]}})).is_ok());
     }
     #[test]

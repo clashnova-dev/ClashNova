@@ -7,11 +7,13 @@
 //! 重命名、文件名防穿越、设备注册表与手动添加、UDP 组播发现（discovery）、
 //! 交互式接收审批。未实现：TLS、断点续传、进度事件节流、暂停/取消在途任务。
 
+pub mod bonjour;
 pub mod checksum;
 pub mod discovery;
 pub mod error;
 pub mod messages;
 pub mod protocol;
+pub mod scan;
 pub mod security;
 pub mod storage;
 pub mod tls;
@@ -74,6 +76,8 @@ pub struct LanConfig {
     pub max_concurrent: usize,
     /// 是否启用 TLS（自签证书 + 指纹 pin）。默认开；测试可关走明文 HTTP。
     pub use_tls: bool,
+    /// 本机设备类型（由调用方按平台探测后注入；默认 Desktop）。
+    pub device_type: protocol::DeviceType,
 }
 
 impl LanConfig {
@@ -88,6 +92,7 @@ impl LanConfig {
             default_save_dir,
             max_concurrent: 2,
             use_tls: true,
+            device_type: protocol::DeviceType::Desktop,
         }
     }
 }
@@ -117,6 +122,12 @@ pub enum LanEvent {
         peer_alias: String,
         peer_fingerprint: String,
     },
+    /// 收到对端的「拉取同步」请求，待本机用户确认是否把配置发给对方。
+    SyncRequest {
+        request_id: String,
+        peer_alias: String,
+        peer_fingerprint: String,
+    },
 }
 
 /// 接收请求的处置。
@@ -136,6 +147,8 @@ struct InteractiveApprover {
     pending: Mutex<HashMap<String, oneshot::Sender<transport::AcceptDecision>>>,
     /// 待确认的配对请求：request_id → 决定回传通道。
     pending_pairs: Mutex<HashMap<String, oneshot::Sender<bool>>>,
+    /// 待确认的拉取同步请求：request_id → 决定回传通道（Some(payload)=接受并发送，None=拒绝）。
+    pending_syncs: Mutex<HashMap<String, oneshot::Sender<Option<String>>>>,
     /// 是否接收入站传输（关则一律拒绝）。可运行时切换、持久化。
     accept_incoming: std::sync::atomic::AtomicBool,
     /// 已配对设备是否自动接收（关则仍逐次弹窗确认）。可运行时切换、持久化。
@@ -170,6 +183,20 @@ impl Drop for PairGuard<'_> {
     }
 }
 
+// 同步拉取请求被取消/超时时，移除其待确认槽位。
+struct SyncGuard<'a> {
+    pending: &'a Mutex<HashMap<String, oneshot::Sender<Option<String>>>>,
+    id: String,
+}
+impl Drop for SyncGuard<'_> {
+    fn drop(&mut self) {
+        self.pending
+            .lock()
+            .expect("pending syncs lock")
+            .remove(&self.id);
+    }
+}
+
 #[async_trait]
 impl transport::AcceptPolicy for InteractiveApprover {
     async fn decide(
@@ -181,6 +208,29 @@ impl transport::AcceptPolicy for InteractiveApprover {
         use std::sync::atomic::Ordering;
         if !self.accept_incoming.load(Ordering::SeqCst) {
             return transport::AcceptDecision::Reject;
+        }
+        // 文本消息风险低：已配对（指纹经 mTLS 验证）的对端直接接收，不逐次确认，
+        // 不受「自动接收文件」开关影响。
+        let is_text = files.len() == 1
+            && files
+                .values()
+                .next()
+                .map(|f| f.file_type == messages::TEXT_TYPE)
+                .unwrap_or(false);
+        if is_text
+            && !sender.fingerprint.is_empty()
+            && self
+                .storage
+                .is_trusted(&sender.fingerprint)
+                .unwrap_or(false)
+        {
+            return transport::AcceptDecision::Accept {
+                save_dir: self
+                    .default_save_dir
+                    .lock()
+                    .expect("receive directory lock")
+                    .clone(),
+            };
         }
         // 已配对 + 自动接收开启：直接收，不弹窗。关闭自动接收则仍逐次确认。
         if self.auto_accept_trusted.load(Ordering::SeqCst)
@@ -270,7 +320,8 @@ impl transport::AcceptPolicy for InteractiveApprover {
             peer_alias: sender.alias.clone(),
             peer_fingerprint: sender.fingerprint.clone(),
         });
-        match tokio::time::timeout(Duration::from_secs(120), rx).await {
+        // 配对确认 30s 过期：超时视为拒绝（两端一致）。
+        match tokio::time::timeout(Duration::from_secs(30), rx).await {
             Ok(Ok(true)) => {
                 let _ = self
                     .storage
@@ -278,6 +329,34 @@ impl transport::AcceptPolicy for InteractiveApprover {
                 true
             }
             _ => false,
+        }
+    }
+
+    /// 拉取同步审批：推送 [`LanEvent::SyncRequest`]，阻塞等待用户确认（30s 过期）。
+    /// 接受则由上层经 [`LanService::respond_sync`] 回传配置 payload。
+    async fn decide_sync(&self, sender: &DeviceInfo) -> Option<String> {
+        if sender.fingerprint.is_empty() {
+            return None;
+        }
+        let request_id = Uuid::new_v4().to_string();
+        let (tx, rx) = oneshot::channel();
+        self.pending_syncs
+            .lock()
+            .expect("pending syncs lock")
+            .insert(request_id.clone(), tx);
+        let _guard = SyncGuard {
+            pending: &self.pending_syncs,
+            id: request_id.clone(),
+        };
+        let _ = self.events_tx.send(LanEvent::SyncRequest {
+            request_id: request_id.clone(),
+            peer_alias: sender.alias.clone(),
+            peer_fingerprint: sender.fingerprint.clone(),
+        });
+        // 同步确认 30s 过期：超时视为拒绝。
+        match tokio::time::timeout(Duration::from_secs(30), rx).await {
+            Ok(Ok(decision)) => decision,
+            _ => None,
         }
     }
 }
@@ -295,6 +374,8 @@ pub struct LanService {
     storage: Arc<storage::Storage>,
     approver: Arc<InteractiveApprover>,
     devices: Arc<Mutex<HashMap<String, DiscoveredDevice>>>,
+    /// 各对端最近被发现的时刻，用于 TTL 剔除（超时未刷新 → 自动下线）。
+    last_seen: Arc<Mutex<HashMap<String, std::time::Instant>>>,
     tasks: Arc<Mutex<HashMap<String, TransferTask>>>,
     transfer_tx: Mutex<Option<TransferSink>>,
     cancels: transport::CancelRegistry,
@@ -304,6 +385,8 @@ pub struct LanService {
     paused: Mutex<HashMap<String, (DiscoveredDevice, PathBuf)>>,
     receiver: tokio::sync::Mutex<Option<transport::Receiver>>,
     beacon: tokio::sync::Mutex<Option<discovery::Beacon>>,
+    /// Bonjour/DNS-SD 发现（全平台主发现）：注册本机服务 + 浏览对端。
+    bonjour: Mutex<Option<bonjour::Bonjour>>,
     /// 可运行时修改的本机别名（设备名）；持久化于 lan_settings。
     alias: Mutex<String>,
     /// 是否对外可发现（广播信标）；可运行时切换，持久化于 lan_settings。
@@ -348,6 +431,7 @@ impl LanService {
             events_tx: events_tx.clone(),
             pending: Mutex::new(HashMap::new()),
             pending_pairs: Mutex::new(HashMap::new()),
+            pending_syncs: Mutex::new(HashMap::new()),
             accept_incoming: std::sync::atomic::AtomicBool::new(config.accept_incoming),
             auto_accept_trusted: std::sync::atomic::AtomicBool::new(config.auto_accept_trusted),
             default_save_dir: Mutex::new(config.default_save_dir.clone()),
@@ -362,6 +446,7 @@ impl LanService {
             storage,
             approver,
             devices: Arc::new(Mutex::new(HashMap::new())),
+            last_seen: Arc::new(Mutex::new(HashMap::new())),
             tasks: Arc::new(Mutex::new(HashMap::new())),
             transfer_tx: Mutex::new(None),
             cancels: transport::cancel_registry(),
@@ -369,6 +454,7 @@ impl LanService {
             paused: Mutex::new(HashMap::new()),
             receiver: tokio::sync::Mutex::new(None),
             beacon: tokio::sync::Mutex::new(None),
+            bonjour: Mutex::new(None),
             alias: Mutex::new(alias0),
             discoverable: std::sync::atomic::AtomicBool::new(discoverable0),
             disc_tx: Mutex::new(None),
@@ -496,8 +582,12 @@ impl LanService {
         Ok(())
     }
 
-    /// 按当前别名/可发现状态重启组播信标：停旧的；若可发现且接收端在运行则起新的。
+    /// 按当前别名/可发现状态重启发现（Bonjour + 组播信标）：停旧的；若可发现且
+    /// 接收端在运行则按新别名重起，对端很快刷新到新名。
     async fn refresh_beacon(&self) {
+        if let Some(b) = self.bonjour.lock().expect("bonjour lock").take() {
+            b.stop();
+        }
         if let Some(beacon) = self.beacon.lock().await.take() {
             beacon.shutdown().await;
         }
@@ -507,6 +597,16 @@ impl LanService {
         let disc_tx = self.disc_tx.lock().expect("disc_tx lock").clone();
         let Some(disc_tx) = disc_tx else { return };
         let device = self.local_device_info();
+        match bonjour::Bonjour::start(
+            &device.alias,
+            self.config.device_type,
+            self.fingerprint(),
+            self.config.listen_port,
+            disc_tx.clone(),
+        ) {
+            Ok(b) => *self.bonjour.lock().expect("bonjour lock") = Some(b),
+            Err(e) => log::warn!("Bonjour 重启失败: {e}"),
+        }
         match discovery::Beacon::start(device, disc_tx).await {
             Ok(beacon) => *self.beacon.lock().await = Some(beacon),
             Err(err) => log::warn!("信标重启失败: {err}"),
@@ -518,7 +618,7 @@ impl LanService {
             alias: self.alias.lock().expect("alias lock").clone(),
             version: protocol::PROTOCOL_VERSION.to_string(),
             device_model: None,
-            device_type: Some(DeviceType::Desktop),
+            device_type: Some(self.config.device_type),
             fingerprint: self.fingerprint.clone(),
             port: Some(self.config.listen_port),
             protocol: Some(if self.config.use_tls {
@@ -593,6 +693,7 @@ impl LanService {
         *self.disc_tx.lock().expect("disc_tx lock") = Some(disc_tx.clone());
         {
             let devices = self.devices.clone();
+            let last_seen = self.last_seen.clone();
             let events = self.events_tx.clone();
             let storage = self.storage.clone();
             tokio::spawn(async move {
@@ -600,6 +701,10 @@ impl LanService {
                     if found.info.fingerprint.is_empty() {
                         continue;
                     }
+                    last_seen
+                        .lock()
+                        .expect("last_seen lock")
+                        .insert(found.info.fingerprint.clone(), std::time::Instant::now());
                     let dd = DiscoveredDevice {
                         alias: found.info.alias.clone(),
                         fingerprint: found.info.fingerprint.clone(),
@@ -614,6 +719,69 @@ impl LanService {
                         reg.values().cloned().collect::<Vec<_>>()
                     };
                     let _ = events.send(LanEvent::DevicesChanged(list));
+                }
+            });
+        }
+
+        // TTL 剔除任务：周期清理超时未再被任一发现源刷新的对端 → 前端自动显示离线。
+        {
+            let devices = self.devices.clone();
+            let last_seen = self.last_seen.clone();
+            let events = self.events_tx.clone();
+            tokio::spawn(async move {
+                const TTL: std::time::Duration = std::time::Duration::from_secs(30);
+                let mut ticker = tokio::time::interval(std::time::Duration::from_secs(10));
+                loop {
+                    ticker.tick().await;
+                    let gone: Vec<String> = {
+                        let ls = last_seen.lock().expect("last_seen lock");
+                        ls.iter()
+                            .filter(|(_, t)| t.elapsed() > TTL)
+                            .map(|(fp, _)| fp.clone())
+                            .collect()
+                    };
+                    if gone.is_empty() {
+                        continue;
+                    }
+                    let list = {
+                        let mut reg = devices.lock().expect("devices lock");
+                        let mut ls = last_seen.lock().expect("last_seen lock");
+                        for fp in &gone {
+                            reg.remove(fp);
+                            ls.remove(fp);
+                        }
+                        reg.values().cloned().collect::<Vec<_>>()
+                    };
+                    let _ = events.send(LanEvent::DevicesChanged(list));
+                }
+            });
+        }
+
+        // 保活任务：被动发现是边沿触发（Bonjour 仅在服务列表变化时回调；组播可能
+        // 被路由挡），持续在线的设备不会被重复上报，光靠 TTL 会把仍在线的设备误删
+        // （表现为"偶尔掉线"）。周期（< TTL）对已知设备做轻量 TCP 探活，通则续期
+        // last_seen，不通才交给 TTL 剔除。只探已知设备，开销很小。
+        {
+            let devices = self.devices.clone();
+            let last_seen = self.last_seen.clone();
+            tokio::spawn(async move {
+                let mut ticker = tokio::time::interval(std::time::Duration::from_secs(12));
+                loop {
+                    ticker.tick().await;
+                    let snapshot: Vec<(String, SocketAddr)> = {
+                        let reg = devices.lock().expect("devices lock");
+                        reg.values()
+                            .map(|d| (d.fingerprint.clone(), SocketAddr::from((d.address, d.port))))
+                            .collect()
+                    };
+                    for (fp, addr) in snapshot {
+                        if scan::probe(addr, std::time::Duration::from_millis(600)).await {
+                            last_seen
+                                .lock()
+                                .expect("last_seen lock")
+                                .insert(fp, std::time::Instant::now());
+                        }
+                    }
                 }
             });
         }
@@ -656,8 +824,20 @@ impl LanService {
         .await?;
         *guard = Some(receiver);
 
-        // 组播发现（best-effort）：失败不影响接收端运行。
+        // Bonjour + 组播发现（均 best-effort）：失败不影响接收端运行。
         if self.discoverable() {
+            // Bonjour/DNS-SD：全平台主发现（含 iOS，免组播权限）。
+            match bonjour::Bonjour::start(
+                &device.alias,
+                self.config.device_type,
+                self.fingerprint(),
+                self.config.listen_port,
+                disc_tx.clone(),
+            ) {
+                Ok(b) => *self.bonjour.lock().expect("bonjour lock") = Some(b),
+                Err(e) => log::warn!("Bonjour 发现启动失败: {e}"),
+            }
+            // UDP 组播：兼容原版 LocalSend。
             match discovery::Beacon::start(device, disc_tx).await {
                 Ok(beacon) => {
                     *self.beacon.lock().await = Some(beacon);
@@ -672,6 +852,9 @@ impl LanService {
 
     /// 停止接收端与组播发现，释放端口与后台任务。
     pub async fn stop(&self) -> Result<()> {
+        if let Some(b) = self.bonjour.lock().expect("bonjour lock").take() {
+            b.stop();
+        }
         if let Some(beacon) = self.beacon.lock().await.take() {
             beacon.shutdown().await;
         }
@@ -716,6 +899,10 @@ impl LanService {
             device_type: info.device_type,
             trusted: self.storage.is_trusted(&info.fingerprint).unwrap_or(false),
         };
+        self.last_seen
+            .lock()
+            .expect("last_seen lock")
+            .insert(dd.fingerprint.clone(), std::time::Instant::now());
         let list = {
             let mut reg = self.devices.lock().expect("devices lock");
             reg.insert(dd.fingerprint.clone(), dd.clone());
@@ -723,6 +910,22 @@ impl LanService {
         };
         let _ = self.events_tx.send(LanEvent::DevicesChanged(list));
         Ok(dd)
+    }
+
+    /// TCP 单播扫描兜底：探活本机各 /24 内 `:DEFAULT_PORT` 开放的主机并拉 `/info`
+    /// 登记。组播被网络/路由挡住、或对端无组播权限（iOS）时用它发现对端——纯单播，
+    /// 不依赖组播。开放的主机复用 [`add_manual_device`]（含 mTLS 客户端证书）。
+    pub async fn scan_subnet(&self) -> Result<()> {
+        use futures_util::stream::{self, StreamExt};
+        let targets = scan::scan_targets(protocol::DEFAULT_PORT);
+        stream::iter(targets)
+            .for_each_concurrent(64, |addr| async move {
+                if scan::probe(addr, std::time::Duration::from_millis(400)).await {
+                    let _ = self.add_manual_device(addr).await;
+                }
+            })
+            .await;
+        Ok(())
     }
 
     /// 向指定指纹的对端发送文件，返回各任务 id。地址由注册表解析，过程上报任务状态。
@@ -737,8 +940,13 @@ impl LanService {
         let mut ids = Vec::new();
         for path in paths {
             let task_id = Uuid::new_v4().to_string();
-            self.send_one(task_id.clone(), &device, &path).await?;
-            ids.push(task_id);
+            match self.send_one(task_id.clone(), &device, &path).await {
+                Ok(()) => ids.push(task_id),
+                // 用户取消：任务状态已通过 Finished(Canceled) 事件上报（气泡显示「已取消」），
+                // 不作为错误上抛，否则前端会把取消弹成「局域网传输出错」。跳过该文件、继续剩余。
+                Err(LanError::Canceled) => continue,
+                Err(e) => return Err(e),
+            }
         }
         Ok(ids)
     }
@@ -928,6 +1136,67 @@ impl LanService {
         };
         let _ = tx.send(accept);
         Ok(())
+    }
+
+    /// 响应一个收到的拉取同步请求（前端在 SyncRequest 后调用）。接受时上层把采集好的
+    /// 配置 payload 一并传入，由此完成被阻塞的 /sync 响应；拒绝则传空（会回 403）。
+    pub async fn respond_sync(
+        &self,
+        request_id: &str,
+        accept: bool,
+        payload: String,
+    ) -> Result<()> {
+        let tx = self
+            .approver
+            .pending_syncs
+            .lock()
+            .expect("pending syncs lock")
+            .remove(request_id);
+        let Some(tx) = tx else {
+            return Err(LanError::Protocol("无此同步请求或已超时".into()));
+        };
+        let _ = tx.send(if accept { Some(payload) } else { None });
+        Ok(())
+    }
+
+    /// 主动从某设备「拉取」配置：POST /sync 带本机信息，对端用户确认后在响应体返回
+    /// 配置 payload（不透明字符串，由前端采集/应用）。不建立配对。
+    pub async fn sync_pull(&self, fingerprint: &str) -> Result<String> {
+        let device = {
+            let reg = self.devices.lock().expect("devices lock");
+            reg.get(fingerprint).cloned()
+        };
+        let Some(device) = device else {
+            return Err(LanError::Untrusted(fingerprint.to_string()));
+        };
+        let addr = connect_addr(SocketAddr::new(device.address, device.port));
+        let scheme = if self.config.use_tls { "https" } else { "http" };
+        let url = format!("{scheme}://{addr}{}", messages::SYNC_PATH);
+        let expected = if self.config.use_tls {
+            Some(device.fingerprint.clone())
+        } else {
+            None
+        };
+        let resp = tls::client(self.config.use_tls, expected, Some(&self.identity))?
+            .post(url)
+            .json(&messages::SyncRequest {
+                info: self.local_device_info(),
+            })
+            // 客户端超时 > 对端 30s 确认窗，避免确认前就断开。
+            .timeout(Duration::from_secs(45))
+            .send()
+            .await?;
+        match resp.status() {
+            reqwest::StatusCode::OK => {
+                let body: messages::SyncResponse = resp.json().await?;
+                Ok(body.payload)
+            }
+            reqwest::StatusCode::FORBIDDEN => Err(LanError::Rejected),
+            _ => {
+                resp.error_for_status()?;
+                Err(LanError::Protocol("同步应答异常".into()))
+            }
+        }
     }
 
     /// 与某设备（指纹）的会话时间线（文本+文件合并，按时间正序）。
@@ -1519,8 +1788,9 @@ mod tests {
         };
         send.cancel(&task_id).await.unwrap();
 
-        // 发送因取消返回错误，并落一条 CANCELED 历史。
-        assert!(handle.await.unwrap().is_err());
+        // 用户取消是干净返回（不作为错误上抛，避免前端弹「传输出错」），
+        // 但仍落一条 CANCELED 历史。
+        assert!(handle.await.unwrap().is_ok());
         let mut rows = Vec::new();
         for _ in 0..50 {
             rows = send.history();

@@ -7,8 +7,9 @@
   import ProfileInfoDialog from "../../components/ProfileInfoDialog.vue";
   import ProfileNodesDialog from "../../components/ProfileNodesDialog.vue";
   import BaseButton from "../../components/ui/BaseButton.vue";
+  import LanSyncDialog from "../../components/LanSyncDialog.vue";
   import { encode } from "uqr";
-  import { Plus, QrCode, RefreshCw, Trash2, X } from "@lucide/vue";
+  import { Plus, QrCode, RefreshCw, Trash2, X, Share2 } from "@lucide/vue";
   const {
     t,
     locale,
@@ -34,6 +35,7 @@
   const shareUrl = ref("");
   const shareName = ref("");
   const qrDialog = ref<HTMLDialogElement | null>(null);
+  const lanSyncDialog = ref<InstanceType<typeof LanSyncDialog> | null>(null);
   const qr = computed(() => (shareUrl.value ? qrModules(shareUrl.value) : null));
   function qrModules(text: string) {
     const code = encode(text, { ecc: "M", border: 2 });
@@ -164,9 +166,13 @@
         <h2>{{ t("subscriptions.mySubscriptions") }}</h2>
         <span>{{ t("subscriptions.count", { count }) }}</span>
       </div>
-      <BaseButton variant="primary" @click="openProfileDialog"
-        ><Plus :size="16" />{{ t("subscriptions.add") }}</BaseButton
-      >
+      <div class="subs-head-actions">
+        <BaseButton :title="t('lan.syncDesc')" @click="lanSyncDialog?.open()"
+          ><Share2 :size="16" />{{ t("lan.sync") }}</BaseButton
+        ><BaseButton variant="primary" @click="openProfileDialog"
+          ><Plus :size="16" />{{ t("subscriptions.add") }}</BaseButton
+        >
+      </div>
     </div>
     <div v-if="count" class="subs-grid">
       <SubscriptionCard
@@ -272,6 +278,7 @@
     <ProfileEditor ref="profileEditor" />
     <ProfileInfoDialog ref="profileInfo" />
     <ProfileNodesDialog ref="profileNodes" @advanced="onNodesAdvanced" />
+    <LanSyncDialog ref="lanSyncDialog" />
     <div v-if="menu" class="ctx-backdrop" @click="closeMenu" @contextmenu.prevent="closeMenu">
       <ul class="ctx-menu" :style="{ left: menu.x + 'px', top: menu.y + 'px' }" role="menu" @click.stop>
         <li v-for="(item, i) in menu.items" :key="i">

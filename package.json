@@ -11,6 +11,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,vue,scss,css,json}\""
   },
   "dependencies": {
+    "@iconify-icons/vscode-icons": "^2.0.27",
+    "@iconify/vue": "^5.0.5",
     "@lucide/vue": "^1.72.0",
     "@tauri-apps/api": "^2.3.0",
     "@tauri-apps/plugin-autostart": "^2.7.0",
@@ -43,6 +45,6 @@
     "url": "https://github.com/clashnova-dev/ClashNova.git"
   },
   "homepage": "https://github.com/clashnova-dev/ClashNova",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "ClashNova desktop proxy client"
 }

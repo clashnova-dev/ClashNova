@@ -15,7 +15,11 @@ impl Drop for Process {
         let _ = self.0.wait();
     }
 }
-pub fn output(command: &mut Command, timeout: Duration, max_bytes: usize) -> Result<Vec<u8>, String> {
+pub fn output(
+    command: &mut Command,
+    timeout: Duration,
+    max_bytes: usize,
+) -> Result<Vec<u8>, String> {
     let mut process = Process(
         command
             .stdin(Stdio::null())

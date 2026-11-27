@@ -60,17 +60,24 @@ export type Bridge = {
   saveSubscriptions(data: string): Promise<void>;
   connect(mode: "system" | "tun" | "manual"): Promise<Snapshot>;
   disconnect(): Promise<Snapshot>;
+  // Hot-switch the exit node on the running core (Clash API selector); keeps the connection alive.
+  selectNode(tag: string): Promise<void>;
   lanGetLocalDevice(): Promise<LanLocalDevice>;
   lanAddManualDevice(addr: string): Promise<LanDiscoveredDevice>;
   lanGetSettings(): Promise<LanSettings>;
   lanUpdateSettings(settings: LanSettings): Promise<LanSettings>;
   lanRefreshDevices(): Promise<void>;
+  lanScanSubnet(): Promise<void>;
   lanListTransfers(): Promise<LanTransferTask[]>;
   lanSendFiles(fingerprint: string, paths: string[]): Promise<string[]>;
   lanSendText(fingerprint: string, text: string): Promise<LanHistoryEntry>;
   lanRespondIncoming(taskId: string, accept: boolean, saveDir: string | null): Promise<void>;
   lanPair(fingerprint: string): Promise<void>;
   lanRespondPair(requestId: string, accept: boolean): Promise<void>;
+  /** 从某设备拉取配置同步：对端确认后返回其配置 payload（不透明 JSON 字符串）。 */
+  lanSyncPull(fingerprint: string): Promise<string>;
+  /** 响应收到的拉取同步请求：接受时把本机配置 payload 传回。 */
+  lanRespondSync(requestId: string, accept: boolean, payload: string): Promise<void>;
   lanListTrusted(): Promise<LanTrustedDevice[]>;
   lanUnpair(fingerprint: string): Promise<void>;
   lanGetConversation(fingerprint: string): Promise<LanHistoryEntry[]>;
@@ -94,6 +101,7 @@ export type Bridge = {
   onLanTransfer?(cb: (task: LanTransferTask) => void): Promise<() => void>;
   onLanProgress?(cb: (p: LanProgress) => void): Promise<() => void>;
   onLanPair?(cb: (req: LanPairRequest) => void): Promise<() => void>;
+  onLanSync?(cb: (req: LanPairRequest) => void): Promise<() => void>;
   onState?(cb: (s: Snapshot) => void): Promise<() => void>;
   onProgress?(cb: (stage: string) => void): Promise<() => void>;
 };

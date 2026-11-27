@@ -235,12 +235,11 @@ pub async fn set_application_policy(
 ) -> Result<PolicyResult, String> {
     let core = core.inner().clone();
     let store = store.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    crate::blocking(move || {
         let mut core = core.lock().map_err(|_| "native.connectionBusy")?;
         set_policy(&mut core, &store, app, policy)
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]

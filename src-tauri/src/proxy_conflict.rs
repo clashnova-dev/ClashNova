@@ -109,7 +109,10 @@ fn linux_system_proxy(own_port: u16) -> Vec<String> {
 }
 
 fn command_output(args: &[&str]) -> Result<String, ()> {
-    let output = Command::new(args[0]).args(&args[1..]).output().map_err(|_| ())?;
+    let output = Command::new(args[0])
+        .args(&args[1..])
+        .output()
+        .map_err(|_| ())?;
     if !output.status.success() {
         return Err(());
     }
@@ -195,7 +198,8 @@ fn parse_unix_tun(text: &str) -> Vec<String> {
         // `ip -4 -o addr`: "5: tun0 inet 172.19.0.1/30 ..."
         let mut parts = line.split_whitespace();
         let first = parts.next().unwrap_or("");
-        let name = if first.ends_with(':') && first[..first.len() - 1].chars().all(|c| c.is_ascii_digit())
+        let name = if first.ends_with(':')
+            && first[..first.len() - 1].chars().all(|c| c.is_ascii_digit())
         {
             parts.next().unwrap_or("").trim_end_matches(':')
         } else {
@@ -276,7 +280,10 @@ mod tests {
   SOCKSEnable : 0\n\
   ProxyAutoConfigEnable : 0\n\
 }\n";
-        assert_eq!(parse_scutil_proxy(sample, 2080), vec!["127.0.0.1:7890".to_string()]);
+        assert_eq!(
+            parse_scutil_proxy(sample, 2080),
+            vec!["127.0.0.1:7890".to_string()]
+        );
         let ours = sample.replace("7890", "2080");
         assert_eq!(parse_scutil_proxy(&ours, 2080), Vec::<String>::new());
     }
@@ -284,7 +291,10 @@ mod tests {
     #[test]
     fn a_tun_with_an_ipv4_address_is_on_and_a_link_local_utun_is_not() {
         let sample = "utun0: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1380\n\tinet6 fe80::1%utun0 prefixlen 64\nutun8: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 9000\n\tinet 198.18.0.1 --> 198.18.0.1 netmask 0xfffffffc\nen0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500\n\tinet 192.168.1.20 netmask 0xffffff00\n";
-        assert_eq!(parse_unix_tun(sample), vec!["TUN utun8 198.18.0.1".to_string()]);
+        assert_eq!(
+            parse_unix_tun(sample),
+            vec!["TUN utun8 198.18.0.1".to_string()]
+        );
     }
 
     #[test]
@@ -292,7 +302,10 @@ mod tests {
         let sample = "\
 2: enp0s1    inet 192.168.1.20/24 brd 192.168.1.255 scope global\n\
 5: tun0    inet 172.19.0.1/30 scope global tun0\n";
-        assert_eq!(parse_unix_tun(sample), vec!["TUN tun0 172.19.0.1".to_string()]);
+        assert_eq!(
+            parse_unix_tun(sample),
+            vec!["TUN tun0 172.19.0.1".to_string()]
+        );
     }
 
     #[test]

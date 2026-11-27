@@ -188,6 +188,7 @@
               <tr
                 v-for="row in filteredRows"
                 :key="row.id"
+                v-memo="[row.download, row.upload, row.downloadSpeed, row.uploadSpeed, selection?.row.id === row.id]"
                 class="pnm-connection-row"
                 :class="{ selected: selection?.row.id === row.id }"
                 @click="openConnection(row, $event)"
@@ -338,7 +339,7 @@
   </section>
 </template>
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, onUnmounted, ref, type Component } from "vue";
+  import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, type Component } from "vue";
   import { invoke } from "@tauri-apps/api/core";
   import {
     AppWindow,
@@ -358,6 +359,8 @@
   } from "@lucide/vue";
   import AppIcon from "../../components/AppIcon.vue";
   import { connectionSearch, type SearchOptions } from "../../lib/connection-search";
+  import { bindConnectionWatch } from "../../lib/connection-watch";
+  import { clampIntoViewport } from "../../lib/floating";
   import SelectMenu from "../../components/ui/SelectMenu.vue";
   import BaseButton from "../../components/ui/BaseButton.vue";
   import HelpTip from "../../components/ui/HelpTip.vue";
@@ -385,7 +388,10 @@
     closed: Row[];
   };
   type AppGroup = ApplicationGroup<Row>;
-  const snapshot = ref<Snapshot>({
+  // shallowRef: the poll replaces the whole snapshot each tick, so we only need reactivity on the
+  // `.value` identity. This skips recursively proxying hundreds of rows (+ nested metadata) every
+  // 1.5s and the per-read Proxy getter cost while rendering — the rows are read-only, replace-only.
+  const snapshot = shallowRef<Snapshot>({
     session: 0,
     running: false,
     uploadTotal: 0,
@@ -451,8 +457,8 @@
   let anchor: HTMLElement | undefined;
   function positionPopover(element: HTMLElement, target: HTMLElement) {
     const rect = target.getBoundingClientRect();
-    element.style.left = `${Math.max(12, Math.min(rect.right - element.offsetWidth, window.innerWidth - element.offsetWidth - 12))}px`;
-    element.style.top = `${Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - element.offsetHeight - 12))}px`;
+    element.style.left = `${clampIntoViewport(rect.right - element.offsetWidth, element.offsetWidth, window.innerWidth, 12)}px`;
+    element.style.top = `${clampIntoViewport(rect.bottom + 8, element.offsetHeight, window.innerHeight, 12)}px`;
   }
   async function openDetail(group: AppGroup, event: MouseEvent) {
     selectedApp.value = group.app;
@@ -495,11 +501,13 @@
   }
   const scopedActive = computed(() => connectionsForApp(snapshot.value.active, connectionApp.value));
   const scopedClosed = computed(() => connectionsForApp(snapshot.value.closed, connectionApp.value));
-  const filteredRows = computed(() =>
-    (status.value === "active" ? scopedActive.value : scopedClosed.value).filter(row =>
-      search.value.matches(`${host(row)} ${row.metadata.processPath} ${chain(row)}`)
-    )
-  );
+  const filteredRows = computed(() => {
+    const rows = status.value === "active" ? scopedActive.value : scopedClosed.value;
+    // Empty query matches everything, so skip building the per-row search haystack (host + chain
+    // string work on every row) when there is nothing to match against.
+    if (!query.value.trim()) return rows;
+    return rows.filter(row => search.value.matches(`${host(row)} ${row.metadata.processPath} ${chain(row)}`));
+  });
   function requestCloseAll(event: MouseEvent) {
     closeSession = snapshot.value.session;
     closePopover.value?.showPopover();
@@ -592,14 +600,17 @@
   const groups = computed<AppGroup[]>(() =>
     applicationGroups(snapshot.value.active, snapshot.value.closed, appPolicies.value)
   );
-  const filteredGroups = computed(() =>
-    groups.value.filter(
-      group =>
-        (filter.value === "all" ||
-          (filter.value === "configured" ? savedOf(group.app) !== "inherit" : savedOf(group.app) === filter.value)) &&
-        search.value.matches(`${group.app || t("connections.unknownApp")} ${group.exe}`)
-    )
-  );
+  const filteredGroups = computed(() => {
+    const q = query.value.trim();
+    return groups.value.filter(group => {
+      const passesFilter =
+        filter.value === "all" ||
+        (filter.value === "configured" ? savedOf(group.app) !== "inherit" : savedOf(group.app) === filter.value);
+      if (!passesFilter) return false;
+      // Skip the search haystack build when there is no query.
+      return !q || search.value.matches(`${group.app || t("connections.unknownApp")} ${group.exe}`);
+    });
+  });
   const activeApp = computed(() => groups.value.find(group => group.app === selectedApp.value) || selectedGroup.value);
   const totalConns = computed(() => groups.value.reduce((sum, group) => sum + group.rows.length, 0));
   const configuredCount = computed(() => Object.keys(appPolicies.value).length);
@@ -626,6 +637,7 @@
   }
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const connectionWatch = bindConnectionWatch("details");
   let popoverResize: ResizeObserver | undefined;
   async function refresh() {
     try {
@@ -650,12 +662,15 @@
     });
     if (dialog.value) popoverResize.observe(dialog.value);
     window.addEventListener("resize", dismissPopovers);
-    if ("__TAURI_INTERNALS__" in window) void poll();
-    else error.value = t("connections.connectionMonitoringIsAvailableIn");
+    if ("__TAURI_INTERNALS__" in window) {
+      connectionWatch.start();
+      void poll();
+    } else error.value = t("connections.connectionMonitoringIsAvailableIn");
   });
   onUnmounted(() => {
     stopped = true;
     clearTimeout(timer);
+    connectionWatch.stop();
     popoverResize?.disconnect();
     window.removeEventListener("resize", dismissPopovers);
   });

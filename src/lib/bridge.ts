@@ -70,11 +70,13 @@ export function createBridge(deps: BridgeDeps) {
         saveSubscriptions: data => invoke("save_subscriptions", { data }),
         connect: mode => invoke("connect", { mode }),
         disconnect: () => invoke("disconnect"),
+        selectNode: tag => invoke("select_node", { tag }),
         lanGetLocalDevice: () => invoke("lan_get_local_device"),
         lanAddManualDevice: addr => invoke("lan_add_manual_device", { addr }),
         lanGetSettings: () => invoke("lan_get_settings"),
         lanUpdateSettings: settings => invoke("lan_update_settings", { settings }),
         lanRefreshDevices: () => invoke("lan_refresh_devices"),
+        lanScanSubnet: () => invoke("lan_scan_subnet"),
         lanListTransfers: () => invoke("lan_list_transfers"),
         lanSendFiles: (fingerprint, paths) => invoke("lan_send_files", { fingerprint, paths }),
         lanSendText: (fingerprint, text) => invoke("lan_send_text", { fingerprint, text }),
@@ -86,6 +88,9 @@ export function createBridge(deps: BridgeDeps) {
           }),
         lanPair: fingerprint => invoke("lan_pair", { fingerprint }),
         lanRespondPair: (requestId, accept) => invoke("lan_respond_pair", { request: requestId, accept }),
+        lanSyncPull: fingerprint => invoke("lan_sync_pull", { fingerprint }),
+        lanRespondSync: (requestId, accept, payload) =>
+          invoke("lan_respond_sync", { request: requestId, accept, payload }),
         lanListTrusted: () => invoke("lan_list_trusted"),
         lanUnpair: fingerprint => invoke("lan_unpair", { fingerprint }),
         lanGetConversation: fingerprint => invoke("lan_get_conversation", { fingerprint }),
@@ -120,6 +125,9 @@ export function createBridge(deps: BridgeDeps) {
         },
         async onLanPair(cb) {
           return listen<LanPairRequest>("lan://pair", e => cb(e.payload));
+        },
+        async onLanSync(cb) {
+          return listen<LanPairRequest>("lan://sync", e => cb(e.payload));
         },
         async onProgress(cb) {
           return listen<{ stage: string }>("connection://progress", event => cb(event.payload.stage));
@@ -178,6 +186,7 @@ export function createBridge(deps: BridgeDeps) {
         return settings;
       },
       async lanRefreshDevices() {},
+      async lanScanSubnet() {},
       async lanListTransfers() {
         return [];
       },
@@ -190,6 +199,10 @@ export function createBridge(deps: BridgeDeps) {
       async lanRespondIncoming() {},
       async lanPair() {},
       async lanRespondPair() {},
+      async lanSyncPull() {
+        throw new Error("native.lanNotImplemented");
+      },
+      async lanRespondSync() {},
       async lanListTrusted() {
         return [];
       },
@@ -313,6 +326,9 @@ export function createBridge(deps: BridgeDeps) {
         note = "status.disconnected";
         lines.push(deps.logLine(note));
         return { phase: current, message: note, logs: lines };
+      },
+      async selectNode() {
+        // No running core in the preview; node selection is a no-op.
       },
     };
   }

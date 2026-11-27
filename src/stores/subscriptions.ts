@@ -5,6 +5,7 @@ import { type ExternalProfile, type ActiveSubscription } from "../types";
 import { msg, type Text } from "../i18n";
 import { confirmation } from "../lib/confirmation";
 import { parseSingBoxProfile } from "../lib/profiles";
+import { AUTOMATIC_NODE_ID } from "../lib/automatic-selection";
 import { parseDeepLink, redeemedSubscription } from "../lib/deep-link";
 import { useCoreStore } from "./core";
 import { useI18nStore } from "./i18n";
@@ -549,6 +550,89 @@ export const useSubscriptionsStore = defineStore(
       } else if (dialog.open) dialog.close();
     });
 
+    // ——— 局域网跨端同步 ———
+    // 采集本机「自建订阅 + 当前选择」为统一 payload（跨端 schema，详见计划）。
+    function buildLanSyncPayload(): string {
+      const { selectedNode } = storeToRefs(useNodesStore());
+      const { chain } = storeToRefs(useChainStore());
+      const active = externalProfiles.value.find(item => item.id === activeExternalId.value);
+      return JSON.stringify({
+        v: 1,
+        subs: externalProfiles.value.map(p => ({ name: p.name, url: p.url, content: p.raw })),
+        sel: {
+          activeUrl: active?.url || null,
+          activeName: active?.name || null,
+          node: selectedNode.value || null,
+          chain: [...(chain.value ?? [])],
+        },
+      });
+    }
+
+    // 应用收到的 payload：按 url(无 url 则 name) 合并订阅，再 best-effort 应用选择。返回合并条数。
+    async function applyLanSyncPayload(payload: string): Promise<number> {
+      const data = JSON.parse(payload);
+      if (!data || data.v !== 1 || !Array.isArray(data.subs)) {
+        throw new Error("lan.syncBadPayload");
+      }
+      const keyOf = (s: { url?: string; name?: string }) =>
+        s.url && s.url.length ? `u:${s.url}` : `n:${s.name ?? ""}`;
+      const byKey = new Map(externalProfiles.value.map(p => [keyOf(p), { ...p }]));
+      let count = 0;
+      for (const s of data.subs) {
+        if (!s || typeof s.content !== "string" || !s.content) continue;
+        let raw: string;
+        try {
+          raw = await normalizeExternalRaw(s.content);
+        } catch {
+          continue; // 跳过无法解析/转换的订阅
+        }
+        const existing = byKey.get(keyOf(s));
+        if (existing) {
+          existing.name = s.name || existing.name;
+          existing.raw = raw;
+          existing.updatedAt = new Date().toISOString();
+        } else {
+          byKey.set(keyOf(s), {
+            id: crypto.randomUUID(),
+            name: s.name || s.url || "sub",
+            url: s.url || "",
+            raw,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        count++;
+      }
+      const merged = [...byKey.values()];
+      await persistExternal(merged);
+      externalProfiles.value = merged;
+
+      // 应用选择：激活对应订阅，再按 payload 覆盖选中节点/链（best-effort，失败不影响已同步的订阅）。
+      const sel = data.sel ?? {};
+      const active =
+        (sel.activeUrl && merged.find(p => p.url === sel.activeUrl)) ||
+        (sel.activeName && merged.find(p => p.name === sel.activeName)) ||
+        null;
+      if (active) {
+        await activateExternal(active);
+        try {
+          const { nodes, selectedNode } = storeToRefs(useNodesStore());
+          const { chain } = storeToRefs(useChainStore());
+          const ids = new Set(nodes.value.map(n => n.id));
+          if (sel.node && (ids.has(sel.node) || sel.node === AUTOMATIC_NODE_ID)) {
+            selectedNode.value = sel.node;
+          }
+          if (Array.isArray(sel.chain)) {
+            chain.value = sel.chain.filter((t: unknown) => typeof t === "string" && ids.has(t));
+          }
+          const connection = useConnectionStore();
+          await (await connection.bridge()).saveProfile(connection.buildProfileConfig());
+        } catch {
+          /* 覆盖选择失败：订阅已同步，忽略 */
+        }
+      }
+      return count;
+    }
+
     return {
       externalProfiles,
       activeExternalId,
@@ -588,6 +672,8 @@ export const useSubscriptionsStore = defineStore(
       saveExternalRules,
       importSub,
       copySubscription,
+      buildLanSyncPayload,
+      applyLanSyncPayload,
     };
   },
   { persist: { key: "airport.subscriptions", pick: ["activeExternalId"] } }

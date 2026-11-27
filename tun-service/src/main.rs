@@ -31,7 +31,10 @@ const REQUEST_DEADLINE: Duration = Duration::from_secs(2);
 /// bounded and the excess is dropped rather than queued.
 const MAX_PENDING_READS: usize = 16;
 const MAX_BATCH: usize = 32;
-fn request_channel() -> (mpsc::SyncSender<(Request, TcpStream)>, mpsc::Receiver<(Request, TcpStream)>) {
+fn request_channel() -> (
+    mpsc::SyncSender<(Request, TcpStream)>,
+    mpsc::Receiver<(Request, TcpStream)>,
+) {
     mpsc::sync_channel(MAX_PENDING_READS)
 }
 
@@ -554,7 +557,9 @@ fn daemon() -> Result<()> {
             }
         }
         for _ in 0..MAX_BATCH {
-            let Ok((request, mut stream)) = incoming.try_recv() else { break; };
+            let Ok((request, mut stream)) = incoming.try_recv() else {
+                break;
+            };
             idle = false;
             if !replay.accept(&request) {
                 continue;
@@ -705,20 +710,41 @@ mod tests {
     }
     #[test]
     fn request_queue_bounds_memory_and_drops_overflow_sockets() {
-        let listener=TcpListener::bind("127.0.0.1:0").unwrap();
-        let (sender, receiver)=request_channel();let mut clients=Vec::new();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let (sender, receiver) = request_channel();
+        let mut clients = Vec::new();
         for _ in 0..MAX_PENDING_READS {
             clients.push(TcpStream::connect(listener.local_addr().unwrap()).unwrap());
-            let (stream,_)=listener.accept().unwrap();
-            sender.try_send((Request { id:airport_tun_service::random_id().unwrap(),time:now(),action:Action::Status },stream)).unwrap();
+            let (stream, _) = listener.accept().unwrap();
+            sender
+                .try_send((
+                    Request {
+                        id: airport_tun_service::random_id().unwrap(),
+                        time: now(),
+                        action: Action::Status,
+                    },
+                    stream,
+                ))
+                .unwrap();
         }
-        let mut overflow=TcpStream::connect(listener.local_addr().unwrap()).unwrap();
-        overflow.set_read_timeout(Some(Duration::from_millis(500))).unwrap();
-        let (stream,_)=listener.accept().unwrap();
-        let result=sender.try_send((Request { id:airport_tun_service::random_id().unwrap(),time:now(),action:Action::Status },stream));
-        assert!(matches!(&result,Err(mpsc::TrySendError::Full(_))));drop(result);
-        let mut byte=[0];assert_eq!(overflow.read(&mut byte).unwrap(),0);
-        assert_eq!(receiver.try_iter().count(),MAX_PENDING_READS);
+        let mut overflow = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        overflow
+            .set_read_timeout(Some(Duration::from_millis(500)))
+            .unwrap();
+        let (stream, _) = listener.accept().unwrap();
+        let result = sender.try_send((
+            Request {
+                id: airport_tun_service::random_id().unwrap(),
+                time: now(),
+                action: Action::Status,
+            },
+            stream,
+        ));
+        assert!(matches!(&result, Err(mpsc::TrySendError::Full(_))));
+        drop(result);
+        let mut byte = [0];
+        assert_eq!(overflow.read(&mut byte).unwrap(), 0);
+        assert_eq!(receiver.try_iter().count(), MAX_PENDING_READS);
     }
     #[test]
     fn replay_guard_rejects_duplicates_and_expired_requests() {

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-scan-subnet"
+description = "Enables the lan_scan_subnet command without any pre-configured scope."
+commands.allow = ["lan_scan_subnet"]
+
+[[permission]]
+identifier = "deny-lan-scan-subnet"
+description = "Denies the lan_scan_subnet command without any pre-configured scope."
+commands.deny = ["lan_scan_subnet"]

@@ -16,11 +16,19 @@ pub const PROTOCOL_VERSION: &str = "2.0";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DeviceType {
-    Mobile,
     Desktop,
-    Web,
-    Headless,
+    Laptop,
+    /// 旧版本上报的 "mobile" 归一到 phone。
+    #[serde(alias = "mobile")]
+    Phone,
+    Tablet,
+    /// 旧版本上报的 "headless" 归一到 server。
+    #[serde(alias = "headless")]
     Server,
+    Tv,
+    /// 未知/旧版 "web" 等无法识别的值兜底。
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

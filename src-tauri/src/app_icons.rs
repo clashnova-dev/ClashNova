@@ -8,24 +8,11 @@ mod windows;
 #[cfg(target_os = "macos")]
 use std::path::Path;
 
+// No backend cache: the webview owns the icon cache (see app-icon-cache.ts), so resolve the
+// icon live on every call. The frontend only reaches this on a cache miss, and the system
+// icon lookup is cheap, so a fresh fetch stays fast while always reflecting the current icon.
 pub fn load(path: &str) -> Option<Vec<u8>> {
-    use std::{
-        collections::HashMap,
-        sync::{Mutex, OnceLock},
-    };
-    static CACHE: OnceLock<Mutex<HashMap<String, Option<Vec<u8>>>>> = OnceLock::new();
-    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    if let Some(value) = cache.lock().ok()?.get(path).cloned() {
-        return value;
-    }
-    let value = native_icon(path);
-    if let Ok(mut entries) = cache.lock() {
-        if entries.len() >= 32 {
-            entries.clear();
-        }
-        entries.insert(path.to_owned(), value.clone());
-    }
-    value
+    native_icon(path)
 }
 
 fn native_icon(path: &str) -> Option<Vec<u8>> {

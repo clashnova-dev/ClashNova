@@ -1,32 +1,32 @@
 mod app_icons;
 mod app_policies;
-mod external_url;
 mod conversion;
-mod subscription_url;
+mod external_url;
 mod startup;
+mod subscription_url;
 use startup::check_proxy_egress;
-mod recovery;
-pub mod watchdog;
-mod lan;
-mod lan_transfer;
 mod connection;
 mod connections;
+mod lan;
+mod lan_transfer;
 mod message;
 mod network_info;
-mod unlock;
 mod network_settings;
 mod notifications;
+mod recovery;
 mod shortcuts;
 mod tun;
 mod tun_service;
+mod unlock;
+pub mod watchdog;
 #[cfg(windows)]
 use network_settings::default_proxy_port;
 use network_settings::NetworkSettings;
 mod port_reclaim;
 mod probe;
 mod proxy_conflict;
-mod storage;
 mod settings_store;
+mod storage;
 mod tray;
 mod tray_speed;
 use tray::sync_tray;
@@ -82,6 +82,8 @@ struct Core {
     /// service may be blocking the network: the block is kept alive, shown, and must be released.
     tun_guard: bool,
     guard_checked: Option<Instant>,
+    /// Boot-time kill-switch release. TUN connect waits so that release cannot disarm a new session.
+    startup_gate: Option<tun_service::StartupGate>,
 }
 
 #[cfg(windows)]
@@ -155,6 +157,7 @@ impl Core {
             proxy_backup_path: None,
             tun_guard: false,
             guard_checked: None,
+            startup_gate: None,
         }
     }
 
@@ -164,7 +167,9 @@ impl Core {
 
     fn record_recovery_intent(&mut self, connected: bool) {
         if let Some(path) = &self.recovery_intent_path {
-            if let Err(error) = storage::write_private(path, if connected { b"true" } else { b"false" }) {
+            if let Err(error) =
+                storage::write_private(path, if connected { b"true" } else { b"false" })
+            {
                 self.push_log(msg("recovery.intentWriteFailed", &[("error", text(error))]));
             }
         }
@@ -357,30 +362,38 @@ fn emit_state(app: &AppHandle, core: &Core) {
     let _ = app.emit("connection://state", core.snapshot());
 }
 
+/// Run a blocking closure on the blocking thread pool, flattening the join error into the
+/// closure's own `Result<_, String>`. This is the shared tail every async command spells out.
+pub(crate) async fn blocking<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 async fn connection_state(state: State<'_, Arc<Mutex<Core>>>) -> Result<Snapshot, String> {
     let state = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         state
             .lock()
             .map(|core| core.snapshot())
-            .map_err(|error| error.to_string())
+            .map_err(|e| e.to_string())
     })
     .await
-    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
 async fn read_logs(state: State<'_, Arc<Mutex<Core>>>) -> Result<Vec<String>, String> {
     let state = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         state
             .lock()
             .map(|core| core.snapshot().logs)
-            .map_err(|error| error.to_string())
+            .map_err(|e| e.to_string())
     })
     .await
-    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -425,9 +438,7 @@ fn save_network_settings(
 
 #[tauri::command]
 async fn proxy_diagnostics() -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(diagnose_system_proxy)
-        .await
-        .map_err(|error| error.to_string())?
+    blocking(diagnose_system_proxy).await
 }
 
 #[cfg(not(windows))]
@@ -452,15 +463,11 @@ fn diagnose_system_proxy() -> Result<String, String> {
 
 #[tauri::command]
 async fn begin_probe(config: String, tags: Vec<String>) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || probe::begin(config, tags))
-        .await
-        .map_err(|e| e.to_string())?
+    blocking(move || probe::begin(config, tags)).await
 }
 #[tauri::command]
 async fn probe_delay(session: String, tag: String) -> Result<probe::DelayResult, String> {
-    tauri::async_runtime::spawn_blocking(move || probe::delay(session, tag))
-        .await
-        .map_err(|e| e.to_string())?
+    blocking(move || probe::delay(session, tag)).await
 }
 #[tauri::command]
 async fn probe_speed(
@@ -468,13 +475,15 @@ async fn probe_speed(
     session: String,
     tag: String,
 ) -> Result<probe::SpeedResult, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         probe::speed(session, tag, move |mbps, bytes| {
-            let _ = app.emit("probe://speed", serde_json::json!({"mbps": mbps, "bytes": bytes}));
+            let _ = app.emit(
+                "probe://speed",
+                serde_json::json!({"mbps": mbps, "bytes": bytes}),
+            );
         })
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn probe_speed_up(
@@ -482,13 +491,15 @@ async fn probe_speed_up(
     session: String,
     tag: String,
 ) -> Result<probe::SpeedResult, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         probe::speed_up(session, tag, move |mbps, bytes| {
-            let _ = app.emit("probe://speed-up", serde_json::json!({"mbps": mbps, "bytes": bytes}));
+            let _ = app.emit(
+                "probe://speed-up",
+                serde_json::json!({"mbps": mbps, "bytes": bytes}),
+            );
         })
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn end_probe(session: String) -> Result<(), String> {
@@ -502,7 +513,7 @@ async fn probe_node(host: String, port: u16) -> Result<u32, String> {
     if host.is_empty() || host.len() > 253 || port == 0 {
         return Err("native.nodeAddressInvalid".into());
     }
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         let started = Instant::now();
         let addresses = (host.as_str(), port)
             .to_socket_addrs()
@@ -515,7 +526,6 @@ async fn probe_node(host: String, port: u16) -> Result<u32, String> {
         Err("native.nodeConnectTimeout".into())
     })
     .await
-    .map_err(|err| err.to_string())?
 }
 
 #[derive(Serialize)]
@@ -531,7 +541,7 @@ async fn fetch_subscription(url: String) -> Result<String, String> {
 
 #[tauri::command]
 async fn fetch_subscription_details(url: String) -> Result<SubscriptionDownload, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         let parsed = subscription_url::validate(&url)?;
         let origin = parsed.clone();
         let client = reqwest::blocking::Client::builder()
@@ -610,7 +620,6 @@ async fn fetch_subscription_details(url: String) -> Result<SubscriptionDownload,
         Ok(SubscriptionDownload { raw, userinfo })
     })
     .await
-    .map_err(|err| err.to_string())?
 }
 
 fn resolve_sidecar(name: &str) -> Result<PathBuf, String> {
@@ -641,7 +650,7 @@ fn resolve_converter() -> Result<PathBuf, String> {
 
 #[tauri::command]
 async fn convert_subscription(raw: String) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         if raw.len() > 2 * 1024 * 1024 {
             return Err("error.subscriptionTooLarge".into());
         }
@@ -653,7 +662,11 @@ async fn convert_subscription(raw: String) -> Result<String, String> {
             .map_err(|err| err.to_string())?;
         input.flush().map_err(|err| err.to_string())?;
         let mut cmd = Command::new(converter);
-        hide_console(&mut cmd).arg(input.path()).arg("--only-nodes").arg("--out").arg("-");
+        hide_console(&mut cmd)
+            .arg(input.path())
+            .arg("--only-nodes")
+            .arg("--out")
+            .arg("-");
         let output = conversion::output(&mut cmd, Duration::from_secs(15), 4 * 1024 * 1024)?;
         let nodes: Vec<serde_json::Value> =
             serde_json::from_slice(&output).map_err(|_| "native.converterOutputInvalid")?;
@@ -664,7 +677,6 @@ async fn convert_subscription(raw: String) -> Result<String, String> {
             .map_err(|err| err.to_string())
     })
     .await
-    .map_err(|err| err.to_string())?
 }
 
 fn load_subscription_file(path: &std::path::Path) -> Result<String, String> {
@@ -684,9 +696,11 @@ fn load_subscription_file(path: &std::path::Path) -> Result<String, String> {
     if bytes.len() > 16 * 1024 * 1024 {
         return Err("native.subscriptionListInvalid".into());
     }
-    let value: serde_json::Value = serde_json::from_slice(&bytes)
-        .map_err(|_| "native.subscriptionListInvalid")?;
-    if !value.is_array() { return Err("native.subscriptionListInvalid".into()); }
+    let value: serde_json::Value =
+        serde_json::from_slice(&bytes).map_err(|_| "native.subscriptionListInvalid")?;
+    if !value.is_array() {
+        return Err("native.subscriptionListInvalid".into());
+    }
     String::from_utf8(bytes).map_err(|_| "native.subscriptionListInvalid".into())
 }
 
@@ -759,9 +773,15 @@ fn resolve_binary() -> Result<PathBuf, String> {
 
 fn startup_progress(core: &mut Core, app: Option<&AppHandle>, stage: &str, started: Instant) {
     let elapsed = started.elapsed().as_millis().min(u64::MAX as u128) as u64;
-    core.push_log(msg("log.startupProgress", &[("stage", text(stage)), ("milliseconds", elapsed.into())]));
+    core.push_log(msg(
+        "log.startupProgress",
+        &[("stage", text(stage)), ("milliseconds", elapsed.into())],
+    ));
     if let Some(app) = app.filter(|_| core.phase != Phase::Connected) {
-        let _ = app.emit("connection://progress", serde_json::json!({"stage": stage, "elapsedMs": elapsed}));
+        let _ = app.emit(
+            "connection://progress",
+            serde_json::json!({"stage": stage, "elapsedMs": elapsed}),
+        );
     }
 }
 
@@ -827,6 +847,9 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
     // connect on an extra launch each time.
     startup_progress(core, app, "startup.starting", started);
     let process = if core.mode == "tun" {
+        if let Some(gate) = core.startup_gate.clone() {
+            gate.wait();
+        }
         tun_service::ServiceProcess::start(
             core.tun_credentials
                 .as_deref()
@@ -862,7 +885,9 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
             core.child = Some(child);
             core.apply(ConnEvent::CoreSpawned)?;
             core.message = "status.connecting".into();
-            if let Some(app) = app { emit_state(app, core); }
+            if let Some(app) = app {
+                emit_state(app, core);
+            }
             let deadline = Instant::now() + Duration::from_secs(5);
             loop {
                 if let Some(status) = core
@@ -891,7 +916,9 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
                 thread::sleep(Duration::from_millis(20));
             }
             startup_progress(core, app, "startup.verifying", started);
-            let egress = check_proxy_egress(port);
+            // Heartbeat while the check runs. This thread holds the core lock, so the watcher
+            // cannot renew the TUN lease, and the service drops a silent session after 15s.
+            let egress = verify_proxy_egress(core, port);
             if let Err(err) = egress {
                 let exited = core
                     .child
@@ -997,12 +1024,16 @@ fn spawn_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn connect(app: AppHandle, state: State<'_, Arc<Mutex<Core>>>, mode: String) -> Result<Snapshot, String> {
+async fn connect(
+    app: AppHandle,
+    state: State<'_, Arc<Mutex<Core>>>,
+    mode: String,
+) -> Result<Snapshot, String> {
     if !matches!(mode.as_str(), "system" | "tun" | "manual") {
         return Err("native.connectionModeInvalid".into());
     }
     let state = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         let mut core = state.lock().map_err(|error| error.to_string())?;
         if !matches!(core.phase, Phase::Idle | Phase::Failed) {
             return Err("native.cannotConnectNow".into());
@@ -1022,7 +1053,6 @@ async fn connect(app: AppHandle, state: State<'_, Arc<Mutex<Core>>>, mode: Strin
         Ok(core.snapshot())
     })
     .await
-    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -1036,6 +1066,39 @@ fn set_connection_mode(state: State<Arc<Mutex<Core>>>, mode: String) -> Result<(
     }
     core.mode = mode;
     Ok(())
+}
+
+/// The egress check can take several seconds. Pump TUN heartbeats until it finishes, and
+/// return as soon as the core has exited instead of waiting out the probe timeout.
+fn verify_proxy_egress(core: &mut Core, port: u16) -> Result<(), String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    thread::spawn(move || {
+        let _ = tx.send(check_proxy_egress(port));
+    });
+    let deadline = Instant::now() + Duration::from_secs(9);
+    loop {
+        match rx.recv_timeout(Duration::from_millis(200)) {
+            Ok(result) => return result,
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("native.proxyEgressTimeout".into());
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                if let Some(reason) = tun_heartbeat(core)? {
+                    return Err(reason);
+                }
+                if Instant::now() >= deadline {
+                    return Err("native.proxyEgressTimeout".into());
+                }
+            }
+        }
+    }
+}
+
+fn tun_heartbeat(core: &mut Core) -> Result<Option<String>, String> {
+    match core.child.as_mut() {
+        Some(CoreProcess::Service(service)) => service.poll(),
+        _ => Ok(None),
+    }
 }
 
 fn start_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
@@ -1058,7 +1121,9 @@ fn start_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
         release_tun_guard(core);
     }
     core.message = "status.preparing".into();
-    if let Some(app) = app { emit_state(app, core); }
+    if let Some(app) = app {
+        emit_state(app, core);
+    }
     spawn_core(core, app)?;
     core.recovery.healthy(Instant::now());
     core.record_recovery_intent(true);
@@ -1068,13 +1133,12 @@ fn start_core(core: &mut Core, app: Option<&AppHandle>) -> Result<(), String> {
 #[tauri::command]
 async fn disconnect(state: State<'_, Arc<Mutex<Core>>>) -> Result<Snapshot, String> {
     let state = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         let mut core = state.lock().map_err(|error| error.to_string())?;
         stop_core(&mut core)?;
         Ok(core.snapshot())
     })
     .await
-    .map_err(|error| error.to_string())?
 }
 
 /// Open an external link (About page: project repository, chat group) in the user's
@@ -1288,7 +1352,10 @@ fn watch_child(app: AppHandle, state: Arc<Mutex<Core>>) {
         thread::sleep(Duration::from_millis(500));
         let mut core = match state.lock() {
             Ok(guard) => guard,
-            Err(_) => continue,
+            // A poisoned lock means another thread panicked while holding Core. Recover the guard
+            // instead of `continue`-ing forever: otherwise this watcher would spin silently for the
+            // rest of the process's life, permanently disabling exit detection and auto-reconnect.
+            Err(poisoned) => poisoned.into_inner(),
         };
         let observation = core
             .child
@@ -1355,7 +1422,7 @@ async fn take_crash_recovery(
         }
         core.tun_credentials.clone()
     };
-    tauri::async_runtime::spawn_blocking(move || {
+    blocking(move || {
         // A previous TUN lease must expire before conflict detection or starting another core.
         if let Some(path) = credentials.filter(|p| p.exists()) {
             tun_service::await_previous_session(&path)?;
@@ -1363,7 +1430,6 @@ async fn take_crash_recovery(
         Ok(true)
     })
     .await
-    .map_err(|e| e.to_string())?
 }
 
 fn show_main(app: &AppHandle) {
@@ -1390,6 +1456,16 @@ pub fn run() {
                     Target::new(TargetKind::Stdout),
                     Target::new(TargetKind::LogDir { file_name: None }),
                 ])
+                // 插件默认级别是 Trace，会把每个 mDNS/mio 事件都写盘——在 Windows 上
+                // 表现为持续的磁盘 I/O 和明显耗能/卡顿。调试构建保留 Debug，发布构建
+                // 降到 Info；并单独把逐包刷屏的 mdns_sd / mio 压到 Warn。
+                .level(if cfg!(debug_assertions) {
+                    log::LevelFilter::Debug
+                } else {
+                    log::LevelFilter::Info
+                })
+                .level_for("mdns_sd", log::LevelFilter::Warn)
+                .level_for("mio", log::LevelFilter::Warn)
                 .build(),
         )
         .plugin(tauri_plugin_fs::init())
@@ -1420,10 +1496,13 @@ pub fn run() {
             unlock::unlock_check,
             unlock::unlock_cancel,
             network_info::get_auto_selection,
+            network_info::select_node,
             shortcuts::set_shortcut_recording,
             shortcuts::load_shortcuts,
             shortcuts::save_shortcuts,
             connections::list_connections,
+            connections::connection_traffic,
+            connections::set_connection_watch,
             connections::application_icon,
             connections::close_connections,
             app_policies::set_application_policy,
@@ -1460,6 +1539,7 @@ pub fn run() {
             lan_transfer::lan_get_settings,
             lan_transfer::lan_update_settings,
             lan_transfer::lan_refresh_devices,
+            lan_transfer::lan_scan_subnet,
             lan_transfer::lan_list_transfers,
             lan_transfer::lan_send_files,
             lan_transfer::lan_send_text,
@@ -1473,6 +1553,8 @@ pub fn run() {
             lan_transfer::lan_unpair,
             lan_transfer::lan_pair,
             lan_transfer::lan_respond_pair,
+            lan_transfer::lan_sync_pull,
+            lan_transfer::lan_respond_sync,
             lan_transfer::lan_get_conversation,
             lan_transfer::lan_open_path,
             lan_transfer::lan_reveal_path,
@@ -1485,25 +1567,31 @@ pub fn run() {
             lan_transfer::lan_pick_save_directory
         ])
         .setup(move |app| {
-            app.manage(Arc::new(settings_store::SettingsStore::open(app.path().app_data_dir()?.join("airport-settings.json"))));
+            app.manage(Arc::new(settings_store::SettingsStore::open(
+                app.path().app_data_dir()?.join("airport-settings.json"),
+            )));
             {
                 // 局域网传输服务状态，生命周期独立于代理连接（见 docs/desktop/局域网文件传输设计.md 第 6 节）。
                 let lan_dir = app.path().app_data_dir()?.join("lan");
                 fs::create_dir_all(&lan_dir)?;
-                let save_dir = app.path().download_dir().unwrap_or_else(|_| lan_dir.clone());
+                let save_dir = app
+                    .path()
+                    .download_dir()
+                    .unwrap_or_else(|_| lan_dir.clone());
                 // 默认别名用机器名，避免多台设备都叫 “ClashNova” 无法区分（取不到则回退）。
                 let alias = {
                     let host = tauri_plugin_os::hostname();
                     let host = host.strip_suffix(".local").unwrap_or(&host).trim();
-                    if host.is_empty() { "ClashNova".to_string() } else { host.to_string() }
+                    if host.is_empty() {
+                        "ClashNova".to_string()
+                    } else {
+                        host.to_string()
+                    }
                 };
-                app.manage(lan_transfer::LanTransferState::new(lan_service::LanConfig::new(
-                    alias,
-                    lan_dir,
-                    save_dir,
-                )));
+                let mut lan_config = lan_service::LanConfig::new(alias, lan_dir, save_dir);
+                lan_config.device_type = lan_transfer::detect_device_type();
+                app.manage(lan_transfer::LanTransferState::new(lan_config));
                 // 常驻拉起：接收端与组播发现随 App 启动运行，不依赖打开局域网页面。
-                log::info!("[lan] setup: calling autostart");
                 lan_transfer::autostart(app.handle());
             }
             // Keep the main window hidden at its real size. The webview shows it
@@ -1526,13 +1614,11 @@ pub fn run() {
                 });
                 app.manage(watchdog);
                 guard.proxy_backup_path = Some(dir.join("proxy-backup.json"));
-                guard.tun_credentials = Some(dir.join("tun-service.json"));
-                // A previous run of the app may have ended while the kill switch was blocking.
-                // This run knows nothing of that connection, so it starts with the network open.
                 let credentials = dir.join("tun-service.json");
-                thread::spawn(move || {
-                    let _ = tun_service::release_guard(&credentials);
-                });
+                guard.tun_credentials = Some(credentials.clone());
+                // A previous run may have left the kill switch blocking. Release that block, but
+                // keep the completion gate: a TUN connect waits so this Release cannot disarm it.
+                guard.startup_gate = Some(tun_service::StartupGate::start(credentials));
                 if let Err(error) = restore_saved_proxy(&mut guard) {
                     guard.push_log(error);
                 }
@@ -1570,9 +1656,14 @@ pub fn run() {
                 }
                 probe::stop_all();
                 let state = app.state::<Arc<Mutex<Core>>>();
-                if let Ok(mut core) = state.lock() {
-                    let _ = stop_core(&mut core);
+                // Run cleanup even if the Core lock was poisoned by an earlier panic — skipping it
+                // would strand the system proxy / TUN device and leave the user with no network after
+                // quit. Recover the guard and stop the core regardless.
+                let mut core = match state.lock() {
+                    Ok(core) => core,
+                    Err(poisoned) => poisoned.into_inner(),
                 };
+                let _ = stop_core(&mut core);
             }
             #[cfg(target_os = "macos")]
             if matches!(event, tauri::RunEvent::Reopen { .. }) {
@@ -1643,7 +1734,10 @@ mod runtime_tests {
         assert_eq!(core.phase, Phase::Idle);
         assert!(!core.auto_reconnect);
         assert!(!core.recovery.due(Instant::now() + Duration::from_secs(60)));
-        assert_eq!(fs::read(core.recovery_intent_path.unwrap()).unwrap(), b"false");
+        assert_eq!(
+            fs::read(core.recovery_intent_path.unwrap()).unwrap(),
+            b"false"
+        );
     }
 
     #[test]
@@ -1662,7 +1756,10 @@ mod runtime_tests {
         handle_core_exit(&mut core, "crashed".into(), false);
         assert_eq!(core.phase, Phase::Failed);
         assert!(!core.auto_reconnect);
-        assert_eq!(fs::read(core.recovery_intent_path.unwrap()).unwrap(), b"false");
+        assert_eq!(
+            fs::read(core.recovery_intent_path.unwrap()).unwrap(),
+            b"false"
+        );
     }
 
     #[cfg(unix)]
@@ -1677,7 +1774,11 @@ mod runtime_tests {
         assert!(core.child.is_none());
         assert_eq!(core.phase, Phase::Reconnecting);
         // This child has been reaped, so it is no longer in our process table.
-        let result = Command::new("/bin/kill").args(["-0", &pid.to_string()]).stderr(Stdio::null()).status().unwrap();
+        let result = Command::new("/bin/kill")
+            .args(["-0", &pid.to_string()])
+            .stderr(Stdio::null())
+            .status()
+            .unwrap();
         assert!(!result.success());
     }
 

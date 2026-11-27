@@ -3,6 +3,7 @@
   import { useApp } from "../../composables/useApp";
   import ExitInfo from "../../components/ExitInfo.vue";
   import { usedTraffic } from "../../lib/subscription-info";
+  import { bindConnectionWatch } from "../../lib/connection-watch";
   import { ArrowDown, ArrowUp, ChevronRight, Link, Power, LoaderCircle, Zap } from "@lucide/vue";
   import SelectMenu from "../../components/ui/SelectMenu.vue";
   import BaseButton from "../../components/ui/BaseButton.vue";
@@ -145,6 +146,7 @@
   const history = ref<{ down: number; up: number }[]>([]);
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const trafficWatch = bindConnectionWatch("summary");
   async function sample() {
     if (stopped) return;
     if (!document.hidden) {
@@ -153,10 +155,11 @@
         const snapshot = await invoke<{
           uploadTotal: number;
           downloadTotal: number;
-          active: { uploadSpeed: number; downloadSpeed: number }[];
-        }>("list_connections");
-        const down = snapshot.active.reduce((sum, row) => sum + (row.downloadSpeed || 0), 0);
-        const up = snapshot.active.reduce((sum, row) => sum + (row.uploadSpeed || 0), 0);
+          uploadSpeed: number;
+          downloadSpeed: number;
+        }>("connection_traffic");
+        const down = snapshot.downloadSpeed || 0;
+        const up = snapshot.uploadSpeed || 0;
         live.value = {
           down,
           up,
@@ -171,11 +174,14 @@
     if (!stopped) timer = setTimeout(sample, 1000);
   }
   onMounted(() => {
-    if (isNative) void sample();
+    if (!isNative) return;
+    trafficWatch.start();
+    void sample();
   });
   onUnmounted(() => {
     stopped = true;
     clearTimeout(timer);
+    trafficWatch.stop();
   });
   function rate(value: number) {
     if (value < 1024) return { value: String(Math.round(value)), unit: "B/s" };
